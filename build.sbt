@@ -1,10 +1,19 @@
 import com.typesafe.sbt.pgp.PgpKeys
 
-lazy val projectSettings = Seq(
-  name := "monix-kafka",
+val kafkaVersion = "0.10.0.1"
+val monixVersion = "2.0.1"
+
+lazy val doNotPublishArtifact = Seq(
+  publishArtifact := false,
+  publishArtifact in (Compile, packageDoc) := false,
+  publishArtifact in (Compile, packageSrc) := false,
+  publishArtifact in (Compile, packageBin) := false
+)
+
+lazy val sharedSettings = Seq(
   organization := "io.monix",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.0-RC1"),
+  crossScalaVersions := Seq("2.10.6", "2.11.8"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -110,14 +119,6 @@ lazy val projectSettings = Seq(
     Resolver.sonatypeRepo("releases")
   ),
 
-  libraryDependencies ++= Seq(
-    "io.monix" %% "monix-reactive" % "2.0.1",
-    "org.apache.kafka" % "kafka-clients" % "0.10.0.1",
-    "com.typesafe" % "config" % "1.3.0",
-    "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-    "net.manub" %% "scalatest-embedded-kafka" % "0.7.1" % "test"
-  ),
-
   // -- Settings meant for deployment on oss.sonatype.org
 
   useGpg := true,
@@ -162,5 +163,15 @@ lazy val projectSettings = Seq(
 )
 
 lazy val monixKafka = project.in(file("."))
-  .settings(projectSettings)
-
+  .settings(sharedSettings)
+  .settings(
+    name := "monix-kafka",
+    libraryDependencies ++= Seq(
+      "io.monix" %% "monix-reactive" % monixVersion,
+      "org.apache.kafka" % "kafka-clients" % kafkaVersion,
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+      "com.typesafe" % "config" % "1.3.0",
+      "org.scalatest" %% "scalatest" % "2.2.4" % "test",
+      "net.manub" %% "scalatest-embedded-kafka" % "0.7.1" % "test"
+    )
+  )
