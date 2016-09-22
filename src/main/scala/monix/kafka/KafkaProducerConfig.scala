@@ -1,8 +1,9 @@
-package monix.kafka.config
+package monix.kafka
 
 import java.io.File
 import java.util.Properties
 import com.typesafe.config.{Config, ConfigFactory}
+import monix.kafka.config._
 import scala.concurrent.duration._
 
 /** The Kafka Producer config.

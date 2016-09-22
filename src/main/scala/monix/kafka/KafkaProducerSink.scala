@@ -5,10 +5,10 @@ import monix.eval.{Callback, Coeval, Task}
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.AssignableCancelable
 import monix.execution.{Ack, Scheduler}
-import monix.kafka.config.KafkaProducerConfig
 import monix.reactive.Consumer
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.producer.ProducerRecord
+
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}

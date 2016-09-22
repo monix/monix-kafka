@@ -5,7 +5,6 @@ import monix.eval.Task
 import monix.execution.{Cancelable, Scheduler}
 import monix.execution.atomic.Atomic
 import monix.execution.cancelables.SingleAssignmentCancelable
-import monix.kafka.config.KafkaProducerConfig
 import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata, KafkaProducer => ApacheKafkaProducer}
 import scala.util.control.NonFatal
 

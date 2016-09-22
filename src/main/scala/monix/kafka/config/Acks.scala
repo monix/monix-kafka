@@ -1,6 +1,7 @@
 package monix.kafka.config
 
 import com.typesafe.config.ConfigException.BadValue
+import monix.kafka.KafkaProducerConfig
 
 /** Enumeration for specifying the `acks` setting in [[KafkaProducerConfig]].
   *
