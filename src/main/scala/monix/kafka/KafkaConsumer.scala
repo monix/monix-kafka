@@ -1,140 +1,93 @@
 package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
-import monix.execution.Ack.Stop
-import monix.execution.FutureUtils.extensions.FutureExtensions
-import monix.execution.cancelables.SingleAssignmentCancelable
+import monix.eval.Task
+import monix.execution.Ack.{Continue, Stop}
+import monix.execution.FutureUtils.extensions._
 import monix.execution.{Ack, Cancelable, Scheduler}
-import monix.reactive.{Observable, Observer}
 import monix.reactive.observers.Subscriber
+import monix.reactive.{Observable, Observer}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer => ApacheKafkaConsumer}
 
-import scala.concurrent.Future
-import scala.util.control.NonFatal
-import scala.util.{Failure, Success}
 import scala.collection.JavaConverters._
+import scala.concurrent.Future
+import scala.util.{Failure, Success, Try}
 
 /** An `Observable` implementation that reads messages from `Kafka`.
-  *
-  * You need to call `addTopicSubscription` in order for the Observable to start sending messages from that topic.
   */
-final class KafkaConsumer[K, V] private
-  (config: KafkaConsumerConfig, ioScheduler: Scheduler)
+final class KafkaConsumer[K, V]
+  (kafkaConsumerTask: Task[ApacheKafkaConsumer[K,V]], config: KafkaConsumerConfig, ioScheduler: Scheduler)
   (implicit K: Deserializer[K], V: Deserializer[V])
   extends Observable[ConsumerRecord[K, V]] with StrictLogging {
 
-  def unsafeSubscribeFn(subscriber: Subscriber[ConsumerRecord[K, V]]): Cancelable = {
-    val source = underlying.onErrorHandleWith { ex =>
-      logger.error(
-        s"Unexpected error in KafkaConsumerObservable, retrying in ${config.retryBackoffTime}", ex)
-      // Applying configured delay before retry!
-      underlying.delaySubscription(config.retryBackoffTime)
-    }
+  override def unsafeSubscribeFn(subscriber: Subscriber[ConsumerRecord[K, V]]): Cancelable =
+    kafkaConsumerTask
+      .map(kafkaConsumer => underlying(kafkaConsumer).unsafeSubscribeFn(subscriber))
+      .runAsync(ioScheduler)
 
-    source.unsafeSubscribeFn(subscriber)
-  }
 
-  def addTopicSubscription(topics: Set[String]): Unit = {
-    logger.info(s"Subscribing to topics : ${topics.mkString(",")}")
-    consumerRef.subscribe((currentSubscriptions() ++ topics).asJavaCollection)
-  }
-
-  /**
-    * Removes a subscription from a particular topic.
-    *
-    * @param topics the topics to be unsubscribed, if it is an `Set.empty` this method will unsubscribe from all topics.
-    */
-  def removeTopicSubscription(topics: Set[String]): Unit =
-    if(topics.nonEmpty) {
-      logger.info(s"Unsubscribing from topics : ${topics.mkString(",")}")
-      consumerRef.subscribe((currentSubscriptions() -- topics).asJavaCollection)
-    } else {
-      logger.info(s"Unsubscribing from topics : ${currentSubscriptions().mkString(",")}")
-      consumerRef.unsubscribe()
-    }
-
-  // Gets initialized on `subscribe`
-  private lazy val consumerRef = {
-    logger.info(s"Kafka consumer connecting to servers: ${config.servers.mkString(",")}")
-    new ApacheKafkaConsumer[K,V](config.toProperties, K.create(), V.create())
-  }
-
-  private def currentSubscriptions() =
+  private def currentSubscriptions(consumerRef: ApacheKafkaConsumer[K,V]) =
     consumerRef.subscription().asScala.toSet
 
-  private lazy val underlying =
-    Observable.unsafeCreate[ConsumerRecord[K, V]] { subscriber =>
-      val cancelable = SingleAssignmentCancelable()
-
+  private def loop(consumer: ApacheKafkaConsumer[K,V], out: Subscriber[ConsumerRecord[K,V]]): Task[Unit] = {
+    val consumeTask = Task.unsafeCreate[Ack] { (s, conn, cb) =>
       // Forced asynchronous boundary, in order to not block
       // the current thread!
       ioScheduler.executeAsync {
-        cancelable := Observable
-          .fromStateAction[Set[String], ConsumerRecords[K, V]]{ subscriptions =>
-            val pollRecords =
-              if (subscriptions.nonEmpty)
-                consumerRef.poll(config.fetchMaxWaitTime.toMillis)
-              else
-                ConsumerRecords.empty[K, V]()
 
-            (pollRecords, currentSubscriptions())
-          }(initialState = currentSubscriptions())
-          .doOnSubscriptionCancel(consumerRef.close())
-          .unsafeSubscribeFn(new Subscriber[ConsumerRecords[K, V]] {
-            self =>
+        implicit val scheduler = ioScheduler
 
-            implicit val scheduler = ioScheduler
-            private[this] var isDone = false
+        val pollRecordsF =
+          if (currentSubscriptions(consumer).nonEmpty)
+            Future.fromTry(Try(consumer.poll(config.fetchMaxWaitTime.toMillis)))
+          else
+            Future.successful(ConsumerRecords.empty[K, V]())
 
-            def onNext(elem: ConsumerRecords[K, V]): Future[Ack] =
-              self.synchronized {
-                if (isDone) Stop else {
-                  val f = Observer.feed(subscriber, elem.asScala)
+        val ack = pollRecordsF.flatMap { pollRecords =>
+          Observer
+            .feed(out, pollRecords.asScala)
+            .materialize
+            .flatMap {
+              case Success(ackSuccess) =>
+                if (!config.enableAutoCommit && currentSubscriptions(consumer).nonEmpty)
+                  Future.fromTry(
+                    Try { consumer.commitSync(); ackSuccess }
+                      .recoverWith { case ex => Try { consumer.close(); Stop } }
+                  )
+                else
+                  ackSuccess
+              case Failure(ex) =>
+                Future.fromTry(Try {consumer.close(); Stop })
+            }
+        }
 
-                  f.materialize.map {
-                    case Success(ack) =>
-                      if (!config.enableAutoCommit && currentSubscriptions().nonEmpty)
-                        try {
-                          consumerRef.commitSync()
-                          ack
-                        } catch {
-                          case NonFatal(ex) =>
-                            onError(ex)
-                            Stop
-                        }
-                      else
-                        ack
-                    case Failure(ex) =>
-                      onError(ex)
-                      Stop
-                  }
-                }
-              }
-
-            def onError(ex: Throwable): Unit =
-              self.synchronized {
-                if (isDone) scheduler.reportFailure(ex) else {
-                  isDone = true
-                  subscriber.onError(ex)
-                }
-              }
-
-            def onComplete(): Unit =
-              self.synchronized {
-                if (!isDone) {
-                  isDone = true
-                  subscriber.onComplete()
-                }
-              }
-          })
+        ack.syncOnComplete {
+          case Success(value) =>
+            cb.asyncOnSuccess(value)(s)
+          case Failure(ex) =>
+            cb.asyncOnError(ex)(s)
+        }
       }
+    }
 
-      cancelable
+    consumeTask.flatMap {
+      case Stop => Task.unit
+      case Continue => loop(consumer, out)
+    }
+  }
+
+  private def underlying(kafkaConsumer: ApacheKafkaConsumer[K, V]): Observable[ConsumerRecord[K, V]] =
+    Observable.unsafeCreate[ConsumerRecord[K, V]] { subscriber =>
+      loop(kafkaConsumer, subscriber).runAsync(ioScheduler)
     }
 }
 
 object KafkaConsumer {
   def apply[K, V](config: KafkaConsumerConfig, ioScheduler: Scheduler)
     (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumer[K,V] =
-    new KafkaConsumer(config, ioScheduler)
+    apply(new ApacheKafkaConsumer[K,V](config.toProperties, K.create(), V.create()), config, ioScheduler)
+
+  def apply[K, V](kafkaConsumer: ApacheKafkaConsumer[K,V], config: KafkaConsumerConfig, ioScheduler: Scheduler)
+    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumer[K,V] =
+    new KafkaConsumer(Task.eval(kafkaConsumer), config, ioScheduler)
 }
