@@ -14,9 +14,12 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 import scala.collection.JavaConverters._
 
-/** An `Observable` implementation that reads messages from `Kafka`. */
+/** An `Observable` implementation that reads messages from `Kafka`.
+  *
+  * You need to call `addSubscription` in order for the Observable to start sending messages from that topic.
+  * */
 final class KafkaConsumer[K, V] private
-  (config: KafkaConsumerConfig, topic: String, ioScheduler: Scheduler)
+  (config: KafkaConsumerConfig, ioScheduler: Scheduler)
   (implicit K: Deserializer[K], V: Deserializer[V])
   extends Observable[ConsumerRecord[K, V]] with StrictLogging {
 
@@ -31,25 +34,51 @@ final class KafkaConsumer[K, V] private
     source.unsafeSubscribeFn(subscriber)
   }
 
-  private val underlying =
+  def addSubscription(topics: Set[String]): Unit = {
+    logger.info(s"Subscribing to topics : ${topics.mkString(",")}")
+    consumerRef.subscribe((currentSubscriptions() ++ topics).asJavaCollection)
+  }
+
+  /**
+    *
+    * @param topics the topics to be unsubscribed, if it is an `Set.empty` this method will unsubscribe from all topics.
+    */
+  def removeSubscriptions(topics: Set[String]): Unit =
+    if(topics.nonEmpty) {
+      logger.info(s"Unsubscribing from topics : ${topics.mkString(",")}")
+      consumerRef.subscribe((currentSubscriptions() -- topics).asJavaCollection)
+    } else {
+      logger.info(s"Unsubscribing from topics : ${currentSubscriptions().mkString(",")}")
+      consumerRef.unsubscribe()
+    }
+
+  // Gets initialized on `subscribe`
+  private lazy val consumerRef = {
+    logger.info(s"Kafka consumer connecting to servers: ${config.servers.mkString(",")}")
+    new ApacheKafkaConsumer[K,V](config.toProperties, K.create(), V.create())
+  }
+
+  private def currentSubscriptions() =
+    consumerRef.subscription().asScala.toSet
+
+  private lazy val underlying =
     Observable.unsafeCreate[ConsumerRecord[K, V]] { subscriber =>
       val cancelable = SingleAssignmentCancelable()
 
       // Forced asynchronous boundary, in order to not block
       // the current thread!
       ioScheduler.executeAsync {
-        val configProps = config.toProperties
-
-        logger.info(s"Kafka Consumer connecting with $configProps")
-
-        val consumer = new ApacheKafkaConsumer[K, V](configProps, K.create(), V.create())
-
-        consumer.subscribe(List(topic).asJavaCollection)
-        logger.info(s"Subscribing to topic : $topic")
-
         cancelable := Observable
-          .repeatEval(consumer.poll(config.fetchMaxWaitTime.toMillis))
-          .doOnSubscriptionCancel(consumer.close())
+          .fromStateAction[Set[String], ConsumerRecords[K, V]]{ subscriptions =>
+            val pollRecords =
+              if (subscriptions.nonEmpty)
+                consumerRef.poll(config.fetchMaxWaitTime.toMillis)
+              else
+                ConsumerRecords.empty[K, V]()
+
+            (pollRecords, currentSubscriptions())
+          }(initialState = currentSubscriptions())
+          .doOnSubscriptionCancel(consumerRef.close())
           .unsafeSubscribeFn(new Subscriber[ConsumerRecords[K, V]] {
             self =>
 
@@ -65,7 +94,7 @@ final class KafkaConsumer[K, V] private
                     case Success(ack) =>
                       if (!config.enableAutoCommit)
                         try {
-                          consumer.commitSync()
+                          consumerRef.commitSync()
                           ack
                         } catch {
                           case NonFatal(ex) =>
@@ -104,6 +133,6 @@ final class KafkaConsumer[K, V] private
 }
 
 object KafkaConsumer {
-  def apply[K, V](config: KafkaConsumerConfig, ioScheduler: Scheduler)(topic: String): KafkaConsumer[K,V] =
-    new KafkaConsumer(config, topic, ioScheduler)
+  def apply[K, V](config: KafkaConsumerConfig, ioScheduler: Scheduler): KafkaConsumer[K,V] =
+    new KafkaConsumer(config, ioScheduler)
 }
