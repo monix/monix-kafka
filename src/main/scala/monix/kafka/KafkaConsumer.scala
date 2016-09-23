@@ -1,26 +1,26 @@
 package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
-import monix.execution.Ack.{Continue, Stop}
+import monix.execution.Ack.Stop
 import monix.execution.FutureUtils.extensions.FutureExtensions
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.execution.{Ack, Cancelable, Scheduler}
-import monix.reactive.Observable
+import monix.reactive.{Observable, Observer}
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer => ApacheKafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerRecord, ConsumerRecords, KafkaConsumer => ApacheKafkaConsumer}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 /** An `Observable` implementation that reads messages from `Kafka`. */
 final class KafkaConsumer[K, V] private
   (config: KafkaConsumerConfig, topic: String, ioScheduler: Scheduler)
   (implicit K: Deserializer[K], V: Deserializer[V])
-  extends Observable[(K, V)] with StrictLogging {
+  extends Observable[ConsumerRecord[K, V]] with StrictLogging {
 
-  def unsafeSubscribeFn(subscriber: Subscriber[(K, V)]): Cancelable = {
+  def unsafeSubscribeFn(subscriber: Subscriber[ConsumerRecord[K, V]]): Cancelable = {
     val source = underlying.onErrorHandleWith { ex =>
       logger.error(
         s"Unexpected error in KafkaConsumerObservable, retrying in ${config.retryBackoffTime}", ex)
@@ -32,7 +32,7 @@ final class KafkaConsumer[K, V] private
   }
 
   private val underlying =
-    Observable.unsafeCreate[(K, V)] { subscriber =>
+    Observable.unsafeCreate[ConsumerRecord[K, V]] { subscriber =>
       val cancelable = SingleAssignmentCancelable()
 
       // Forced asynchronous boundary, in order to not block
@@ -44,7 +44,7 @@ final class KafkaConsumer[K, V] private
 
         val consumer = new ApacheKafkaConsumer[K, V](configProps, K.create(), V.create())
 
-        consumer.subscribe(List(topic))
+        consumer.subscribe(List(topic).asJavaCollection)
         logger.info(s"Subscribing to topic : $topic")
 
         cancelable := Observable
@@ -59,20 +59,21 @@ final class KafkaConsumer[K, V] private
             def onNext(elem: ConsumerRecords[K, V]): Future[Ack] =
               self.synchronized {
                 if (isDone) Stop else {
-                  val f = Future.sequence(elem.map(e => subscriber.onNext((e.key(), e.value()))))
+                  val f = Observer.feed(subscriber, elem.asScala)
 
                   f.materialize.map {
                     case Success(ack) =>
                       if (!config.enableAutoCommit)
                         try {
                           consumer.commitSync()
+                          ack
                         } catch {
                           case NonFatal(ex) =>
                             onError(ex)
                             Stop
                         }
-
-                      ack.find(_.isInstanceOf[Stop]).getOrElse(Continue)
+                      else
+                        ack
                     case Failure(ex) =>
                       onError(ex)
                       Stop
