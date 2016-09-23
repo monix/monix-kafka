@@ -34,7 +34,7 @@ final class KafkaConsumer[K, V] private
     source.unsafeSubscribeFn(subscriber)
   }
 
-  def addSubscription(topics: Set[String]): Unit = {
+  def addTopicSubscription(topics: Set[String]): Unit = {
     logger.info(s"Subscribing to topics : ${topics.mkString(",")}")
     consumerRef.subscribe((currentSubscriptions() ++ topics).asJavaCollection)
   }
@@ -43,7 +43,7 @@ final class KafkaConsumer[K, V] private
     *
     * @param topics the topics to be unsubscribed, if it is an `Set.empty` this method will unsubscribe from all topics.
     */
-  def removeSubscriptions(topics: Set[String]): Unit =
+  def removeTopicSubscription(topics: Set[String]): Unit =
     if(topics.nonEmpty) {
       logger.info(s"Unsubscribing from topics : ${topics.mkString(",")}")
       consumerRef.subscribe((currentSubscriptions() -- topics).asJavaCollection)
