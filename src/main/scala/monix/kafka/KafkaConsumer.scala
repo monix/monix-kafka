@@ -1,18 +1,18 @@
 package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
-import monix.execution.Ack.Stop
+import monix.execution.Ack.{Continue, Stop}
 import monix.execution.FutureUtils.extensions.FutureExtensions
 import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.execution.{Ack, Cancelable, Scheduler}
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer => ApacheKafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerRecords, KafkaConsumer => ApacheKafkaConsumer}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
-import scala.collection.JavaConversions.{asScalaIterator, seqAsJavaList}
+import scala.collection.JavaConversions._
 
 /** An `Observable` implementation that reads messages from `Kafka`. */
 final class KafkaConsumer[K, V] private
@@ -48,28 +48,31 @@ final class KafkaConsumer[K, V] private
         logger.info(s"Subscribing to topic : $topic")
 
         cancelable := Observable
-          .fromIterator(consumer.poll(config.fetchMaxWaitTime.toMillis).iterator(), () => consumer.close())
-          .unsafeSubscribeFn(new Subscriber[ConsumerRecord[K, V]] {
+          .repeatEval(consumer.poll(config.fetchMaxWaitTime.toMillis))
+          .doOnSubscriptionCancel(consumer.close())
+          .unsafeSubscribeFn(new Subscriber[ConsumerRecords[K, V]] {
             self =>
 
             implicit val scheduler = ioScheduler
             private[this] var isDone = false
 
-            def onNext(elem: ConsumerRecord[K, V]): Future[Ack] =
+            def onNext(elem: ConsumerRecords[K, V]): Future[Ack] =
               self.synchronized {
                 if (isDone) Stop else {
-                  val f = subscriber.onNext((elem.key(), elem.value()))
+                  val f = Future.sequence(elem.map(e => subscriber.onNext((e.key(), e.value()))))
 
                   f.materialize.map {
                     case Success(ack) =>
-                      try {
-                        consumer.commitSync()
-                        ack
-                      } catch {
-                        case NonFatal(ex) =>
-                          onError(ex)
-                          Stop
-                      }
+                      if (!config.enableAutoCommit)
+                        try {
+                          consumer.commitSync()
+                        } catch {
+                          case NonFatal(ex) =>
+                            onError(ex)
+                            Stop
+                        }
+
+                      ack.find(_.isInstanceOf[Stop]).getOrElse(Continue)
                     case Failure(ex) =>
                       onError(ex)
                       Stop
