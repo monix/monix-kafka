@@ -7,7 +7,6 @@ import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.execution.{Ack, Cancelable, Scheduler}
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer => ApacheKafkaConsumer}
 
 import scala.concurrent.Future
@@ -16,11 +15,12 @@ import scala.util.{Failure, Success}
 import scala.collection.JavaConversions.{asScalaIterator, seqAsJavaList}
 
 /** An `Observable` implementation that reads messages from `Kafka`. */
-final class KafkaConsumer private
-(config: KafkaConsumerConfig, topic: String, ioScheduler: Scheduler)
-  extends Observable[(String, String)] with StrictLogging {
+final class KafkaConsumer[K, V] private
+  (config: KafkaConsumerConfig, topic: String, ioScheduler: Scheduler)
+  (implicit K: Deserializer[K], V: Deserializer[V])
+  extends Observable[(K, V)] with StrictLogging {
 
-  def unsafeSubscribeFn(subscriber: Subscriber[(String, String)]): Cancelable = {
+  def unsafeSubscribeFn(subscriber: Subscriber[(K, V)]): Cancelable = {
     val source = underlying.onErrorHandleWith { ex =>
       logger.error(
         s"Unexpected error in KafkaConsumerObservable, retrying in ${config.retryBackoffTime}", ex)
@@ -32,7 +32,7 @@ final class KafkaConsumer private
   }
 
   private val underlying =
-    Observable.unsafeCreate[(String, String)] { subscriber =>
+    Observable.unsafeCreate[(K, V)] { subscriber =>
       val cancelable = SingleAssignmentCancelable()
 
       // Forced asynchronous boundary, in order to not block
@@ -42,22 +42,20 @@ final class KafkaConsumer private
 
         logger.info(s"Kafka Consumer connecting with $configProps")
 
-        val stringDeserializer = new StringDeserializer()
-        val consumer =
-          new ApacheKafkaConsumer[String, String](configProps, stringDeserializer, stringDeserializer)
+        val consumer = new ApacheKafkaConsumer[K, V](configProps, K.create(), V.create())
 
         consumer.subscribe(List(topic))
         logger.info(s"Subscribing to topic : $topic")
 
         cancelable := Observable
           .fromIterator(consumer.poll(config.fetchMaxWaitTime.toMillis).iterator(), () => consumer.close())
-          .unsafeSubscribeFn(new Subscriber[ConsumerRecord[String, String]] {
+          .unsafeSubscribeFn(new Subscriber[ConsumerRecord[K, V]] {
             self =>
 
             implicit val scheduler = ioScheduler
             private[this] var isDone = false
 
-            def onNext(elem: ConsumerRecord[String, String]): Future[Ack] =
+            def onNext(elem: ConsumerRecord[K, V]): Future[Ack] =
               self.synchronized {
                 if (isDone) Stop else {
                   val f = subscriber.onNext((elem.key(), elem.value()))
@@ -102,6 +100,6 @@ final class KafkaConsumer private
 }
 
 object KafkaConsumer {
-  def apply(config: KafkaConsumerConfig, ioScheduler: Scheduler)(topic: String): KafkaConsumer =
+  def apply[K, V](config: KafkaConsumerConfig, ioScheduler: Scheduler)(topic: String): KafkaConsumer[K,V] =
     new KafkaConsumer(config, topic, ioScheduler)
 }
