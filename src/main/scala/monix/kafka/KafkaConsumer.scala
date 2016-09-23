@@ -16,8 +16,8 @@ import scala.collection.JavaConverters._
 
 /** An `Observable` implementation that reads messages from `Kafka`.
   *
-  * You need to call `addSubscription` in order for the Observable to start sending messages from that topic.
-  * */
+  * You need to call `addTopicSubscription` in order for the Observable to start sending messages from that topic.
+  */
 final class KafkaConsumer[K, V] private
   (config: KafkaConsumerConfig, ioScheduler: Scheduler)
   (implicit K: Deserializer[K], V: Deserializer[V])
@@ -40,6 +40,7 @@ final class KafkaConsumer[K, V] private
   }
 
   /**
+    * Removes a subscription from a particular topic.
     *
     * @param topics the topics to be unsubscribed, if it is an `Set.empty` this method will unsubscribe from all topics.
     */
@@ -92,7 +93,7 @@ final class KafkaConsumer[K, V] private
 
                   f.materialize.map {
                     case Success(ack) =>
-                      if (!config.enableAutoCommit)
+                      if (!config.enableAutoCommit && currentSubscriptions().nonEmpty)
                         try {
                           consumerRef.commitSync()
                           ack
@@ -133,6 +134,7 @@ final class KafkaConsumer[K, V] private
 }
 
 object KafkaConsumer {
-  def apply[K, V](config: KafkaConsumerConfig, ioScheduler: Scheduler): KafkaConsumer[K,V] =
+  def apply[K, V](config: KafkaConsumerConfig, ioScheduler: Scheduler)
+    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumer[K,V] =
     new KafkaConsumer(config, ioScheduler)
 }
