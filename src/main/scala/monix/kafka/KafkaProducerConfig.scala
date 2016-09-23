@@ -141,6 +141,16 @@ import scala.concurrent.duration._
   *        The amount of time to wait before attempting to retry a failed
   *        request to a given topic partition. This avoids repeatedly
   *        sending requests in a tight loop under some failure scenarios.
+  *
+  * @param metadataFetchTimeout is the `metadata.fetch.timeout.ms` setting.
+  *        The first time data is sent to a topic we must fetch metadata
+  *        about that topic to know which servers host the topic's partitions.
+  *
+  * @param metadataMaxAge is the `metadata.max.age.ms` setting.
+  *        The period of time in milliseconds after which we force a
+  *        refresh of metadata even if we haven't seen any partition
+  *        leadership changes to proactively discover any new brokers
+  *        or partitions.
   */
 case class KafkaProducerConfig(
   servers: List[String],
@@ -173,7 +183,9 @@ case class KafkaProducerConfig(
   sslTruststoreType: String,
   acksTimeout: FiniteDuration,
   reconnectBackoffTime: FiniteDuration,
-  retryBackoffTime: FiniteDuration) {
+  retryBackoffTime: FiniteDuration,
+  metadataFetchTimeout: FiniteDuration,
+  metadataMaxAge: FiniteDuration) {
 
   def toProperties: Properties = {
     val props = new Properties()
@@ -212,13 +224,15 @@ case class KafkaProducerConfig(
     "ssl.truststore.type" -> sslTruststoreType,
     "timeout.ms" -> acksTimeout.toMillis.toString,
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
-    "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
+    "retry.backoff.ms" -> retryBackoffTime.toMillis.toString,
+    "metadata.fetch.timeout.ms" -> metadataFetchTimeout.toMillis.toString,
+    "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString
   )
 }
 
 object KafkaProducerConfig {
   lazy val default: KafkaProducerConfig =
-    apply(ConfigFactory.load("monix/kafka/producer.conf"))
+    apply(ConfigFactory.load("monix/kafka/default.conf"))
 
   def load(): KafkaProducerConfig =
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
@@ -234,14 +248,14 @@ object KafkaProducerConfig {
     }
 
   def loadResource(resourceBaseName: String, includeDefaults: Boolean = true): KafkaProducerConfig = {
-    def default = ConfigFactory.load("monix/kafka/producer.conf")
+    def default = ConfigFactory.load("monix/kafka/default.conf")
     val config = ConfigFactory.load(resourceBaseName)
     if (!includeDefaults) apply(config) else
       apply(config.withFallback(default))
   }
 
   def loadFile(file: File, includeDefaults: Boolean = true): KafkaProducerConfig = {
-    def default = ConfigFactory.load("monix/kafka/producer.conf")
+    def default = ConfigFactory.load("monix/kafka/default.conf")
     val config = ConfigFactory.parseFile(file).resolve()
     if (!includeDefaults) apply(config) else
       apply(config.withFallback(default))
@@ -283,7 +297,9 @@ object KafkaProducerConfig {
       sslTruststoreType = config.getString("kafka.ssl.truststore.type"),
       acksTimeout = config.getInt("kafka.timeout.ms").millis,
       reconnectBackoffTime = config.getInt("kafka.reconnect.backoff.ms").millis,
-      retryBackoffTime = config.getInt("kafka.retry.backoff.ms").millis
+      retryBackoffTime = config.getInt("kafka.retry.backoff.ms").millis,
+      metadataFetchTimeout = config.getInt("kafka.metadata.fetch.timeout.ms").millis,
+      metadataMaxAge = config.getInt("kafka.metadata.max.age.ms").millis
     )
   }
 }

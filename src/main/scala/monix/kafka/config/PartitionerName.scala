@@ -12,7 +12,7 @@ final case class PartitionerName(className: String)
 }
 
 object PartitionerName {
-  /** Builds a [[SerializerName]], given a class. */
+  /** Builds a [[PartitionerName]], given a class. */
   def apply[C <: Partitioner](implicit C: ClassTag[C]): PartitionerName =
     PartitionerName(C.runtimeClass.getCanonicalName)
 

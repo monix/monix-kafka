@@ -13,7 +13,6 @@ lazy val doNotPublishArtifact = Seq(
 lazy val sharedSettings = Seq(
   organization := "io.monix",
   scalaVersion := "2.11.8",
-  crossScalaVersions := Seq("2.10.6", "2.11.8"),
 
   scalacOptions ++= Seq(
     // warnings

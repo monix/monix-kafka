@@ -1,9 +1,9 @@
 package monix.kafka.config
 
 import com.typesafe.config.ConfigException.BadValue
-import monix.kafka.KafkaProducerConfig
 
-/** Enumeration for specifying the `acks` setting in [[KafkaProducerConfig]].
+/** Enumeration for specifying the `acks` setting in
+  * [[monix.kafka.KafkaProducerConfig KafkaProducerConfig]].
   *
   * Represents the number of acknowledgments the producer requires
   * the leader to have received before considering a request complete.
