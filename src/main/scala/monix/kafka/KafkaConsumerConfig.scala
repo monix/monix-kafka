@@ -21,7 +21,7 @@ import java.io.File
 import java.util.Properties
 
 import com.typesafe.config.{Config, ConfigFactory}
-import monix.kafka.config.{AutoOffsetReset, SSLProtocol, SecurityProtocol}
+import monix.kafka.config._
 
 import scala.concurrent.duration._
 
@@ -172,6 +172,15 @@ import scala.concurrent.duration._
   *        The amount of time to wait before attempting to retry a failed
   *        request to a given topic partition. This avoids repeatedly
   *        sending requests in a tight loop under some failure scenarios.
+  *
+  * @param observableCommitType is the `monix.observable.commit.type` setting.
+  *        Represents the type of commit to make when the [[enableAutoCommit]]
+  *        setting is set to `false`, in which case the observable has to
+  *        commit on every batch.
+  *
+  * @param observableCommitOrder is the `monix.observable.commit.order` setting.
+  *        Specifies when the commit should happen, like before we receive the
+  *        acknowledgement from downstream, or afterwards.
   */
 final case class KafkaConsumerConfig(
   servers: List[String],
@@ -206,7 +215,9 @@ final case class KafkaConsumerConfig(
   fetchMaxWaitTime: FiniteDuration,
   metadataMaxAge: FiniteDuration,
   reconnectBackoffTime: FiniteDuration,
-  retryBackoffTime: FiniteDuration) {
+  retryBackoffTime: FiniteDuration,
+  observableCommitType: ObservableCommitType,
+  observableCommitOrder: ObservableCommitOrder) {
 
   def toMap: Map[String,String] = Map(
     "bootstrap.servers" -> servers.mkString(","),
@@ -290,7 +301,9 @@ object KafkaConsumerConfig {
       fetchMaxWaitTime = config.getInt("kafka.fetch.max.wait.ms").millis,
       metadataMaxAge = config.getInt("kafka.metadata.max.age.ms").millis,
       reconnectBackoffTime = config.getInt("kafka.reconnect.backoff.ms").millis,
-      retryBackoffTime = config.getInt("kafka.retry.backoff.ms").millis
+      retryBackoffTime = config.getInt("kafka.retry.backoff.ms").millis,
+      observableCommitType = ObservableCommitType(config.getString("kafka.monix.observable.commit.type")),
+      observableCommitOrder = ObservableCommitOrder(config.getString("kafka.monix.observable.commit.order"))
     )
   }
 
