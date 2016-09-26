@@ -167,7 +167,8 @@ lazy val monixKafka = project.in(file("."))
     name := "monix-kafka",
     libraryDependencies ++= Seq(
       "io.monix" %% "monix-reactive" % monixVersion,
-      "org.apache.kafka" % "kafka-clients" % kafkaVersion,
+      "org.apache.kafka" %% "kafka" % kafkaVersion exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
+      "org.apache.kafka" %  "kafka-clients" % kafkaVersion exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
       "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
       "com.typesafe" % "config" % "1.3.0",
       "org.scalatest" %% "scalatest" % "2.2.4" % "test",
