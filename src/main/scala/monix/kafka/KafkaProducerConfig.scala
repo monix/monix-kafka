@@ -35,7 +35,8 @@ import scala.concurrent.duration._
   *
   * @param acks is the `acks` setting and represents
   *        the number of acknowledgments the producer requires the leader to
-  *        have received before considering a request complete. See [[Acks]].
+  *        have received before considering a request complete.
+  *        See [[monix.kafka.config.Acks Acks]].
   *
   * @param bufferMemoryInBytes is the `buffer.memory` setting and
   *        represents the total bytes of memory the producer
