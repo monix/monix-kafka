@@ -279,45 +279,48 @@ object KafkaProducerConfig {
       apply(config.withFallback(default))
   }
 
-  def apply(config: Config): KafkaProducerConfig = {
+  def apply(config: Config): KafkaProducerConfig =
+    apply("kafka", config)
+
+  def apply(rootPath: String, config: Config): KafkaProducerConfig = {
     def getOptString(path: String): Option[String] =
       if (config.hasPath(path)) Option(config.getString(path))
       else None
 
     KafkaProducerConfig(
-      servers = config.getString("kafka.bootstrap.servers").trim.split("\\s*,\\s*").toList,
-      acks = Acks(config.getString("kafka.acks")),
-      bufferMemoryInBytes = config.getInt("kafka.buffer.memory"),
-      compressionType = CompressionType(config.getString("kafka.compression.type")),
-      retries = config.getInt("kafka.retries"),
-      sslKeyPassword = getOptString("kafka.ssl.key.password"),
-      sslKeyStorePassword = getOptString("kafka.ssl.keystore.password"),
-      sslKeyStoreLocation = getOptString("kafka.ssl.keystore.location"),
-      sslTrustStorePassword = getOptString("kafka.ssl.truststore.password"),
-      sslTrustStoreLocation = getOptString("kafka.ssl.truststore.location"),
-      batchSizeInBytes = config.getInt("kafka.batch.size"),
-      clientId = config.getString("kafka.client.id"),
-      connectionsMaxIdleTime = config.getInt("kafka.connections.max.idle.ms").millis,
-      lingerTime = config.getInt("kafka.linger.ms").millis,
-      maxBlockTime = config.getInt("kafka.max.block.ms").millis,
-      maxRequestSizeInBytes = config.getInt("kafka.max.request.size"),
-      partitionerClass = getOptString("kafka.partitioner.class").filter(_.nonEmpty).map(PartitionerName.apply),
-      receiveBufferInBytes = config.getInt("kafka.receive.buffer.bytes"),
-      requestTimeout = config.getInt("kafka.request.timeout.ms").millis,
-      saslKerberosServiceName = getOptString("kafka.sasl.kerberos.service.name"),
-      saslMechanism = config.getString("kafka.sasl.mechanism"),
-      securityProtocol = SecurityProtocol(config.getString("kafka.security.protocol")),
-      sendBufferInBytes = config.getInt("kafka.send.buffer.bytes"),
-      sslEnabledProtocols = config.getString("kafka.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
-      sslKeystoreType = config.getString("kafka.ssl.keystore.type"),
-      sslProtocol = SSLProtocol(config.getString("kafka.ssl.protocol")),
-      sslProvider = getOptString("kafka.ssl.provider"),
-      sslTruststoreType = config.getString("kafka.ssl.truststore.type"),
-      acksTimeout = config.getInt("kafka.timeout.ms").millis,
-      reconnectBackoffTime = config.getInt("kafka.reconnect.backoff.ms").millis,
-      retryBackoffTime = config.getInt("kafka.retry.backoff.ms").millis,
-      metadataFetchTimeout = config.getInt("kafka.metadata.fetch.timeout.ms").millis,
-      metadataMaxAge = config.getInt("kafka.metadata.max.age.ms").millis
+      servers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
+      acks = Acks(config.getString(s"$rootPath.acks")),
+      bufferMemoryInBytes = config.getInt(s"$rootPath.buffer.memory"),
+      compressionType = CompressionType(config.getString(s"$rootPath.compression.type")),
+      retries = config.getInt(s"$rootPath.retries"),
+      sslKeyPassword = getOptString(s"$rootPath.ssl.key.password"),
+      sslKeyStorePassword = getOptString(s"$rootPath.ssl.keystore.password"),
+      sslKeyStoreLocation = getOptString(s"$rootPath.ssl.keystore.location"),
+      sslTrustStorePassword = getOptString(s"$rootPath.ssl.truststore.password"),
+      sslTrustStoreLocation = getOptString(s"$rootPath.ssl.truststore.location"),
+      batchSizeInBytes = config.getInt(s"$rootPath.batch.size"),
+      clientId = config.getString(s"$rootPath.client.id"),
+      connectionsMaxIdleTime = config.getInt(s"$rootPath.connections.max.idle.ms").millis,
+      lingerTime = config.getInt(s"$rootPath.linger.ms").millis,
+      maxBlockTime = config.getInt(s"$rootPath.max.block.ms").millis,
+      maxRequestSizeInBytes = config.getInt(s"$rootPath.max.request.size"),
+      partitionerClass = getOptString(s"$rootPath.partitioner.class").filter(_.nonEmpty).map(PartitionerName.apply),
+      receiveBufferInBytes = config.getInt(s"$rootPath.receive.buffer.bytes"),
+      requestTimeout = config.getInt(s"$rootPath.request.timeout.ms").millis,
+      saslKerberosServiceName = getOptString(s"$rootPath.sasl.kerberos.service.name"),
+      saslMechanism = config.getString(s"$rootPath.sasl.mechanism"),
+      securityProtocol = SecurityProtocol(config.getString(s"$rootPath.security.protocol")),
+      sendBufferInBytes = config.getInt(s"$rootPath.send.buffer.bytes"),
+      sslEnabledProtocols = config.getString(s"$rootPath.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
+      sslKeystoreType = config.getString(s"$rootPath.ssl.keystore.type"),
+      sslProtocol = SSLProtocol(config.getString(s"$rootPath.ssl.protocol")),
+      sslProvider = getOptString(s"$rootPath.ssl.provider"),
+      sslTruststoreType = config.getString(s"$rootPath.ssl.truststore.type"),
+      acksTimeout = config.getInt(s"$rootPath.timeout.ms").millis,
+      reconnectBackoffTime = config.getInt(s"$rootPath.reconnect.backoff.ms").millis,
+      retryBackoffTime = config.getInt(s"$rootPath.retry.backoff.ms").millis,
+      metadataFetchTimeout = config.getInt(s"$rootPath.metadata.fetch.timeout.ms").millis,
+      metadataMaxAge = config.getInt(s"$rootPath.metadata.max.age.ms").millis
     )
   }
 }

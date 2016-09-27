@@ -217,7 +217,8 @@ final case class KafkaConsumerConfig(
   reconnectBackoffTime: FiniteDuration,
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
-  observableCommitOrder: ObservableCommitOrder) {
+  observableCommitOrder: ObservableCommitOrder,
+  observableSeekToEndOnStart: Boolean) {
 
   def toMap: Map[String,String] = Map(
     "bootstrap.servers" -> servers.mkString(","),
@@ -263,47 +264,51 @@ final case class KafkaConsumerConfig(
 }
 
 object KafkaConsumerConfig {
-  def apply(config: Config): KafkaConsumerConfig = {
+  def apply(config: Config): KafkaConsumerConfig =
+    apply("kafka", config)
+
+  def apply(rootPath: String, config: Config): KafkaConsumerConfig = {
     def getOptString(path: String): Option[String] =
       if (config.hasPath(path)) Option(config.getString(path))
       else None
 
     KafkaConsumerConfig(
-      servers = config.getString("kafka.bootstrap.servers").trim.split("\\s*,\\s*").toList,
-      fetchMinBytes = config.getInt("kafka.fetch.min.bytes"),
-      groupId = config.getString("kafka.group.id"),
-      heartbeatInterval = config.getInt("kafka.heartbeat.interval.ms").millis,
-      maxPartitionFetchBytes = config.getInt("kafka.max.partition.fetch.bytes"),
-      sessionTimeout = config.getInt("kafka.session.timeout.ms").millis,
-      sslKeyPassword = getOptString("kafka.ssl.key.password"),
-      sslKeyStorePassword = getOptString("kafka.ssl.keystore.password"),
-      sslKeyStoreLocation = getOptString("kafka.ssl.keystore.location"),
-      sslTrustStorePassword = getOptString("kafka.ssl.truststore.password"),
-      sslTrustStoreLocation = getOptString("kafka.ssl.truststore.location"),
-      autoOffsetReset = AutoOffsetReset(config.getString("kafka.auto.offset.reset")),
-      connectionsMaxIdleTime = config.getInt("kafka.connections.max.idle.ms").millis,
-      enableAutoCommit = config.getBoolean("kafka.enable.auto.commit"),
-      excludeInternalTopics = config.getBoolean("kafka.exclude.internal.topics"),
-      maxPollRecords = config.getInt("kafka.max.poll.records"),
-      receiveBufferInBytes = config.getInt("kafka.receive.buffer.bytes"),
-      requestTimeout = config.getInt("kafka.request.timeout.ms").millis,
-      saslKerberosServiceName = getOptString("kafka.sasl.kerberos.service.name"),
-      saslMechanism = config.getString("kafka.sasl.mechanism"),
-      securityProtocol = SecurityProtocol(config.getString("kafka.security.protocol")),
-      sendBufferInBytes = config.getInt("kafka.send.buffer.bytes"),
-      sslEnabledProtocols = config.getString("kafka.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
-      sslKeystoreType = config.getString("kafka.ssl.keystore.type"),
-      sslProtocol = SSLProtocol(config.getString("kafka.ssl.protocol")),
-      sslProvider = getOptString("kafka.ssl.provider"),
-      sslTruststoreType = config.getString("kafka.ssl.truststore.type"),
-      checkCRCs = config.getBoolean("kafka.check.crcs"),
-      clientId = config.getString("kafka.client.id"),
-      fetchMaxWaitTime = config.getInt("kafka.fetch.max.wait.ms").millis,
-      metadataMaxAge = config.getInt("kafka.metadata.max.age.ms").millis,
-      reconnectBackoffTime = config.getInt("kafka.reconnect.backoff.ms").millis,
-      retryBackoffTime = config.getInt("kafka.retry.backoff.ms").millis,
-      observableCommitType = ObservableCommitType(config.getString("kafka.monix.observable.commit.type")),
-      observableCommitOrder = ObservableCommitOrder(config.getString("kafka.monix.observable.commit.order"))
+      servers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
+      fetchMinBytes = config.getInt(s"$rootPath.fetch.min.bytes"),
+      groupId = config.getString(s"$rootPath.group.id"),
+      heartbeatInterval = config.getInt(s"$rootPath.heartbeat.interval.ms").millis,
+      maxPartitionFetchBytes = config.getInt(s"$rootPath.max.partition.fetch.bytes"),
+      sessionTimeout = config.getInt(s"$rootPath.session.timeout.ms").millis,
+      sslKeyPassword = getOptString(s"$rootPath.ssl.key.password"),
+      sslKeyStorePassword = getOptString(s"$rootPath.ssl.keystore.password"),
+      sslKeyStoreLocation = getOptString(s"$rootPath.ssl.keystore.location"),
+      sslTrustStorePassword = getOptString(s"$rootPath.ssl.truststore.password"),
+      sslTrustStoreLocation = getOptString(s"$rootPath.ssl.truststore.location"),
+      autoOffsetReset = AutoOffsetReset(config.getString(s"$rootPath.auto.offset.reset")),
+      connectionsMaxIdleTime = config.getInt(s"$rootPath.connections.max.idle.ms").millis,
+      enableAutoCommit = config.getBoolean(s"$rootPath.enable.auto.commit"),
+      excludeInternalTopics = config.getBoolean(s"$rootPath.exclude.internal.topics"),
+      maxPollRecords = config.getInt(s"$rootPath.max.poll.records"),
+      receiveBufferInBytes = config.getInt(s"$rootPath.receive.buffer.bytes"),
+      requestTimeout = config.getInt(s"$rootPath.request.timeout.ms").millis,
+      saslKerberosServiceName = getOptString(s"$rootPath.sasl.kerberos.service.name"),
+      saslMechanism = config.getString(s"$rootPath.sasl.mechanism"),
+      securityProtocol = SecurityProtocol(config.getString(s"$rootPath.security.protocol")),
+      sendBufferInBytes = config.getInt(s"$rootPath.send.buffer.bytes"),
+      sslEnabledProtocols = config.getString(s"$rootPath.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
+      sslKeystoreType = config.getString(s"$rootPath.ssl.keystore.type"),
+      sslProtocol = SSLProtocol(config.getString(s"$rootPath.ssl.protocol")),
+      sslProvider = getOptString(s"$rootPath.ssl.provider"),
+      sslTruststoreType = config.getString(s"$rootPath.ssl.truststore.type"),
+      checkCRCs = config.getBoolean(s"$rootPath.check.crcs"),
+      clientId = config.getString(s"$rootPath.client.id"),
+      fetchMaxWaitTime = config.getInt(s"$rootPath.fetch.max.wait.ms").millis,
+      metadataMaxAge = config.getInt(s"$rootPath.metadata.max.age.ms").millis,
+      reconnectBackoffTime = config.getInt(s"$rootPath.reconnect.backoff.ms").millis,
+      retryBackoffTime = config.getInt(s"$rootPath.retry.backoff.ms").millis,
+      observableCommitType = ObservableCommitType(config.getString(s"$rootPath.monix.observable.commit.type")),
+      observableCommitOrder = ObservableCommitOrder(config.getString(s"$rootPath.monix.observable.commit.order")),
+      observableSeekToEndOnStart = config.getBoolean(s"$rootPath.monix.observable.seekEnd.onStart")
     )
   }
 

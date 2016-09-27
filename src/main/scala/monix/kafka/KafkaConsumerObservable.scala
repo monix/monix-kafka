@@ -29,8 +29,14 @@ import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-/** Consumes a Kafka stream. */
-final class KafkaConsumerObservable[K,V] private
+/** Exposes an `Observable` that consumes a Kafka stream by
+  * means of a Kafka Consumer client.
+  *
+  * In order to get initialized, it needs a configuration. See the
+  * [[KafkaConsumerConfig]] needed and see `monix/kafka/default.conf`,
+  * (in the resource files) that is exposing all default values.
+  */
+final class KafkaConsumerObservable[K, V] private
   (config: KafkaConsumerConfig, consumer: Task[KafkaConsumer[K,V]], io: Scheduler)
   extends Observable[ConsumerRecord[K,V]] {
 
@@ -77,14 +83,15 @@ final class KafkaConsumerObservable[K,V] private
       // subscriber, returning the resulting acknowledgement
       val ackTask: Task[Ack] = Task.unsafeCreate { (scheduler, conn, cb) =>
         implicit val s = scheduler
-
-        // Forced asynchronous boundary
+        // Forced asynchronous boundary (on the I/O scheduler)
         s.executeAsync {
           val ackFuture =
             try consumer.synchronized {
               if (conn.isCanceled) Stop else {
                 val next = consumer.poll(pollTimeoutMillis)
                 if (shouldCommitBefore) consumerCommit(consumer)
+                // Feeding the observer happens on the Subscriber's scheduler
+                // if any asynchronous boundaries happen
                 Observer.feed(out, next.asScala)(out.scheduler)
               }
             } catch {
@@ -146,6 +153,8 @@ final class KafkaConsumerObservable[K,V] private
 
     Task.unsafeCreate { (s, conn, cb) =>
       val feedTask = consumer.flatMap { c =>
+        // Skipping all available messages on all partitions
+        if (config.observableSeekToEndOnStart) c.seekToEnd(Nil.asJavaCollection)
         // A task to execute on both cancellation and normal termination
         val onCancel = cancelTask(c)
         // We really need an easier way of adding
@@ -160,20 +169,43 @@ final class KafkaConsumerObservable[K,V] private
 }
 
 object KafkaConsumerObservable {
-  /** Builds a [[KafkaConsumerObservable]] instance. */
+  /** Builds a [[KafkaConsumerObservable]] instance.
+    *
+    * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
+    *        consumer; also make sure to see `monix/kafka/default.conf` for
+    *        the default values being used.
+    *
+    * @param consumer is a factory for the
+    *        `org.apache.kafka.clients.consumer.KafkaConsumer`
+    *        instance to use for consuming from Kafka
+    *
+    * @param io is the scheduler meant for I/O, a scheduler that is best
+    *        configured with expectations of blocking operations, because
+    *        polling Kafka does block the underlying thread used
+    */
   def apply[K,V](
     cfg: KafkaConsumerConfig,
     consumer: Task[KafkaConsumer[K,V]],
     io: Scheduler): KafkaConsumerObservable[K,V] =
     new KafkaConsumerObservable[K,V](cfg, consumer, io)
 
-
-  /** Builds a [[KafkaConsumerObservable]] instance. */
-  def apply[K,V](config: KafkaConsumerConfig, topics: List[String], io: Scheduler)
+  /** Builds a [[KafkaConsumerObservable]] instance.
+    *
+    * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
+    *        consumer; also make sure to see `monix/kafka/default.conf` for
+    *        the default values being used.
+    *
+    * @param topics is the list of Kafka topics to subscribe to.
+    *
+    * @param io is the scheduler meant for I/O, a scheduler that is best
+    *        configured with expectations of blocking operations, because
+    *        polling Kafka does block the underlying thread used.
+    */
+  def apply[K,V](cfg: KafkaConsumerConfig, topics: List[String], io: Scheduler)
     (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
 
-    val consumer = createConsumer[K,V](config, topics, io)
-    apply(config, consumer, io)
+    val consumer = createConsumer[K,V](cfg, topics, io)
+    apply(cfg, consumer, io)
   }
 
   /** Returns a `Task` for creating a consumer instance. */
