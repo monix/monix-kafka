@@ -113,10 +113,6 @@ import scala.concurrent.duration._
   * @param saslKerberosServiceName is the `sasl.kerberos.service.name` setting,
   *        being the Kerberos principal name that Kafka runs as.
   *
-  * @param saslMechanism is the `sasl.mechanism` setting, being the SASL
-  *        mechanism used for client connections. This may be any mechanism
-  *        for which a security provider is available.
-  *
   * @param securityProtocol is the `security.protocol` setting,
   *        being the protocol used to communicate with brokers.
   *
@@ -144,11 +140,6 @@ import scala.concurrent.duration._
   * @param sslTruststoreType is the `ssl.truststore.type` setting, being
   *        the file format of the trust store file.
   *
-  * @param acksTimeout is the `timeout.ms` setting. This value controls the
-  *        maximum amount of time the server will wait for acknowledgments
-  *        from followers to meet the acknowledgment requirements the
-  *        producer has specified with the acks configuration.
-  *
   * @param reconnectBackoffTime is the `reconnect.backoff.ms` setting.
   *        The amount of time to wait before attempting to reconnect to a
   *        given host. This avoids repeatedly connecting to a host in a
@@ -159,10 +150,6 @@ import scala.concurrent.duration._
   *        The amount of time to wait before attempting to retry a failed
   *        request to a given topic partition. This avoids repeatedly
   *        sending requests in a tight loop under some failure scenarios.
-  *
-  * @param metadataFetchTimeout is the `metadata.fetch.timeout.ms` setting.
-  *        The first time data is sent to a topic we must fetch metadata
-  *        about that topic to know which servers host the topic's partitions.
   *
   * @param metadataMaxAge is the `metadata.max.age.ms` setting.
   *        The period of time in milliseconds after which we force a
@@ -191,7 +178,6 @@ case class KafkaProducerConfig(
   receiveBufferInBytes: Int,
   requestTimeout: FiniteDuration,
   saslKerberosServiceName: Option[String],
-  saslMechanism: String,
   securityProtocol: SecurityProtocol,
   sendBufferInBytes: Int,
   sslEnabledProtocols: List[SSLProtocol],
@@ -199,10 +185,8 @@ case class KafkaProducerConfig(
   sslProtocol: SSLProtocol,
   sslProvider: Option[String],
   sslTruststoreType: String,
-  acksTimeout: FiniteDuration,
   reconnectBackoffTime: FiniteDuration,
   retryBackoffTime: FiniteDuration,
-  metadataFetchTimeout: FiniteDuration,
   metadataMaxAge: FiniteDuration) {
 
   def toProperties: Properties = {
@@ -232,7 +216,6 @@ case class KafkaProducerConfig(
     "receive.buffer.bytes" -> receiveBufferInBytes.toString,
     "request.timeout.ms" -> requestTimeout.toMillis.toString,
     "sasl.kerberos.service.name" -> saslKerberosServiceName.orNull,
-    "sasl.mechanism" -> saslMechanism,
     "security.protocol" -> securityProtocol.id,
     "send.buffer.bytes" -> sendBufferInBytes.toString,
     "ssl.enabled.protocols" -> sslEnabledProtocols.map(_.id).mkString(","),
@@ -240,10 +223,8 @@ case class KafkaProducerConfig(
     "ssl.protocol" -> sslProtocol.id,
     "ssl.provider" -> sslProvider.orNull,
     "ssl.truststore.type" -> sslTruststoreType,
-    "timeout.ms" -> acksTimeout.toMillis.toString,
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString,
-    "metadata.fetch.timeout.ms" -> metadataFetchTimeout.toMillis.toString,
     "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString
   )
 }
@@ -308,7 +289,6 @@ object KafkaProducerConfig {
       receiveBufferInBytes = config.getInt(s"$rootPath.receive.buffer.bytes"),
       requestTimeout = config.getInt(s"$rootPath.request.timeout.ms").millis,
       saslKerberosServiceName = getOptString(s"$rootPath.sasl.kerberos.service.name"),
-      saslMechanism = config.getString(s"$rootPath.sasl.mechanism"),
       securityProtocol = SecurityProtocol(config.getString(s"$rootPath.security.protocol")),
       sendBufferInBytes = config.getInt(s"$rootPath.send.buffer.bytes"),
       sslEnabledProtocols = config.getString(s"$rootPath.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
@@ -316,10 +296,8 @@ object KafkaProducerConfig {
       sslProtocol = SSLProtocol(config.getString(s"$rootPath.ssl.protocol")),
       sslProvider = getOptString(s"$rootPath.ssl.provider"),
       sslTruststoreType = config.getString(s"$rootPath.ssl.truststore.type"),
-      acksTimeout = config.getInt(s"$rootPath.timeout.ms").millis,
       reconnectBackoffTime = config.getInt(s"$rootPath.reconnect.backoff.ms").millis,
       retryBackoffTime = config.getInt(s"$rootPath.retry.backoff.ms").millis,
-      metadataFetchTimeout = config.getInt(s"$rootPath.metadata.fetch.timeout.ms").millis,
       metadataMaxAge = config.getInt(s"$rootPath.metadata.max.age.ms").millis
     )
   }

@@ -19,7 +19,7 @@ package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.{Callback, Coeval, Task}
-import monix.execution.Ack.Continue
+import monix.execution.Ack.{Continue, Stop}
 import monix.execution.cancelables.AssignableCancelable
 import monix.execution.{Ack, Scheduler}
 import monix.reactive.Consumer
@@ -40,31 +40,40 @@ final class KafkaProducerSink[K,V] private (
   with StrictLogging with Serializable {
 
   def createSubscriber(cb: Callback[Unit], s: Scheduler) = {
-    val out = new Subscriber[ProducerRecord[K,V]] {
+    val out = new Subscriber[ProducerRecord[K,V]] { self =>
       implicit val scheduler = s
       private[this] val p = producer.memoize
+      private[this] var isActive = true
 
-      def onNext(elem: ProducerRecord[K, V]): Future[Ack] = {
-        val task = try p.value.send(elem)
-        catch { case NonFatal(ex) => Task.raiseError(ex) }
+      def onNext(elem: ProducerRecord[K, V]): Future[Ack] =
+        self.synchronized {
+          if (!isActive) Stop else {
+            val task = try p.value.send(elem)
+            catch { case NonFatal(ex) => Task.raiseError(ex) }
 
-        val recovered = task.map(_ => Continue).onErrorHandle { ex =>
-          logger.error("Unexpected error in KafkaProducerSink", ex)
-          Continue
+            val recovered = task.map(_ => Continue).onErrorHandle { ex =>
+              logger.error("Unexpected error in KafkaProducerSink", ex)
+              Continue
+            }
+
+            recovered.runAsync
+          }
         }
 
-        recovered.runAsync
-      }
+      def terminate(cb: => Unit): Unit =
+        self.synchronized {
+          if (isActive) {
+            isActive = false
 
-      def terminate(cb: => Unit): Unit = {
-        if (!shouldTerminate) cb else
-          Task(p.value.close()).flatten.materialize.runAsync.foreach {
-            case Success(_) => cb
-            case Failure(ex) =>
-              logger.error("Unexpected error in KafkaProducerSink", ex)
-              cb
+            if (!shouldTerminate) cb else
+              Task(p.value.close()).flatten.materialize.runAsync.foreach {
+                case Success(_) => cb
+                case Failure(ex) =>
+                  logger.error("Unexpected error in KafkaProducerSink", ex)
+                  cb
+              }
           }
-      }
+        }
 
       def onError(ex: Throwable): Unit =
         terminate(cb.onError(ex))

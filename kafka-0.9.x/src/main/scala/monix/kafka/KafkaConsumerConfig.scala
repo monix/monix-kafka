@@ -32,7 +32,7 @@ import scala.concurrent.duration._
   * [[https://kafka.apache.org/documentation.html#consumerconfigs Consumer Configs]]
   * on `kafka.apache.org`.
   *
-  * @param servers is the `bootstrap.servers` setting,
+  * @param bootstrapServers is the `bootstrap.servers` setting,
   *        a list of host/port pairs to use for establishing
   *        the initial connection to the Kafka cluster.
   *
@@ -108,10 +108,6 @@ import scala.concurrent.duration._
   * @param saslKerberosServiceName is the `sasl.kerberos.service.name` setting,
   *        being the Kerberos principal name that Kafka runs as.
   *
-  * @param saslMechanism is the `sasl.mechanism` setting, being the SASL
-  *        mechanism used for client connections. This may be any mechanism
-  *        for which a security provider is available.
-  *
   * @param securityProtocol is the `security.protocol` setting,
   *        being the protocol used to communicate with brokers.
   *
@@ -183,7 +179,7 @@ import scala.concurrent.duration._
   *        acknowledgement from downstream, or afterwards.
   */
 final case class KafkaConsumerConfig(
-  servers: List[String],
+  bootstrapServers: List[String],
   fetchMinBytes: Int,
   groupId: String,
   heartbeatInterval: FiniteDuration,
@@ -202,7 +198,6 @@ final case class KafkaConsumerConfig(
   receiveBufferInBytes: Int,
   requestTimeout: FiniteDuration,
   saslKerberosServiceName: Option[String],
-  saslMechanism: String,
   securityProtocol: SecurityProtocol,
   sendBufferInBytes: Int,
   sslEnabledProtocols: List[SSLProtocol],
@@ -221,7 +216,7 @@ final case class KafkaConsumerConfig(
   observableSeekToEndOnStart: Boolean) {
 
   def toMap: Map[String,String] = Map(
-    "bootstrap.servers" -> servers.mkString(","),
+    "bootstrap.servers" -> bootstrapServers.mkString(","),
     "fetch.min.bytes" -> fetchMinBytes.toString,
     "group.id" -> groupId,
     "heartbeat.interval.ms" -> heartbeatInterval.toMillis.toString,
@@ -240,7 +235,6 @@ final case class KafkaConsumerConfig(
     "receive.buffer.bytes" -> receiveBufferInBytes.toString,
     "request.timeout.ms" -> requestTimeout.toMillis.toString,
     "sasl.kerberos.service.name" -> saslKerberosServiceName.orNull,
-    "sasl.mechanism" -> saslMechanism,
     "security.protocol" -> securityProtocol.id,
     "send.buffer.bytes" -> sendBufferInBytes.toString,
     "ssl.enabled.protocols" -> sslEnabledProtocols.map(_.id).mkString(","),
@@ -273,7 +267,7 @@ object KafkaConsumerConfig {
       else None
 
     KafkaConsumerConfig(
-      servers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
+      bootstrapServers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
       fetchMinBytes = config.getInt(s"$rootPath.fetch.min.bytes"),
       groupId = config.getString(s"$rootPath.group.id"),
       heartbeatInterval = config.getInt(s"$rootPath.heartbeat.interval.ms").millis,
@@ -292,7 +286,6 @@ object KafkaConsumerConfig {
       receiveBufferInBytes = config.getInt(s"$rootPath.receive.buffer.bytes"),
       requestTimeout = config.getInt(s"$rootPath.request.timeout.ms").millis,
       saslKerberosServiceName = getOptString(s"$rootPath.sasl.kerberos.service.name"),
-      saslMechanism = config.getString(s"$rootPath.sasl.mechanism"),
       securityProtocol = SecurityProtocol(config.getString(s"$rootPath.security.protocol")),
       sendBufferInBytes = config.getInt(s"$rootPath.send.buffer.bytes"),
       sslEnabledProtocols = config.getString(s"$rootPath.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,

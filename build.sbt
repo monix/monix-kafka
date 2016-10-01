@@ -1,7 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys
+import sbtrelease.ReleaseStateTransformations._
 
-val kafkaVersion = "0.10.0.1"
-val monixVersion = "2.0.1"
+val monixVersion = "2.0.2"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
@@ -34,6 +34,11 @@ lazy val sharedSettings = Seq(
     val current  = sys.props("java.specification.version")
     assert(current == required, s"Unsupported build JDK: java.specification.version $current != $required")
   },
+
+  // Shared sources
+  unmanagedSourceDirectories in Compile <+= baseDirectory(_.getParentFile / "shared" / "src" / "main" / "scala"),
+  unmanagedResourceDirectories in Compile <+= baseDirectory(_.getParentFile / "shared" / "src" / "main" / "resources"),
+  unmanagedSourceDirectories in Test <+= baseDirectory(_.getParentFile / "shared" / "src" / "test" / "scala"),
 
   // Targeting Java 6, but only for Scala <= 2.11
   javacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -118,6 +123,16 @@ lazy val sharedSettings = Seq(
     Resolver.sonatypeRepo("releases")
   ),
 
+  libraryDependencies ++= Seq(
+    "io.monix" %% "monix-reactive" % monixVersion,
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+    "com.typesafe" % "config" % "1.3.0",
+    "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+    // For testing ...
+    "ch.qos.logback" % "logback-classic" % "1.1.3" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+  ),
+
   // -- Settings meant for deployment on oss.sonatype.org
 
   useGpg := true,
@@ -127,6 +142,19 @@ lazy val sharedSettings = Seq(
   publishMavenStyle := true,
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
+
+  releaseProcess := Seq[ReleaseStep](
+    checkSnapshotDependencies,
+    inquireVersions,
+    runClean,
+    setReleaseVersion,
+    commitReleaseVersion,
+    tagRelease,
+    publishArtifacts,
+    setNextVersion,
+    commitNextVersion,
+    pushChanges
+  ),
 
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
@@ -162,16 +190,23 @@ lazy val sharedSettings = Seq(
 )
 
 lazy val monixKafka = project.in(file("."))
+  .settings(doNotPublishArtifact)
+  .aggregate(kafka10, kafka9)
+
+lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(sharedSettings)
   .settings(
-    name := "monix-kafka",
+    name := "monix-kafka-0.10",
     libraryDependencies ++= Seq(
-      "io.monix" %% "monix-reactive" % monixVersion,
-      "org.apache.kafka" %% "kafka" % kafkaVersion exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
-      "org.apache.kafka" %  "kafka-clients" % kafkaVersion exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-      "com.typesafe" % "config" % "1.3.0",
-      "org.scalatest" %% "scalatest" % "2.2.4" % "test",
-      "net.manub" %% "scalatest-embedded-kafka" % "0.7.1" % "test"
+      "org.apache.kafka" %  "kafka-clients" % "0.10.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+    )
+  )
+
+lazy val kafka9 = project.in(file("kafka-0.9.x"))
+  .settings(sharedSettings)
+  .settings(
+    name := "monix-kafka-0.9",
+    libraryDependencies ++= Seq(
+      "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
