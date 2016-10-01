@@ -34,12 +34,7 @@ lazy val sharedSettings = Seq(
     val current  = sys.props("java.specification.version")
     assert(current == required, s"Unsupported build JDK: java.specification.version $current != $required")
   },
-
-  // Shared sources
-  unmanagedSourceDirectories in Compile <+= baseDirectory(_.getParentFile / "shared" / "src" / "main" / "scala"),
-  unmanagedResourceDirectories in Compile <+= baseDirectory(_.getParentFile / "shared" / "src" / "main" / "resources"),
-  unmanagedSourceDirectories in Test <+= baseDirectory(_.getParentFile / "shared" / "src" / "test" / "scala"),
-
+  
   // Targeting Java 6, but only for Scala <= 2.11
   javacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, majorVersion)) if majorVersion <= 11 =>
@@ -190,6 +185,7 @@ lazy val sharedSettings = Seq(
 )
 
 lazy val monixKafka = project.in(file("."))
+  .settings(sharedSettings)
   .settings(doNotPublishArtifact)
   .aggregate(kafka10, kafka9)
 
