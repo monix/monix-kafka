@@ -9,7 +9,7 @@ Work in progress!
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-0.9" % "0.1"
+libraryDependencies += "io.monix" %% "monix-kafka-0.9" % "0.2"
 ```
 
 Or in case you're interested in running the tests of this project,
@@ -48,7 +48,7 @@ sbt kafka9/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-0.10" % "0.1"
+libraryDependencies += "io.monix" %% "monix-kafka-0.10" % "0.2"
 ```
 
 Or in case you're interested in running the tests of this project,
@@ -80,6 +80,76 @@ And run the tests:
 ```bash
 sbt kafka10/test
 ```
+
+## Usage
+
+The producer:
+
+```scala
+import monix.kafka._
+
+// Init
+val producerCfg = KafkaProducerConfig.default.copy(
+  bootstrapServers = List("127.0.0.1:9092")
+)
+
+val producer = KafkaProducer[String,String](producerCfg, io)
+
+// For sending one message
+val recordMetadataF = producer.send("my-topic", "my-message").runAsync
+
+// For closing the producer connection
+val closeF = producer.close().runAsync
+```
+
+Note that these methods return [Tasks](https://monix.io/docs/2x/eval/task.html),
+which can then be transformed into `Future`.
+
+For pushing an entire `Observable` to Apache Kafka:
+
+```scala
+import monix.kafka._
+import org.apache.kafka.clients.producer.ProducerRecord
+
+// Initializing the producer
+val producerCfg = KafkaProducerConfig.default.copy(
+  bootstrapServers = List("127.0.0.1:9092")
+)
+
+val producer = KafkaProducerSink[String,String](producerCfg, io)
+
+// Lets pretend we have this observable of records
+val observable: Observable[ProducerRecord[String,String]] = ???
+
+observable
+  // on overflow, start dropping incoming events
+  .whileBusyDrop
+  // buffers into batches if the consumer is busy, up to a max size
+  .bufferIntrospective(1024)
+  // consume everything by pushing into Apache Kafka
+  .runWith(producer)
+  // ready, set, go!
+  .runAsync
+```
+
+For consuming from Apache Kafka:
+
+```scala
+import monix.kafka._
+
+val consumerCfg = KafkaConsumerConfig.default.copy( 
+  bootstrapServers = List("127.0.0.1:9092"),
+  groupId = "kafka-tests"
+)
+
+import monix.execution.Scheduler
+val io = Scheduler.io()
+
+val observable = 
+  KafkaConsumerObservable[String,String](consumerCfg, List("my-topic"), io)
+```
+
+Enjoy! 
 
 ## License
 
