@@ -32,7 +32,7 @@ class MonixKafkaTest extends FunSuite {
 
   test("publish one message") {
     val producerCfg = KafkaProducerConfig.default.copy(
-      servers = List("127.0.0.1:9092")
+      bootstrapServers = List("127.0.0.1:9092")
     )
 
     val consumerCfg = KafkaConsumerConfig.default.copy(
@@ -62,7 +62,7 @@ class MonixKafkaTest extends FunSuite {
 
   test("listen for one message") {
     val producerCfg = KafkaProducerConfig.default.copy(
-      servers = List("127.0.0.1:9092")
+      bootstrapServers = List("127.0.0.1:9092")
     )
 
     val consumerCfg = KafkaConsumerConfig.default.copy(
@@ -88,10 +88,9 @@ class MonixKafkaTest extends FunSuite {
   }
 
   test("full producer/consumer test") {
-    val count = 100
-
+    val count = 10000
     val producerCfg = KafkaProducerConfig.default.copy(
-      servers = List("127.0.0.1:9092")
+      bootstrapServers = List("127.0.0.1:9092")
     )
 
     val consumerCfg = KafkaConsumerConfig.default.copy(
@@ -105,12 +104,14 @@ class MonixKafkaTest extends FunSuite {
 
     val pushT = Observable.range(0, count)
       .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+      .bufferIntrospective(1024)
       .runWith(producer)
+
     val listT = consumer
       .map(_.value())
       .toListL
 
     val (result, _) = Await.result(Task.zip2(Task.fork(listT), Task.fork(pushT)).runAsync, 60.seconds)
-    assert(result === (0 until count).map(_.toString).toList)
+    assert(result.map(_.toInt).sum === (0 until count).sum)
   }
 }

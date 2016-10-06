@@ -19,10 +19,11 @@ package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
-import monix.execution.{Cancelable, Scheduler}
 import monix.execution.atomic.Atomic
 import monix.execution.cancelables.SingleAssignmentCancelable
+import monix.execution.{Cancelable, Scheduler}
 import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata, KafkaProducer => ApacheKafkaProducer}
+
 import scala.util.control.NonFatal
 
 /** Wraps the Kafka Producer. */
@@ -51,7 +52,7 @@ object KafkaProducer {
 
     // Gets initialized on the first `send`
     private lazy val producerRef = {
-      logger.info(s"Kafka producer connecting to servers: ${config.servers.mkString(",")}")
+      logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
       new ApacheKafkaProducer[K,V](config.toProperties, K.create(), V.create())
     }
 
@@ -77,7 +78,7 @@ object KafkaProducer {
               // Using asynchronous API
               val future = producer.send(record, new Callback {
                 def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
-                  if (isActive.compareAndSet(expect = true, update = false)) {
+                  if (isActive.getAndSet(false)) {
                     conn.pop()
                     if (exception != null)
                       cb.asyncOnError(exception)(s)

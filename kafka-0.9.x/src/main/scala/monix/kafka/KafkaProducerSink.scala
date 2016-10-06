@@ -24,8 +24,7 @@ import monix.execution.cancelables.AssignableCancelable
 import monix.execution.{Ack, Scheduler}
 import monix.reactive.Consumer
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.clients.producer.ProducerRecord
-
+import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
@@ -35,23 +34,38 @@ import scala.util.{Failure, Success}
   */
 final class KafkaProducerSink[K,V] private (
   producer: Coeval[KafkaProducer[K,V]],
-  shouldTerminate: Boolean)
-  extends Consumer[ProducerRecord[K,V], Unit]
-  with StrictLogging with Serializable {
+  shouldTerminate: Boolean,
+  parallelism: Int)
+  extends Consumer[Seq[ProducerRecord[K,V]], Unit]
+    with StrictLogging with Serializable {
+
+  require(parallelism >= 1, "parallelism >= 1")
 
   def createSubscriber(cb: Callback[Unit], s: Scheduler) = {
-    val out = new Subscriber[ProducerRecord[K,V]] { self =>
+    val out = new Subscriber[Seq[ProducerRecord[K,V]]] { self =>
       implicit val scheduler = s
       private[this] val p = producer.memoize
       private[this] var isActive = true
 
-      def onNext(elem: ProducerRecord[K, V]): Future[Ack] =
+      private def sendAll(batch: Seq[ProducerRecord[K,V]]): Seq[Task[RecordMetadata]] =
+        for (record <- batch) yield {
+          try p.value.send(record)
+          catch { case NonFatal(ex) => Task.raiseError(ex) }
+        }
+
+      def onNext(list: Seq[ProducerRecord[K, V]]): Future[Ack] =
         self.synchronized {
           if (!isActive) Stop else {
-            val task = try p.value.send(elem)
-            catch { case NonFatal(ex) => Task.raiseError(ex) }
+            val sendTask: Task[Seq[RecordMetadata]] =
+              if (parallelism == 1)
+                Task.sequence(sendAll(list))
+              else {
+                val batches = list.sliding(parallelism, parallelism)
+                val tasks = for (b <- batches) yield Task.gather(sendAll(b))
+                Task.sequence(tasks.toList).map(_.flatten)
+              }
 
-            val recovered = task.map(_ => Continue).onErrorHandle { ex =>
+            val recovered = sendTask.map(_ => Continue).onErrorHandle { ex =>
               logger.error("Unexpected error in KafkaProducerSink", ex)
               Continue
             }
@@ -91,10 +105,12 @@ object KafkaProducerSink {
     (implicit K: Serializer[K], V: Serializer[V]): KafkaProducerSink[K,V] = {
 
     val producer = Coeval(KafkaProducer[K,V](config, io))
-    new KafkaProducerSink(producer, shouldTerminate = true)
+    new KafkaProducerSink(producer, shouldTerminate = true,
+      parallelism = config.monixSinkParallelism)
   }
 
   /** Builder for [[KafkaProducerSink]]. */
-  def apply[K,V](producer: Coeval[KafkaProducer[K,V]]): KafkaProducerSink[K,V] =
-    new KafkaProducerSink(producer, shouldTerminate = false)
+  def apply[K,V](producer: Coeval[KafkaProducer[K,V]], parallelism: Int): KafkaProducerSink[K,V] =
+  new KafkaProducerSink(producer, shouldTerminate = false,
+    parallelism = parallelism)
 }

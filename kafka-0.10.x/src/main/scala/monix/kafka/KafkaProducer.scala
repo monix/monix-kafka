@@ -51,7 +51,7 @@ object KafkaProducer {
 
     // Gets initialized on the first `send`
     private lazy val producerRef = {
-      logger.info(s"Kafka producer connecting to servers: ${config.servers.mkString(",")}")
+      logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
       new ApacheKafkaProducer[K,V](config.toProperties, K.create(), V.create())
     }
 

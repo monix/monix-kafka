@@ -30,7 +30,7 @@ import scala.concurrent.duration._
   * [[https://kafka.apache.org/documentation.html#producerconfigs Producer Configs]]
   * on `kafka.apache.org`.
   *
-  * @param servers is the `bootstrap.servers` setting
+  * @param bootstrapServers is the `bootstrap.servers` setting
   *        and represents the list of servers to connect to.
   *
   * @param acks is the `acks` setting and represents
@@ -156,9 +156,13 @@ import scala.concurrent.duration._
   *        refresh of metadata even if we haven't seen any partition
   *        leadership changes to proactively discover any new brokers
   *        or partitions.
+  *
+  * @param monixSinkParallelism is the `monix.producer.sink.parallelism`
+  *        setting indicating how many requests the [[KafkaProducerSink]]
+  *        can execute in parallel.
   */
 case class KafkaProducerConfig(
-  servers: List[String],
+  bootstrapServers: List[String],
   acks: Acks,
   bufferMemoryInBytes: Int,
   compressionType: CompressionType,
@@ -187,7 +191,8 @@ case class KafkaProducerConfig(
   sslTruststoreType: String,
   reconnectBackoffTime: FiniteDuration,
   retryBackoffTime: FiniteDuration,
-  metadataMaxAge: FiniteDuration) {
+  metadataMaxAge: FiniteDuration,
+  monixSinkParallelism: Int) {
 
   def toProperties: Properties = {
     val props = new Properties()
@@ -196,7 +201,7 @@ case class KafkaProducerConfig(
   }
 
   def toMap: Map[String,String] = Map(
-    "bootstrap.servers" -> servers.mkString(","),
+    "bootstrap.servers" -> bootstrapServers.mkString(","),
     "acks" -> acks.id,
     "buffer.memory" -> bufferMemoryInBytes.toString,
     "compression.type" -> compressionType.id,
@@ -269,7 +274,7 @@ object KafkaProducerConfig {
       else None
 
     KafkaProducerConfig(
-      servers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
+      bootstrapServers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
       acks = Acks(config.getString(s"$rootPath.acks")),
       bufferMemoryInBytes = config.getInt(s"$rootPath.buffer.memory"),
       compressionType = CompressionType(config.getString(s"$rootPath.compression.type")),
@@ -298,7 +303,8 @@ object KafkaProducerConfig {
       sslTruststoreType = config.getString(s"$rootPath.ssl.truststore.type"),
       reconnectBackoffTime = config.getInt(s"$rootPath.reconnect.backoff.ms").millis,
       retryBackoffTime = config.getInt(s"$rootPath.retry.backoff.ms").millis,
-      metadataMaxAge = config.getInt(s"$rootPath.metadata.max.age.ms").millis
+      metadataMaxAge = config.getInt(s"$rootPath.metadata.max.age.ms").millis,
+      monixSinkParallelism = config.getInt(s"$rootPath.monix.producer.sink.parallelism")
     )
   }
 }
