@@ -34,7 +34,7 @@ lazy val sharedSettings = Seq(
     val current  = sys.props("java.specification.version")
     assert(current == required, s"Unsupported build JDK: java.specification.version $current != $required")
   },
-  
+
   // Targeting Java 6, but only for Scala <= 2.11
   javacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, majorVersion)) if majorVersion <= 11 =>
@@ -192,7 +192,7 @@ lazy val monixKafka = project.in(file("."))
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(sharedSettings)
   .settings(
-    name := "monix-kafka-0.10",
+    name := "monix-kafka-10",
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.10.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
@@ -201,7 +201,7 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
 lazy val kafka9 = project.in(file("kafka-0.9.x"))
   .settings(sharedSettings)
   .settings(
-    name := "monix-kafka-0.9",
+    name := "monix-kafka-9",
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
