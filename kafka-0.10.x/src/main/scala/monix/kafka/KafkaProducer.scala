@@ -27,6 +27,7 @@ import scala.util.control.NonFatal
 
 /** Wraps the Kafka Producer. */
 trait KafkaProducer[K,V] extends Serializable {
+  def underlying: Task[ApacheKafkaProducer[K,V]]
   def send(topic: String, value: V): Task[RecordMetadata]
   def send(topic: String, key: K, value: V): Task[RecordMetadata]
   def send(record: ProducerRecord[K,V]): Task[RecordMetadata]
@@ -54,6 +55,9 @@ object KafkaProducer {
       logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
       new ApacheKafkaProducer[K,V](config.toProperties, K.create(), V.create())
     }
+
+    def underlying: Task[ApacheKafkaProducer[K, V]] =
+      Task.eval(producerRef)
 
     def send(topic: String, value: V): Task[RecordMetadata] =
       send(new ProducerRecord[K,V](topic, value))
