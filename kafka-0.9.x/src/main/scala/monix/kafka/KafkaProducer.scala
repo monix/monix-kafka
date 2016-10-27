@@ -29,9 +29,9 @@ import scala.util.control.NonFatal
 /** Wraps the Kafka Producer. */
 trait KafkaProducer[K,V] extends Serializable {
   def underlying: Task[ApacheKafkaProducer[K,V]]
-  def send(topic: String, value: V): Task[RecordMetadata]
-  def send(topic: String, key: K, value: V): Task[RecordMetadata]
-  def send(record: ProducerRecord[K,V]): Task[RecordMetadata]
+  def send(topic: String, value: V): Task[Option[RecordMetadata]]
+  def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]]
+  def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]]
   def close(): Task[Unit]
 }
 
@@ -60,17 +60,19 @@ object KafkaProducer {
     def underlying: Task[ApacheKafkaProducer[K, V]] =
       Task.eval(producerRef)
 
-    def send(topic: String, value: V): Task[RecordMetadata] =
+    def send(topic: String, value: V): Task[Option[RecordMetadata]] =
       send(new ProducerRecord[K,V](topic, value))
 
-    def send(topic: String, key: K, value: V): Task[RecordMetadata] =
+    def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]] =
       send(new ProducerRecord[K,V](topic, key, value))
 
-    def send(record: ProducerRecord[K,V]): Task[RecordMetadata] =
-      Task.unsafeCreate[RecordMetadata] { (s, conn, cb) =>
+    def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]] =
+      Task.unsafeCreate[Option[RecordMetadata]] { (s, conn, cb) =>
         // Forcing asynchronous boundary on the I/O scheduler!
         io.executeAsync(self.synchronized(
-          if (!isCanceled) {
+          if (isCanceled) {
+            cb.asyncOnSuccess(None)(s)
+          } else {
             val isActive = Atomic(true)
             val cancelable = SingleAssignmentCancelable()
             conn.push(cancelable)
@@ -87,8 +89,9 @@ object KafkaProducer {
                     if (exception != null)
                       cb.asyncOnError(exception)(s)
                     else
-                      cb.asyncOnSuccess(meta)(s)
-                  } else if (exception != null) {
+                      cb.asyncOnSuccess(Option(meta))(s)
+                  }
+                  else if (exception != null) {
                     s.reportFailure(exception)
                   }
               })
@@ -105,9 +108,6 @@ object KafkaProducer {
                   s.reportFailure(ex)
                 }
             }
-          } else {
-            val ex = new IllegalStateException("KafkaProducer connection is closed")
-            cb.asyncOnError(ex)(s)
           }
         ))
       }

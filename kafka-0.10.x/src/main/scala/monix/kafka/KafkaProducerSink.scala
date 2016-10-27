@@ -47,7 +47,7 @@ final class KafkaProducerSink[K,V] private (
       private[this] val p = producer.memoize
       private[this] var isActive = true
 
-      private def sendAll(batch: Seq[ProducerRecord[K,V]]): Seq[Task[RecordMetadata]] =
+      private def sendAll(batch: Seq[ProducerRecord[K,V]]): Seq[Task[Option[RecordMetadata]]] =
         for (record <- batch) yield {
           try p.value.send(record)
           catch { case NonFatal(ex) => Task.raiseError(ex) }
@@ -56,7 +56,7 @@ final class KafkaProducerSink[K,V] private (
       def onNext(list: Seq[ProducerRecord[K, V]]): Future[Ack] =
         self.synchronized {
           if (!isActive) Stop else {
-            val sendTask: Task[Seq[RecordMetadata]] =
+            val sendTask: Task[Seq[Option[RecordMetadata]]] =
               if (parallelism == 1)
                 Task.sequence(sendAll(list))
               else {
