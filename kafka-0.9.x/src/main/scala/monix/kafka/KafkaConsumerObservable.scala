@@ -81,13 +81,16 @@ final class KafkaConsumerObservable[K, V] private
     def runLoop(consumer: KafkaConsumer[K,V]): Task[Unit] = {
       // Creates a task that polls the source, then feeds the downstream
       // subscriber, returning the resulting acknowledgement
-      val ackTask: Task[Ack] = Task.unsafeCreate { (scheduler, conn, cb) =>
-        implicit val s = scheduler
+      val ackTask: Task[Ack] = Task.unsafeCreate { (context, cb) =>
+        implicit val s = context.scheduler
+
         // Forced asynchronous boundary (on the I/O scheduler)
-        s.executeAsync {
+        s.executeAsync { () =>
+          context.frameRef.reset()
+
           val ackFuture =
             try consumer.synchronized {
-              if (conn.isCanceled) Stop else {
+              if (context.connection.isCanceled) Stop else {
                 val next = consumer.poll(pollTimeoutMillis)
                 if (shouldCommitBefore) consumerCommit(consumer)
                 // Feeding the observer happens on the Subscriber's scheduler
@@ -109,7 +112,7 @@ final class KafkaConsumerObservable[K, V] private
               try consumer.synchronized {
                 // In case the task has been cancelled, there's no point
                 // in continuing to do anything else
-                if (conn.isCanceled) {
+                if (context.connection.isCanceled) {
                   streamErrors = false
                   cb.asyncOnSuccess(Stop)
                 } else {
@@ -151,7 +154,8 @@ final class KafkaConsumerObservable[K, V] private
       cancelTask.memoize
     }
 
-    Task.unsafeCreate { (s, conn, cb) =>
+    Task.unsafeCreate { (context, cb) =>
+      implicit val s = context.scheduler
       val feedTask = consumer.flatMap { c =>
         // Skipping all available messages on all partitions
         if (config.observableSeekToEndOnStart) c.seekToEnd()
@@ -159,11 +163,11 @@ final class KafkaConsumerObservable[K, V] private
         val onCancel = cancelTask(c)
         // We really need an easier way of adding
         // cancelable stuff to a task!
-        conn.push(Cancelable(() => onCancel.runAsync(s)))
+        context.connection.push(Cancelable(() => onCancel.runAsync(s)))
         runLoop(c).doOnFinish(_ => onCancel)
       }
 
-      Task.unsafeStartNow(feedTask, s, conn, cb)
+      Task.unsafeStartNow(feedTask, context, cb)
     }
   }
 }

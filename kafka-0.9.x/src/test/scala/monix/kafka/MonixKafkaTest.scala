@@ -105,7 +105,7 @@ class MonixKafkaTest extends FunSuite {
     val pushT = Observable.range(0, count)
       .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
       .bufferIntrospective(1024)
-      .runWith(producer)
+      .consumeWith(producer)
 
     val listT = consumer
       .map(_.value())

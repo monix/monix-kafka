@@ -67,15 +67,17 @@ object KafkaProducer {
       send(new ProducerRecord[K,V](topic, key, value))
 
     def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]] =
-      Task.unsafeCreate[Option[RecordMetadata]] { (s, conn, cb) =>
+      Task.unsafeCreate[Option[RecordMetadata]] { (context, cb) =>
         // Forcing asynchronous boundary on the I/O scheduler!
-        io.executeAsync(self.synchronized(
+        io.executeAsync(() => self.synchronized {
+          val s = context.scheduler
           if (isCanceled) {
             cb.asyncOnSuccess(None)(s)
-          } else {
+          }
+          else {
             val isActive = Atomic(true)
             val cancelable = SingleAssignmentCancelable()
-            conn.push(cancelable)
+            context.connection.push(cancelable)
 
             try {
               // Force evaluation
@@ -85,7 +87,7 @@ object KafkaProducer {
               val future = producer.send(record, new Callback {
                 def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
                   if (isActive.getAndSet(false)) {
-                    conn.pop()
+                    context.connection.pop()
                     if (exception != null)
                       cb.asyncOnError(exception)(s)
                     else
@@ -102,24 +104,26 @@ object KafkaProducer {
               case NonFatal(ex) =>
                 // Needs synchronization, otherwise we are violating the contract
                 if (isActive.compareAndSet(expect = true, update = false)) {
-                  conn.pop()
+                  context.connection.pop()
                   cb.asyncOnError(ex)(s)
                 } else {
                   s.reportFailure(ex)
                 }
             }
           }
-        ))
+        })
       }
 
     def close(): Task[Unit] =
-      Task.unsafeCreate { (s, conn, cb) =>
+      Task.unsafeCreate { (context, cb) =>
         // Forcing asynchronous boundary on I/O scheduler!
-        io.executeAsync {
+        io.executeAsync { () =>
           self.synchronized {
+            val s = context.scheduler
             if (isCanceled) {
               cb.asyncOnSuccess(())(s)
-            } else {
+            }
+            else {
               isCanceled = true
               try {
                 producerRef.close()
