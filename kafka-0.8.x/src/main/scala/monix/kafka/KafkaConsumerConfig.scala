@@ -222,6 +222,8 @@ object KafkaConsumerConfig {
 
   lazy private val defaultConf: Config = ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
 
+  lazy val default: KafkaConsumerConfig = apply(defaultConf, includeDefaults = false)
+
   def load(): KafkaConsumerConfig =
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
       case Some(file) if file.exists() =>

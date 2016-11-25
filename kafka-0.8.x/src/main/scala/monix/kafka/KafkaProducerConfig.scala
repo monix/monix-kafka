@@ -174,6 +174,8 @@ object KafkaProducerConfig {
 
   lazy private val defaultConf: Config = ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
 
+  lazy val default: KafkaProducerConfig = apply(defaultConf, includeDefaults = false)
+
   def load(): KafkaProducerConfig =
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
       case Some(file) if file.exists() =>
@@ -182,7 +184,7 @@ object KafkaProducerConfig {
         Option(System.getProperty("config.resource")) match {
           case Some(resource) =>
             loadResource(resource)
-          case None => apply(defaultConf, includeDefaults = false)
+          case None => default
         }
     }
 

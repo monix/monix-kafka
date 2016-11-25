@@ -15,29 +15,11 @@
  * limitations under the License.
  */
 
-package monix.kafka
+package monix
 
-import monix.reactive.Observable
 import monix.execution.Scheduler
-import kafka.consumer._
-import kafka.message.MessageAndMetadata
 
-import scala.collection.Map
-
-object KafkaSimpleConsumerObservable {
-
-  def streams[K, V](cfg: KafkaConsumerConfig, topicMap: Map[String, Int], io: Scheduler)
-                   (implicit K: Decoder[K], V: Decoder[V]): Seq[Observable[MessageAndMetadata[K, V]]] =
-    Consumer
-      .create(new ConsumerConfig(cfg.toProperties))
-      .createMessageStreams(
-        topicCountMap = topicMap,
-        keyDecoder = K.create(),
-        valueDecoder = V.create()
-      ).values.toSeq.flatten
-      .map(Observable
-        .fromIterable(_)
-        .subscribeOn(io)
-      )
-
+package object kafka {
+  /** I/O scheduler meant for tests. */
+  lazy val io = Scheduler.io("monix-kafka-tests")
 }
