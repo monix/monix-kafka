@@ -187,7 +187,7 @@ lazy val sharedSettings = Seq(
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka10, kafka9)
+  .aggregate(kafka10, kafka9, kafka8)
 
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(sharedSettings)
@@ -206,3 +206,13 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
+
+lazy val kafka8 = project.in(file("kafka-0.8.x"))
+  .settings(sharedSettings)
+  .settings(
+    name := "monix-kafka-8",
+    libraryDependencies ++= Seq(
+      "org.apache.kafka" %% "kafka" % "0.8.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+    )
+  )
+

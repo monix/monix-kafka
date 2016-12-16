@@ -19,15 +19,17 @@ package monix.kafka
 
 import java.io.File
 import java.util.Properties
-import com.typesafe.config.{Config, ConfigFactory}
-import monix.kafka.config._
 import scala.concurrent.duration._
+
+import com.typesafe.config.{Config, ConfigFactory}
+
+import monix.kafka.config._
 
 /** The Kafka Producer config.
   *
   * For the official documentation on the available configuration
   * options, see
-  * [[https://kafka.apache.org/documentation.html#producerconfigs Producer Configs]]
+  * [[https://kafka.apache.org/082/documentation.html#newproducerconfigs Producer Configs]]
   * on `kafka.apache.org`.
   *
   * @param bootstrapServers is the `bootstrap.servers` setting
@@ -50,24 +52,6 @@ import scala.concurrent.duration._
   *        cause the client to resend any record whose send fails with
   *        a potentially transient error.
   *
-  * @param sslKeyPassword is the `ssl.key.password` setting and represents
-  *        the password of the private key in the key store file.
-  *        This is optional for client.
-  *
-  * @param sslKeyStorePassword is the `ssl.keystore.password` setting,
-  *        being the password of the private key in the key store file.
-  *        This is optional for client.
-  *
-  * @param sslKeyStoreLocation is the `ssl.keystore.location` setting and
-  *        represents the location of the key store file. This is optional
-  *        for client and can be used for two-way authentication for client.
-  *
-  * @param sslTrustStoreLocation is the `ssl.truststore.location` setting
-  *        and is the location of the trust store file.
-  *
-  * @param sslTrustStorePassword is the `ssl.truststore.password` setting
-  *        and is the password for the trust store file.
-  *
   * @param batchSizeInBytes is the `batch.size` setting.
   *        The producer will attempt to batch records together into fewer
   *        requests whenever multiple records are being sent to the
@@ -80,65 +64,46 @@ import scala.concurrent.duration._
   *        requests beyond just ip/port by allowing a logical application
   *        name to be included in server-side request logging.
   *
-  * @param connectionsMaxIdleTime is the `connections.max.idle.ms` setting
-  *        and specifies how much time to wait before closing idle connections.
-  *
   * @param lingerTime is the `linger.ms` setting
   *        and specifies to buffer records for more efficient batching,
   *        up to the maximum batch size or for the maximum `lingerTime`.
   *        If zero, then no buffering will happen, but if different
   *        from zero, then records will be delayed in absence of load.
   *
-  * @param maxBlockTime is the `max.block.ms` setting.
-  *        The configuration controls how long `KafkaProducer.send()` and
-  *        `KafkaProducer.partitionsFor()` will block. These methods can be
-  *        blocked either because the buffer is full or metadata unavailable.
-  *
   * @param maxRequestSizeInBytes is the `max.request.size` setting
   *        and represents the maximum size of a request in bytes.
   *        This is also effectively a cap on the maximum record size.
-  *
-  * @param partitionerClass is the `partitioner.class` setting
-  *        and represents a class that implements the
-  *        `org.apache.kafka.clients.producer.Partitioner` interface.
   *
   * @param receiveBufferInBytes is the `receive.buffer.bytes` setting
   *        being the size of the TCP receive buffer (SO_RCVBUF) to use
   *        when reading data.
   *
-  * @param requestTimeout is the `request.timeout.ms` setting,
-  *        a configuration the controls the maximum amount of time
-  *        the client will wait for the response of a request.
-  *
-  * @param saslKerberosServiceName is the `sasl.kerberos.service.name` setting,
-  *        being the Kerberos principal name that Kafka runs as.
-  *
-  * @param securityProtocol is the `security.protocol` setting,
-  *        being the protocol used to communicate with brokers.
-  *
   * @param sendBufferInBytes is the `send.buffer.bytes` setting,
   *        being the size of the TCP send buffer (SO_SNDBUF) to use
   *        when sending data.
   *
-  * @param sslEnabledProtocols is the `ssl.enabled.protocols` setting,
-  *        being the list of protocols enabled for SSL connections.
+  * @param timeout is the `timeout.ms` setting,
+  *        a configuration the controls the maximum amount of time
+  *        the server will wait for acknowledgments from followers to meet
+  *        the acknowledgment requirements the producer has specified with
+  *        the `acks` configuration.
   *
-  * @param sslKeystoreType is the `ssl.keystore.type` setting,
-  *        being the file format of the key store file.
+  * @param blockOnBufferFull is the `block.on.buffer.full` setting,
+  *        which controls whether producer stops accepting new
+  *        records (blocks) or throws errors when the memory buffer
+  *        is exhausted.
   *
-  * @param sslProtocol is the `ssl.protocol` setting,
-  *        being the SSL protocol used to generate the SSLContext.
-  *        Default setting is TLS, which is fine for most cases.
-  *        Allowed values in recent JVMs are TLS, TLSv1.1 and TLSv1.2. SSL,
-  *        SSLv2 and SSLv3 may be supported in older JVMs, but their usage
-  *        is discouraged due to known security vulnerabilities.
+  * @param metadataFetchTimeout is the `metadata.fetch.timeout.ms` setting.
+  *        The period of time in milliseconds after which we force a
+  *        refresh of metadata even if we haven't seen any partition
+  *        leadership changes to proactively discover any new brokers
+  *        or partitions.
   *
-  * @param sslProvider is the `ssl.provider` setting,
-  *        being the name of the security provider used for SSL connections.
-  *        Default value is the default security provider of the JVM.
-  *
-  * @param sslTruststoreType is the `ssl.truststore.type` setting, being
-  *        the file format of the trust store file.
+  * @param metadataMaxAge is the `metadata.max.age.ms` setting.
+  *        The period of time in milliseconds after which we force a
+  *        refresh of metadata even if we haven't seen any partition
+  *        leadership changes to proactively discover any new brokers
+  *        or partitions.
   *
   * @param reconnectBackoffTime is the `reconnect.backoff.ms` setting.
   *        The amount of time to wait before attempting to reconnect to a
@@ -151,12 +116,6 @@ import scala.concurrent.duration._
   *        request to a given topic partition. This avoids repeatedly
   *        sending requests in a tight loop under some failure scenarios.
   *
-  * @param metadataMaxAge is the `metadata.max.age.ms` setting.
-  *        The period of time in milliseconds after which we force a
-  *        refresh of metadata even if we haven't seen any partition
-  *        leadership changes to proactively discover any new brokers
-  *        or partitions.
-  *
   * @param monixSinkParallelism is the `monix.producer.sink.parallelism`
   *        setting indicating how many requests the [[KafkaProducerSink]]
   *        can execute in parallel.
@@ -167,70 +126,44 @@ case class KafkaProducerConfig(
   bufferMemoryInBytes: Int,
   compressionType: CompressionType,
   retries: Int,
-  sslKeyPassword: Option[String],
-  sslKeyStorePassword: Option[String],
-  sslKeyStoreLocation: Option[String],
-  sslTrustStoreLocation: Option[String],
-  sslTrustStorePassword: Option[String],
   batchSizeInBytes: Int,
   clientId: String,
-  connectionsMaxIdleTime: FiniteDuration,
   lingerTime: FiniteDuration,
-  maxBlockTime: FiniteDuration,
   maxRequestSizeInBytes: Int,
-  partitionerClass: Option[PartitionerName],
   receiveBufferInBytes: Int,
-  requestTimeout: FiniteDuration,
-  saslKerberosServiceName: Option[String],
-  securityProtocol: SecurityProtocol,
   sendBufferInBytes: Int,
-  sslEnabledProtocols: List[SSLProtocol],
-  sslKeystoreType: String,
-  sslProtocol: SSLProtocol,
-  sslProvider: Option[String],
-  sslTruststoreType: String,
+  timeout: FiniteDuration,
+  blockOnBufferFull: Boolean,
+  metadataFetchTimeout: FiniteDuration,
+  metadataMaxAge: FiniteDuration,
   reconnectBackoffTime: FiniteDuration,
   retryBackoffTime: FiniteDuration,
-  metadataMaxAge: FiniteDuration,
   monixSinkParallelism: Int) {
 
   def toProperties: Properties = {
     val props = new Properties()
-    for ((k,v) <- toMap; if v != null) props.put(k,v)
+    for ((k, v) <- toMap; if v != null) props.put(k, v)
     props
   }
 
-  def toMap: Map[String,String] = Map(
+  def toMap: Map[String, String] = Map(
     "bootstrap.servers" -> bootstrapServers.mkString(","),
     "acks" -> acks.id,
     "buffer.memory" -> bufferMemoryInBytes.toString,
     "compression.type" -> compressionType.id,
     "retries" -> retries.toString,
-    "ssl.key.password" -> sslKeyPassword.orNull,
-    "ssl.keystore.password" -> sslKeyStorePassword.orNull,
-    "ssl.keystore.location" -> sslKeyStoreLocation.orNull,
-    "ssl.truststore.password" -> sslTrustStorePassword.orNull,
-    "ssl.truststore.location" -> sslTrustStoreLocation.orNull,
     "batch.size" -> batchSizeInBytes.toString,
     "client.id" -> clientId,
-    "connections.max.idle.ms" -> connectionsMaxIdleTime.toMillis.toString,
     "linger.ms" -> lingerTime.toMillis.toString,
-    "max.block.ms" -> maxBlockTime.toMillis.toString,
     "max.request.size" -> maxRequestSizeInBytes.toString,
-    "partitioner.class" -> partitionerClass.map(_.className).orNull,
     "receive.buffer.bytes" -> receiveBufferInBytes.toString,
-    "request.timeout.ms" -> requestTimeout.toMillis.toString,
-    "sasl.kerberos.service.name" -> saslKerberosServiceName.orNull,
-    "security.protocol" -> securityProtocol.id,
     "send.buffer.bytes" -> sendBufferInBytes.toString,
-    "ssl.enabled.protocols" -> sslEnabledProtocols.map(_.id).mkString(","),
-    "ssl.keystore.type" -> sslKeystoreType,
-    "ssl.protocol" -> sslProtocol.id,
-    "ssl.provider" -> sslProvider.orNull,
-    "ssl.truststore.type" -> sslTruststoreType,
+    "timeout.ms" -> timeout.toMillis.toString,
+    "block.on.buffer.full" -> blockOnBufferFull.toString,
+    "metadata.fetch.timeout.ms" -> metadataFetchTimeout.toMillis.toString,
+    "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString,
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
-    "retry.backoff.ms" -> retryBackoffTime.toMillis.toString,
-    "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString
+    "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
 }
 
@@ -319,9 +252,6 @@ object KafkaProducerConfig {
     */
   def apply(source: Config, includeDefaults: Boolean = true): KafkaProducerConfig = {
     val config = if (!includeDefaults) source else source.withFallback(defaultConf)
-    def getOptString(path: String): Option[String] =
-      if (config.hasPath(path)) Option(config.getString(path))
-      else None
 
     KafkaProducerConfig(
       bootstrapServers = config.getString("bootstrap.servers").trim.split("\\s*,\\s*").toList,
@@ -329,31 +259,18 @@ object KafkaProducerConfig {
       bufferMemoryInBytes = config.getInt("buffer.memory"),
       compressionType = CompressionType(config.getString("compression.type")),
       retries = config.getInt("retries"),
-      sslKeyPassword = getOptString("ssl.key.password"),
-      sslKeyStorePassword = getOptString("ssl.keystore.password"),
-      sslKeyStoreLocation = getOptString("ssl.keystore.location"),
-      sslTrustStorePassword = getOptString("ssl.truststore.password"),
-      sslTrustStoreLocation = getOptString("ssl.truststore.location"),
       batchSizeInBytes = config.getInt("batch.size"),
       clientId = config.getString("client.id"),
-      connectionsMaxIdleTime = config.getInt("connections.max.idle.ms").millis,
       lingerTime = config.getInt("linger.ms").millis,
-      maxBlockTime = config.getInt("max.block.ms").millis,
       maxRequestSizeInBytes = config.getInt("max.request.size"),
-      partitionerClass = getOptString("partitioner.class").filter(_.nonEmpty).map(PartitionerName.apply),
       receiveBufferInBytes = config.getInt("receive.buffer.bytes"),
-      requestTimeout = config.getInt("request.timeout.ms").millis,
-      saslKerberosServiceName = getOptString("sasl.kerberos.service.name"),
-      securityProtocol = SecurityProtocol(config.getString("security.protocol")),
       sendBufferInBytes = config.getInt("send.buffer.bytes"),
-      sslEnabledProtocols = config.getString("ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
-      sslKeystoreType = config.getString("ssl.keystore.type"),
-      sslProtocol = SSLProtocol(config.getString("ssl.protocol")),
-      sslProvider = getOptString("ssl.provider"),
-      sslTruststoreType = config.getString("ssl.truststore.type"),
+      timeout = config.getInt("timeout.ms").millis,
+      blockOnBufferFull = config.getBoolean("block.on.buffer.full"),
+      metadataFetchTimeout = config.getInt("metadata.fetch.timeout.ms").millis,
+      metadataMaxAge = config.getInt("metadata.max.age.ms").millis,
       reconnectBackoffTime = config.getInt("reconnect.backoff.ms").millis,
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
-      metadataMaxAge = config.getInt("metadata.max.age.ms").millis,
       monixSinkParallelism = config.getInt("monix.producer.sink.parallelism")
     )
   }
