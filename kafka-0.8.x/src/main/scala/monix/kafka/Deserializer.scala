@@ -18,14 +18,13 @@
 package monix.kafka
 
 import kafka.serializer.{DefaultDecoder, StringDecoder, Decoder => KafkaDecoder}
-
 import language.existentials
 
 /** Wraps a Kafka `Decoder`, provided for
   * convenience, since it can be implicitly fetched
   * from the context.
   */
-final case class Decoder[A](
+final case class Deserializer[A](
   className: String,
   classType: Class[_ <: KafkaDecoder[A]]) {
 
@@ -39,17 +38,16 @@ final case class Decoder[A](
   }
 }
 
-object Decoder {
-  implicit val forStrings: Decoder[String] =
-    Decoder(
+object Deserializer {
+  implicit val forStrings: Deserializer[String] =
+    Deserializer(
       className = "kafka.serializer.StringDecoder",
       classType = classOf[StringDecoder]
     )
 
-  implicit val forByteArray: Decoder[Array[Byte]] =
-    Decoder(
+  implicit val forByteArray: Deserializer[Array[Byte]] =
+    Deserializer(
       className = "kafka.serializer.DefaultDecoder",
       classType = classOf[DefaultDecoder]
     )
-
 }

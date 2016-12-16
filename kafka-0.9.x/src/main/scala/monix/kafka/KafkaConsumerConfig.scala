@@ -258,80 +258,130 @@ final case class KafkaConsumerConfig(
 }
 
 object KafkaConsumerConfig {
-  def apply(config: Config): KafkaConsumerConfig =
-    apply("kafka", config)
+  private val defaultRootPath = "kafka"
 
-  def apply(rootPath: String, config: Config): KafkaConsumerConfig = {
-    def getOptString(path: String): Option[String] =
-      if (config.hasPath(path)) Option(config.getString(path))
-      else None
+  lazy private val defaultConf: Config =
+    ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
 
-    KafkaConsumerConfig(
-      bootstrapServers = config.getString(s"$rootPath.bootstrap.servers").trim.split("\\s*,\\s*").toList,
-      fetchMinBytes = config.getInt(s"$rootPath.fetch.min.bytes"),
-      groupId = config.getString(s"$rootPath.group.id"),
-      heartbeatInterval = config.getInt(s"$rootPath.heartbeat.interval.ms").millis,
-      maxPartitionFetchBytes = config.getInt(s"$rootPath.max.partition.fetch.bytes"),
-      sessionTimeout = config.getInt(s"$rootPath.session.timeout.ms").millis,
-      sslKeyPassword = getOptString(s"$rootPath.ssl.key.password"),
-      sslKeyStorePassword = getOptString(s"$rootPath.ssl.keystore.password"),
-      sslKeyStoreLocation = getOptString(s"$rootPath.ssl.keystore.location"),
-      sslTrustStorePassword = getOptString(s"$rootPath.ssl.truststore.password"),
-      sslTrustStoreLocation = getOptString(s"$rootPath.ssl.truststore.location"),
-      autoOffsetReset = AutoOffsetReset(config.getString(s"$rootPath.auto.offset.reset")),
-      connectionsMaxIdleTime = config.getInt(s"$rootPath.connections.max.idle.ms").millis,
-      enableAutoCommit = config.getBoolean(s"$rootPath.enable.auto.commit"),
-      excludeInternalTopics = config.getBoolean(s"$rootPath.exclude.internal.topics"),
-      maxPollRecords = config.getInt(s"$rootPath.max.poll.records"),
-      receiveBufferInBytes = config.getInt(s"$rootPath.receive.buffer.bytes"),
-      requestTimeout = config.getInt(s"$rootPath.request.timeout.ms").millis,
-      saslKerberosServiceName = getOptString(s"$rootPath.sasl.kerberos.service.name"),
-      securityProtocol = SecurityProtocol(config.getString(s"$rootPath.security.protocol")),
-      sendBufferInBytes = config.getInt(s"$rootPath.send.buffer.bytes"),
-      sslEnabledProtocols = config.getString(s"$rootPath.ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
-      sslKeystoreType = config.getString(s"$rootPath.ssl.keystore.type"),
-      sslProtocol = SSLProtocol(config.getString(s"$rootPath.ssl.protocol")),
-      sslProvider = getOptString(s"$rootPath.ssl.provider"),
-      sslTruststoreType = config.getString(s"$rootPath.ssl.truststore.type"),
-      checkCRCs = config.getBoolean(s"$rootPath.check.crcs"),
-      clientId = config.getString(s"$rootPath.client.id"),
-      fetchMaxWaitTime = config.getInt(s"$rootPath.fetch.max.wait.ms").millis,
-      metadataMaxAge = config.getInt(s"$rootPath.metadata.max.age.ms").millis,
-      reconnectBackoffTime = config.getInt(s"$rootPath.reconnect.backoff.ms").millis,
-      retryBackoffTime = config.getInt(s"$rootPath.retry.backoff.ms").millis,
-      observableCommitType = ObservableCommitType(config.getString(s"$rootPath.monix.observable.commit.type")),
-      observableCommitOrder = ObservableCommitOrder(config.getString(s"$rootPath.monix.observable.commit.order")),
-      observableSeekToEndOnStart = config.getBoolean(s"$rootPath.monix.observable.seekEnd.onStart")
-    )
-  }
-
+  /** Returns the default configuration, specified the `monix-kafka` project
+    * in `monix/kafka/default.conf`.
+    */
   lazy val default: KafkaConsumerConfig =
-    apply(ConfigFactory.load("monix/kafka/default.conf"))
+    apply(defaultConf, includeDefaults = false)
 
+  /** Loads the [[KafkaConsumerConfig]] either from a file path or
+    * from a resource, if `config.file` or `config.resource` are
+    * defined, or otherwise returns the default config.
+    *
+    * If you want to specify a `config.file`, you can configure the
+    * Java process on execution like so:
+    * {{{
+    *   java -Dconfig.file=/path/to/application.conf
+    * }}}
+    *
+    * Or if you want to specify a `config.resource` to be loaded
+    * from the executable's distributed JAR or classpath:
+    * {{{
+    *   java -Dconfig.resource=com/company/mySpecial.conf
+    * }}}
+    *
+    * In case neither of these are specified, then the configuration
+    * loaded is the default one, from the `monix-kafka` project, specified
+    * in `monix/kafka/default.conf`.
+    */
   def load(): KafkaConsumerConfig =
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
       case Some(file) if file.exists() =>
-        loadFile(file, includeDefaults = true)
+        loadFile(file)
       case None =>
         Option(System.getProperty("config.resource")) match {
           case Some(resource) =>
-            loadResource(resource, includeDefaults = true)
+            loadResource(resource)
           case None =>
             default
         }
     }
 
-  def loadResource(resourceBaseName: String, includeDefaults: Boolean = true): KafkaConsumerConfig = {
-    def default = ConfigFactory.load("monix/kafka/default.conf")
-    val config = ConfigFactory.load(resourceBaseName)
-    if (!includeDefaults) apply(config) else
-      apply(config.withFallback(default))
-  }
+  /** Loads a [[KafkaConsumerConfig]] from a project resource.
+    *
+    * @param resourceBaseName is the resource from where to load the config
+    * @param rootPath is the config root path (e.g. `kafka`)
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
+  def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaConsumerConfig =
+    apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
-  def loadFile(file: File, includeDefaults: Boolean = true): KafkaConsumerConfig = {
-    def default = ConfigFactory.load("monix/kafka/default.conf")
-    val config = ConfigFactory.parseFile(file).resolve()
-    if (!includeDefaults) apply(config) else
-      apply(config.withFallback(default))
+  /** Loads a [[KafkaConsumerConfig]] from a specified file.
+    *
+    * @param file is the configuration path from where to load the config
+    * @param rootPath is the config root path (e.g. `kafka`)
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
+  def loadFile(file: File, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaConsumerConfig =
+    apply(ConfigFactory.parseFile(file).resolve().getConfig(rootPath), includeDefaults)
+
+  /** Loads the [[KafkaConsumerConfig]] from a parsed
+    * `com.typesafe.config.Config` reference.
+    *
+    * NOTE that this method doesn't assume any path prefix for loading the
+    * configuration settings, so it does NOT assume a root path like `kafka`.
+    * In case case you need that, you can always do:
+    *
+    * {{{
+    *   KafkaConsumerConfig(globalConfig.getConfig("kafka"))
+    * }}}
+    *
+    * @param source is the typesafe `Config` object to read from
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
+  def apply(source: Config, includeDefaults: Boolean = true): KafkaConsumerConfig = {
+    val config = if (!includeDefaults) source else source.withFallback(defaultConf)
+    def getOptString(path: String): Option[String] =
+      if (config.hasPath(path)) Option(config.getString(path))
+      else None
+
+    KafkaConsumerConfig(
+      bootstrapServers = config.getString("bootstrap.servers").trim.split("\\s*,\\s*").toList,
+      fetchMinBytes = config.getInt("fetch.min.bytes"),
+      groupId = config.getString("group.id"),
+      heartbeatInterval = config.getInt("heartbeat.interval.ms").millis,
+      maxPartitionFetchBytes = config.getInt("max.partition.fetch.bytes"),
+      sessionTimeout = config.getInt("session.timeout.ms").millis,
+      sslKeyPassword = getOptString("ssl.key.password"),
+      sslKeyStorePassword = getOptString("ssl.keystore.password"),
+      sslKeyStoreLocation = getOptString("ssl.keystore.location"),
+      sslTrustStorePassword = getOptString("ssl.truststore.password"),
+      sslTrustStoreLocation = getOptString("ssl.truststore.location"),
+      autoOffsetReset = AutoOffsetReset(config.getString("auto.offset.reset")),
+      connectionsMaxIdleTime = config.getInt("connections.max.idle.ms").millis,
+      enableAutoCommit = config.getBoolean("enable.auto.commit"),
+      excludeInternalTopics = config.getBoolean("exclude.internal.topics"),
+      maxPollRecords = config.getInt("max.poll.records"),
+      receiveBufferInBytes = config.getInt("receive.buffer.bytes"),
+      requestTimeout = config.getInt("request.timeout.ms").millis,
+      saslKerberosServiceName = getOptString("sasl.kerberos.service.name"),
+      securityProtocol = SecurityProtocol(config.getString("security.protocol")),
+      sendBufferInBytes = config.getInt("send.buffer.bytes"),
+      sslEnabledProtocols = config.getString("ssl.enabled.protocols").split("\\s*,\\s*").map(SSLProtocol.apply).toList,
+      sslKeystoreType = config.getString("ssl.keystore.type"),
+      sslProtocol = SSLProtocol(config.getString("ssl.protocol")),
+      sslProvider = getOptString("ssl.provider"),
+      sslTruststoreType = config.getString("ssl.truststore.type"),
+      checkCRCs = config.getBoolean("check.crcs"),
+      clientId = config.getString("client.id"),
+      fetchMaxWaitTime = config.getInt("fetch.max.wait.ms").millis,
+      metadataMaxAge = config.getInt("metadata.max.age.ms").millis,
+      reconnectBackoffTime = config.getInt("reconnect.backoff.ms").millis,
+      retryBackoffTime = config.getInt("retry.backoff.ms").millis,
+      observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
+      observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
+      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart")
+    )
   }
 }

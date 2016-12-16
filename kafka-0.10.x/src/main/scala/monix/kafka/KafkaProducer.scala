@@ -19,17 +19,19 @@ package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
-import monix.execution.{Cancelable, Scheduler}
 import monix.execution.atomic.Atomic
 import monix.execution.cancelables.SingleAssignmentCancelable
+import monix.execution.{Cancelable, Scheduler}
 import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata, KafkaProducer => ApacheKafkaProducer}
+
 import scala.util.control.NonFatal
 
 /** Wraps the Kafka Producer. */
 trait KafkaProducer[K,V] extends Serializable {
-  def send(topic: String, value: V): Task[RecordMetadata]
-  def send(topic: String, key: K, value: V): Task[RecordMetadata]
-  def send(record: ProducerRecord[K,V]): Task[RecordMetadata]
+  def underlying: Task[ApacheKafkaProducer[K,V]]
+  def send(topic: String, value: V): Task[Option[RecordMetadata]]
+  def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]]
+  def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]]
   def close(): Task[Unit]
 }
 
@@ -37,7 +39,7 @@ object KafkaProducer {
   /** Builds a [[KafkaProducer]] instance. */
   def apply[K,V](config: KafkaProducerConfig, io: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V]): KafkaProducer[K,V] =
-    new Implementation[K,V](config, io)
+  new Implementation[K,V](config, io)
 
   private final class Implementation[K,V](config: KafkaProducerConfig, io: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V])
@@ -55,20 +57,27 @@ object KafkaProducer {
       new ApacheKafkaProducer[K,V](config.toProperties, K.create(), V.create())
     }
 
-    def send(topic: String, value: V): Task[RecordMetadata] =
+    def underlying: Task[ApacheKafkaProducer[K, V]] =
+      Task.eval(producerRef)
+
+    def send(topic: String, value: V): Task[Option[RecordMetadata]] =
       send(new ProducerRecord[K,V](topic, value))
 
-    def send(topic: String, key: K, value: V): Task[RecordMetadata] =
+    def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]] =
       send(new ProducerRecord[K,V](topic, key, value))
 
-    def send(record: ProducerRecord[K,V]): Task[RecordMetadata] =
-      Task.unsafeCreate[RecordMetadata] { (s, conn, cb) =>
+    def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]] =
+      Task.unsafeCreate[Option[RecordMetadata]] { (context, cb) =>
         // Forcing asynchronous boundary on the I/O scheduler!
-        io.executeAsync(self.synchronized(
-          if (!isCanceled) {
+        io.executeAsync(() => self.synchronized {
+          val s = context.scheduler
+          if (isCanceled) {
+            cb.asyncOnSuccess(None)(s)
+          }
+          else {
             val isActive = Atomic(true)
             val cancelable = SingleAssignmentCancelable()
-            conn.push(cancelable)
+            context.connection.push(cancelable)
 
             try {
               // Force evaluation
@@ -77,13 +86,14 @@ object KafkaProducer {
               // Using asynchronous API
               val future = producer.send(record, new Callback {
                 def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
-                  if (isActive.compareAndSet(expect = true, update = false)) {
-                    conn.pop()
+                  if (isActive.getAndSet(false)) {
+                    context.connection.pop()
                     if (exception != null)
                       cb.asyncOnError(exception)(s)
                     else
-                      cb.asyncOnSuccess(meta)(s)
-                  } else if (exception != null) {
+                      cb.asyncOnSuccess(Option(meta))(s)
+                  }
+                  else if (exception != null) {
                     s.reportFailure(exception)
                   }
               })
@@ -94,27 +104,26 @@ object KafkaProducer {
               case NonFatal(ex) =>
                 // Needs synchronization, otherwise we are violating the contract
                 if (isActive.compareAndSet(expect = true, update = false)) {
-                  conn.pop()
+                  context.connection.pop()
                   cb.asyncOnError(ex)(s)
                 } else {
                   s.reportFailure(ex)
                 }
             }
-          } else {
-            val ex = new IllegalStateException("KafkaProducer connection is closed")
-            cb.asyncOnError(ex)(s)
           }
-        ))
+        })
       }
 
     def close(): Task[Unit] =
-      Task.unsafeCreate { (s, conn, cb) =>
+      Task.unsafeCreate { (context, cb) =>
         // Forcing asynchronous boundary on I/O scheduler!
-        io.executeAsync {
+        io.executeAsync { () =>
           self.synchronized {
+            val s = context.scheduler
             if (isCanceled) {
               cb.asyncOnSuccess(())(s)
-            } else {
+            }
+            else {
               isCanceled = true
               try {
                 producerRef.close()

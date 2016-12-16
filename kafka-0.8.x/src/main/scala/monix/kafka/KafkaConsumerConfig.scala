@@ -148,35 +148,34 @@ import monix.kafka.config._
   *
   */
 final case class KafkaConsumerConfig(
-                                      groupId: String,
-                                      zookeeperConnect: String,
-                                      consumerId: String,
-                                      socketTimeout: FiniteDuration,
-                                      socketReceiveBufferInBytes: Int,
-                                      fetchMessageMaxBytes: Int,
-                                      numConsumerFetchers: Int,
-                                      autoCommitEnable: Boolean,
-                                      autoCommitInterval: FiniteDuration,
-                                      queuedMaxMessageChunks: Int,
-                                      rebalanceMaxRetries: Int,
-                                      fetchMinBytes: Int,
-                                      fetchWaitMaxTime: FiniteDuration,
-                                      rebalanceBackoffTime: FiniteDuration,
-                                      refreshLeaderBackoffTime: FiniteDuration,
-                                      autoOffsetReset: AutoOffsetReset,
-                                      consumerTimeout: FiniteDuration,
-                                      excludeInternalTopics: Boolean,
-                                      partitionAssignmentStrategy: PartitionAssignmentStrategy,
-                                      clientId: String,
-                                      zookeeperSessionTimeout: FiniteDuration,
-                                      zookeeperConnectionTimeout: FiniteDuration,
-                                      zookeeperSyncTime: FiniteDuration,
-                                      offsetsStorage: OffsetsStorage,
-                                      offsetsChannelBackoffTime: FiniteDuration,
-                                      offsetsChannelSocketTimeout: FiniteDuration,
-                                      offsetsCommitMaxRetries: Int,
-                                      dualCommitEnabled: Boolean
-                                    ) {
+  groupId: String,
+  zookeeperConnect: String,
+  consumerId: String,
+  socketTimeout: FiniteDuration,
+  socketReceiveBufferInBytes: Int,
+  fetchMessageMaxBytes: Int,
+  numConsumerFetchers: Int,
+  autoCommitEnable: Boolean,
+  autoCommitInterval: FiniteDuration,
+  queuedMaxMessageChunks: Int,
+  rebalanceMaxRetries: Int,
+  fetchMinBytes: Int,
+  fetchWaitMaxTime: FiniteDuration,
+  rebalanceBackoffTime: FiniteDuration,
+  refreshLeaderBackoffTime: FiniteDuration,
+  autoOffsetReset: AutoOffsetReset,
+  consumerTimeout: FiniteDuration,
+  excludeInternalTopics: Boolean,
+  partitionAssignmentStrategy: PartitionAssignmentStrategy,
+  clientId: String,
+  zookeeperSessionTimeout: FiniteDuration,
+  zookeeperConnectionTimeout: FiniteDuration,
+  zookeeperSyncTime: FiniteDuration,
+  offsetsStorage: OffsetsStorage,
+  offsetsChannelBackoffTime: FiniteDuration,
+  offsetsChannelSocketTimeout: FiniteDuration,
+  offsetsCommitMaxRetries: Int,
+  dualCommitEnabled: Boolean) {
 
   def toMap: Map[String, String] = Map(
     "group.id" -> groupId,
@@ -217,13 +216,37 @@ final case class KafkaConsumerConfig(
 }
 
 object KafkaConsumerConfig {
-
   private val defaultRootPath = "kafka"
 
-  lazy private val defaultConf: Config = ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
+  lazy private val defaultConf: Config =
+    ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
 
-  lazy val default: KafkaConsumerConfig = apply(defaultConf, includeDefaults = false)
+  /** Returns the default configuration, specified the `monix-kafka` project
+    * in `monix/kafka/default.conf`.
+    */
+  lazy val default: KafkaConsumerConfig =
+    apply(defaultConf, includeDefaults = false)
 
+  /** Loads the [[KafkaConsumerConfig]] either from a file path or
+    * from a resource, if `config.file` or `config.resource` are
+    * defined, or otherwise returns the default config.
+    *
+    * If you want to specify a `config.file`, you can configure the
+    * Java process on execution like so:
+    * {{{
+    *   java -Dconfig.file=/path/to/application.conf
+    * }}}
+    *
+    * Or if you want to specify a `config.resource` to be loaded
+    * from the executable's distributed JAR or classpath:
+    * {{{
+    *   java -Dconfig.resource=com/company/mySpecial.conf
+    * }}}
+    *
+    * In case neither of these are specified, then the configuration
+    * loaded is the default one, from the `monix-kafka` project, specified
+    * in `monix/kafka/default.conf`.
+    */
   def load(): KafkaConsumerConfig =
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
       case Some(file) if file.exists() =>
@@ -232,18 +255,52 @@ object KafkaConsumerConfig {
         Option(System.getProperty("config.resource")) match {
           case Some(resource) =>
             loadResource(resource)
-          case None => apply(defaultConf, includeDefaults = false)
+          case None =>
+            default
         }
     }
 
+  /** Loads a [[KafkaConsumerConfig]] from a project resource.
+    *
+    * @param resourceBaseName is the resource from where to load the config
+    * @param rootPath is the config root path (e.g. `kafka`)
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
   def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaConsumerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
+  /** Loads a [[KafkaConsumerConfig]] from a specified file.
+    *
+    * @param file is the configuration path from where to load the config
+    * @param rootPath is the config root path (e.g. `kafka`)
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
   def loadFile(file: File, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaConsumerConfig =
     apply(ConfigFactory.parseFile(file).resolve().getConfig(rootPath), includeDefaults)
 
-  def apply(conf: Config, includeDefaults: Boolean = true): KafkaConsumerConfig = {
-    val config = if (!includeDefaults) conf else conf.withFallback(defaultConf)
+  /** Loads the [[KafkaConsumerConfig]] from a parsed
+    * `com.typesafe.config.Config` reference.
+    *
+    * NOTE that this method doesn't assume any path prefix for loading the
+    * configuration settings, so it does NOT assume a root path like `kafka`.
+    * In case case you need that, you can always do:
+    *
+    * {{{
+    *   KafkaConsumerConfig(globalConfig.getConfig("kafka"))
+    * }}}
+    *
+    * @param source is the typesafe `Config` object to read from
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
+  def apply(source: Config, includeDefaults: Boolean = true): KafkaConsumerConfig = {
+    val config = if (!includeDefaults) source else source.withFallback(defaultConf)
+    
     KafkaConsumerConfig(
       groupId = config.getString("group.id"),
       zookeeperConnect = config.getString("zookeeper.connect"),
@@ -275,5 +332,4 @@ object KafkaConsumerConfig {
       dualCommitEnabled = config.getBoolean("dual.commit.enabled")
     )
   }
-
 }

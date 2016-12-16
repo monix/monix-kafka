@@ -121,25 +121,24 @@ import monix.kafka.config._
   *        can execute in parallel.
   */
 case class KafkaProducerConfig(
-                                bootstrapServers: List[String],
-                                acks: Acks,
-                                bufferMemoryInBytes: Int,
-                                compressionType: CompressionType,
-                                retries: Int,
-                                batchSizeInBytes: Int,
-                                clientId: String,
-                                lingerTime: FiniteDuration,
-                                maxRequestSizeInBytes: Int,
-                                receiveBufferInBytes: Int,
-                                sendBufferInBytes: Int,
-                                timeout: FiniteDuration,
-                                blockOnBufferFull: Boolean,
-                                metadataFetchTimeout: FiniteDuration,
-                                metadataMaxAge: FiniteDuration,
-                                reconnectBackoffTime: FiniteDuration,
-                                retryBackoffTime: FiniteDuration,
-                                monixSinkParallelism: Int
-                              ) {
+  bootstrapServers: List[String],
+  acks: Acks,
+  bufferMemoryInBytes: Int,
+  compressionType: CompressionType,
+  retries: Int,
+  batchSizeInBytes: Int,
+  clientId: String,
+  lingerTime: FiniteDuration,
+  maxRequestSizeInBytes: Int,
+  receiveBufferInBytes: Int,
+  sendBufferInBytes: Int,
+  timeout: FiniteDuration,
+  blockOnBufferFull: Boolean,
+  metadataFetchTimeout: FiniteDuration,
+  metadataMaxAge: FiniteDuration,
+  reconnectBackoffTime: FiniteDuration,
+  retryBackoffTime: FiniteDuration,
+  monixSinkParallelism: Int) {
 
   def toProperties: Properties = {
     val props = new Properties()
@@ -169,13 +168,37 @@ case class KafkaProducerConfig(
 }
 
 object KafkaProducerConfig {
-
   private val defaultRootPath = "kafka"
 
-  lazy private val defaultConf: Config = ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
+  lazy private val defaultConf: Config =
+    ConfigFactory.load("monix/kafka/default.conf").getConfig(defaultRootPath)
 
-  lazy val default: KafkaProducerConfig = apply(defaultConf, includeDefaults = false)
+  /** Returns the default configuration, specified the `monix-kafka` project
+    * in `monix/kafka/default.conf`.
+    */
+  lazy val default: KafkaProducerConfig =
+    apply(defaultConf, includeDefaults = false)
 
+  /** Loads the [[KafkaProducerConfig]] either from a file path or
+    * from a resource, if `config.file` or `config.resource` are
+    * defined, or otherwise returns the default config.
+    *
+    * If you want to specify a `config.file`, you can configure the
+    * Java process on execution like so:
+    * {{{
+    *   java -Dconfig.file=/path/to/application.conf
+    * }}}
+    *
+    * Or if you want to specify a `config.resource` to be loaded
+    * from the executable's distributed JAR or classpath:
+    * {{{
+    *   java -Dconfig.resource=com/company/mySpecial.conf
+    * }}}
+    *
+    * In case neither of these are specified, then the configuration
+    * loaded is the default one, from the `monix-kafka` project, specified
+    * in `monix/kafka/default.conf`.
+    */
   def load(): KafkaProducerConfig =
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
       case Some(file) if file.exists() =>
@@ -184,18 +207,52 @@ object KafkaProducerConfig {
         Option(System.getProperty("config.resource")) match {
           case Some(resource) =>
             loadResource(resource)
-          case None => default
+          case None =>
+            default
         }
     }
 
+  /** Loads a [[KafkaProducerConfig]] from a project resource.
+    *
+    * @param resourceBaseName is the resource from where to load the config
+    * @param rootPath is the config root path (e.g. `kafka`)
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
   def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaProducerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
+  /** Loads a [[KafkaProducerConfig]] from a specified file.
+    *
+    * @param file is the configuration path from where to load the config
+    * @param rootPath is the config root path (e.g. `kafka`)
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
   def loadFile(file: File, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaProducerConfig =
     apply(ConfigFactory.parseFile(file).resolve().getConfig(rootPath), includeDefaults)
 
-  def apply(conf: Config, includeDefaults: Boolean = true): KafkaProducerConfig = {
-    val config = if (!includeDefaults) conf else conf.withFallback(defaultConf)
+  /** Loads the [[KafkaProducerConfig]] from a parsed
+    * `com.typesafe.config.Config` reference.
+    *
+    * NOTE that this method doesn't assume any path prefix for loading the
+    * configuration settings, so it does NOT assume a root path like `kafka`.
+    * In case case you need that, you can always do:
+    *
+    * {{{
+    *   KafkaProducerConfig(globalConfig.getConfig("kafka"))
+    * }}}
+    *
+    * @param source is the typesafe `Config` object to read from
+    * @param includeDefaults should be `true` in case you want to fallback
+    *        to the default values provided by the `monix-kafka` library
+    *        in `monix/kafka/default.conf`
+    */
+  def apply(source: Config, includeDefaults: Boolean = true): KafkaProducerConfig = {
+    val config = if (!includeDefaults) source else source.withFallback(defaultConf)
+
     KafkaProducerConfig(
       bootstrapServers = config.getString("bootstrap.servers").trim.split("\\s*,\\s*").toList,
       acks = Acks(config.getString("acks")),
@@ -217,5 +274,4 @@ object KafkaProducerConfig {
       monixSinkParallelism = config.getInt("monix.producer.sink.parallelism")
     )
   }
-
 }
