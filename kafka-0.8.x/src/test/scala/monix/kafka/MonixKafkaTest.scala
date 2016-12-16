@@ -29,36 +29,6 @@ import scala.concurrent.duration._
 class MonixKafkaTest extends FunSuite {
   val topicName = "monix-kafka-tests"
 
-  test("publish and listen for one message") {
-    val producerCfg = KafkaProducerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092")
-    )
-
-    val consumerCfg = KafkaConsumerConfig.default.copy(
-      zookeeperConnect = "127.0.0.1:9092",
-      groupId = "kafka-tests",
-      autoOffsetReset = AutoOffsetReset.Smallest
-    )
-
-    val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumers = KafkaSimpleConsumerObservable.streams[String,String](consumerCfg, Map(topicName -> 1), io)
-    assert(consumers.size === 1)
-    val consumer = consumers.head
-
-    try {
-      // Publishing one message
-      val send = producer.send(topicName, "test-message")
-      Await.result(send.runAsync, 30.seconds)
-
-      val first = consumer.take(1).map(_.message()).firstL
-      val result = Await.result(first.runAsync, 30.seconds)
-      assert(result === "test-message")
-    }
-    finally {
-      Await.result(producer.close().runAsync, Duration.Inf)
-    }
-  }
-
   test("full producer/consumer test") {
     val count = 10000
     val producerCfg = KafkaProducerConfig.default.copy(
@@ -66,26 +36,25 @@ class MonixKafkaTest extends FunSuite {
     )
 
     val consumerCfg = KafkaConsumerConfig.default.copy(
-      zookeeperConnect = "127.0.0.1:9092",
+      zookeeperConnect = "127.0.0.1:2181",
       groupId = "kafka-tests",
       autoOffsetReset = AutoOffsetReset.Smallest
     )
 
     val producer = KafkaProducerSink[String,String](producerCfg, io)
-    val consumers = KafkaSimpleConsumerObservable.streams[String,String](consumerCfg, Map(topicName -> 1), io)
-    assert(consumers.size === 1)
-    val consumer = consumers.head
+    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io)
 
     val pushT = Observable.range(0, count)
       .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
       .bufferIntrospective(1024)
-      .runWith(producer)
+      .consumeWith(producer)
 
     val listT = consumer
+      .take(count)
       .map(_.message())
       .toListL
 
-    val (result, _) = Await.result(Task.zip2(Task.fork(listT), Task.fork(pushT)).runAsync, 60.seconds)
+    val (result, _) = Await.result(Task.zip2(Task.fork(listT), Task.fork(pushT)).runAsync, 5.minutes)
     assert(result.map(_.toInt).sum === (0 until count).sum)
   }
 }

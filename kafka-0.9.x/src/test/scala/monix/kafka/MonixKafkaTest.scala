@@ -42,7 +42,7 @@ class MonixKafkaTest extends FunSuite {
     )
 
     val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName), io)
+    val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName)).executeOn(io)
     val consumer = Await.result(consumerTask.runAsync, 60.seconds)
 
     try {
@@ -72,7 +72,7 @@ class MonixKafkaTest extends FunSuite {
     )
 
     val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName), io)
+    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io)
     try {
       // Publishing one message
       val send = producer.send(topicName, "test-message")
@@ -100,7 +100,7 @@ class MonixKafkaTest extends FunSuite {
     )
 
     val producer = KafkaProducerSink[String,String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName), io).take(count)
+    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io).take(count)
 
     val pushT = Observable.range(0, count)
       .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
