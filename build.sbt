@@ -1,7 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys
 import sbtrelease.ReleaseStateTransformations._
 
-val monixVersion = "2.1.1"
+val monixVersion = "2.1.2"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
@@ -194,7 +194,7 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(
     name := "monix-kafka-10",
     libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.10.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+      "org.apache.kafka" %  "kafka-clients" % "0.10.1.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
