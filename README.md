@@ -4,6 +4,45 @@ Monix integration with Kafka
 
 Work in progress!
 
+## Getting Started with Kafka 0.8.x
+
+In SBT:
+
+```scala
+libraryDependencies += "io.monix" %% "monix-kafka-8" % "0.8"
+```
+
+Or in case you're interested in running the tests of this project,
+first download the Kafka server, version `0.8.x` from their 
+[download page](https://kafka.apache.org/downloads.html) (note that
+`0.9.x` or higher do not work with `0.8`), then as the
+[quick start](https://kafka.apache.org/082/documentation.html#quickstart)
+section says, open a terminal window and first start Zookeeper:
+
+```bash
+bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+Then start Kafka:
+
+```bash
+bin/kafka-server-start.sh config/server.properties
+```
+
+Create the topic we need for our tests:
+
+```bash
+bin/kafka-topics.sh --create --zookeeper localhost:2181 \
+  --replication-factor 1 --partitions 1 \
+  --topic monix-kafka-tests
+```
+
+And run the tests:
+
+```bash
+sbt kafka8/test
+```
+
 ## Getting Started with Kafka 0.9.x
 
 In SBT:
@@ -150,6 +189,19 @@ val observable =
 ```
 
 Enjoy! 
+
+## How can I contribute to Monix-Kafka?
+
+We welcome contributions to all projects in the Monix organization and would love 
+for you to help build Monix-Kafka. See our [contributor guide](./CONTRIBUTING.md) for
+more information about how you can get involed.
+
+## Maintainers
+
+The current maintainers (people who can merge pull requests) are:
+
+- Alexandru Nedelcu ([alexandru](https://github.com/alexandru))
+- Alex Gryzlov ([clayrat](https://github.com/clayrat))
 
 ## License
 
