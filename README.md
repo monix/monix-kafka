@@ -166,7 +166,7 @@ observable
   // buffers into batches if the consumer is busy, up to a max size
   .bufferIntrospective(1024)
   // consume everything by pushing into Apache Kafka
-  .runWith(producer)
+  .consumeWith(producer)
   // ready, set, go!
   .runAsync
 ```
