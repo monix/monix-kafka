@@ -29,14 +29,18 @@ import language.existentials
   */
 final case class Serializer[A](
   className: String,
-  classType: Class[_ <: KafkaSerializer[A]]) {
+  classType: Class[_ <: KafkaSerializer[A]],
+  classInstance: Serializer.ClassInstanceProvider[A] = (s: Serializer[A]) => s.classType.newInstance()) {
 
   /** Creates a new instance. */
   def create(): KafkaSerializer[A] =
-    classType.newInstance()
+    classInstance(this)
 }
 
 object Serializer {
+
+  type ClassInstanceProvider[A] = (Serializer[A]) => KafkaSerializer[A]
+
   implicit val forStrings: Serializer[String] =
     Serializer(
       className = "org.apache.kafka.common.serialization.StringSerializer",

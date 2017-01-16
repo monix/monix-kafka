@@ -26,19 +26,26 @@ import language.existentials
   */
 final case class Deserializer[A](
   className: String,
-  classType: Class[_ <: KafkaDecoder[A]]) {
+  classType: Class[_ <: KafkaDecoder[A]],
+  classInstance: Deserializer.ClassInstanceProvider[A] = Deserializer.reflectCreate[A] _) {
 
   /** Creates a new instance. */
-  def create(): KafkaDecoder[A] = {
-    val constructor = classType.getDeclaredConstructors()(0)
-    constructor.getParameterCount match {
-      case 0 => classType.newInstance()
-      case 1 => constructor.newInstance(null).asInstanceOf[KafkaDecoder[A]]
-    }
-  }
+  def create(): KafkaDecoder[A] =
+    classInstance(this)
 }
 
 object Deserializer {
+
+  type ClassInstanceProvider[A] = (Deserializer[A]) => KafkaDecoder[A]
+
+  private def reflectCreate[A](d: Deserializer[A]): KafkaDecoder[A] = {
+    val constructor = d.classType.getDeclaredConstructors()(0)
+    constructor.getParameterCount match {
+      case 0 => d.classType.newInstance()
+      case 1 => constructor.newInstance(null).asInstanceOf[KafkaDecoder[A]]
+    }
+  }
+
   implicit val forStrings: Deserializer[String] =
     Deserializer(
       className = "kafka.serializer.StringDecoder",
