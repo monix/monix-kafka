@@ -24,20 +24,32 @@ import language.existentials
 /** Wraps a Kafka `Serializer`, provided for
   * convenience, since it can be implicitly fetched
   * from the context.
+  *
+  * @param className is the full package path to the Kafka `Serializer`
+  *
+  * @param classType is the actual [[Class]] for [[className]]
+  *
+  * @param constructor creates an instance of [[classType]].
+  *        This is defaulted with a `Serializer.Constructor[A]` function that creates a
+  *        new instance using an assumed empty constructor.
+  *        Supplying this parameter allows for manual provision of the `Serializer`.
   */
 final case class Serializer[A](
   className: String,
   classType: Class[_ <: KafkaSerializer[A]],
-  classInstance: Serializer.ClassInstanceProvider[A] = (s: Serializer[A]) => s.classType.newInstance()) {
+  constructor: Serializer.Constructor[A] = (s: Serializer[A]) => s.classType.newInstance()) {
 
   /** Creates a new instance. */
   def create(): KafkaSerializer[A] =
-    classInstance(this)
+    constructor(this)
 }
 
 object Serializer {
 
-  type ClassInstanceProvider[A] = (Serializer[A]) => KafkaSerializer[A]
+  /** Alias for the function that provides an instance of
+    * the Kafka `Serializer`.
+    */
+  type Constructor[A] = (Serializer[A]) => KafkaSerializer[A]
 
   implicit val forStrings: Serializer[String] =
     Serializer(
