@@ -24,17 +24,33 @@ import language.existentials
 /** Wraps a Kafka `Deserializer`, provided for
   * convenience, since it can be implicitly fetched
   * from the context.
+  *
+  * @param className is the full package path to the Kafka `Deserializer`
+  *
+  * @param classType is the actual [[Class]] for [[className]]
+  *
+  * @param constructor creates an instance of [[classType]].
+  *        This is defaulted with a `Deserializer.Constructor[A]` function that creates a
+  *        new instance using an assumed empty constructor.
+  *        Supplying this parameter allows for manual provision of the `Deserializer`.
   */
 final case class Deserializer[A](
   className: String,
-  classType: Class[_ <: KafkaDeserializer[A]]) {
+  classType: Class[_ <: KafkaDeserializer[A]],
+  constructor: Deserializer.Constructor[A] = (d: Deserializer[A]) => d.classType.newInstance()) {
 
   /** Creates a new instance. */
   def create(): KafkaDeserializer[A] =
-  classType.newInstance()
+    constructor(this)
 }
 
 object Deserializer {
+
+  /** Alias for the function that provides an instance of
+    * the Kafka `Deserializer`.
+    */
+  type Constructor[A] = (Deserializer[A]) => KafkaDeserializer[A]
+
   implicit val forStrings: Deserializer[String] =
     Deserializer(
       className = "org.apache.kafka.common.serialization.StringDeserializer",
