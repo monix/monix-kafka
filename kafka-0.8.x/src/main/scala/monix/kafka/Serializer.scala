@@ -27,7 +27,7 @@ import language.existentials
   *
   * @param className is the full package path to the Kafka `Serializer`
   *
-  * @param classType is the actual [[Class]] for [[className]]
+  * @param classType is the `java.lang.Class` for [[className]]
   *
   * @param constructor creates an instance of [[classType]].
   *        This is defaulted with a `Serializer.Constructor[A]` function that creates a
@@ -52,13 +52,13 @@ object Serializer {
   type Constructor[A] = (Serializer[A]) => KafkaSerializer[A]
 
   implicit val forStrings: Serializer[String] =
-    Serializer(
+    Serializer[String](
       className = "org.apache.kafka.common.serialization.StringSerializer",
       classType = classOf[StringSerializer]
     )
 
   implicit val forByteArray: Serializer[Array[Byte]] =
-    Serializer(
+    Serializer[Array[Byte]](
       className = "org.apache.kafka.common.serialization.ByteArraySerializer",
       classType = classOf[ByteArraySerializer]
     )

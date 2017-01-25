@@ -27,7 +27,7 @@ import language.existentials
   *
   * @param className is the full package path to the Kafka `Deserializer`
   *
-  * @param classType is the actual [[Class]] for [[className]]
+  * @param classType is the `java.lang.Class` for [[className]]
   *
   * @param constructor creates an instance of [[classType]].
   *        This is defaulted with a `Deserializer.Constructor[A]` function that creates a
@@ -52,25 +52,25 @@ object Deserializer {
   type Constructor[A] = (Deserializer[A]) => KafkaDeserializer[A]
 
   implicit val forStrings: Deserializer[String] =
-    Deserializer(
+    Deserializer[String](
       className = "org.apache.kafka.common.serialization.StringDeserializer",
       classType = classOf[StringDeserializer]
     )
 
   implicit val forByteArray: Deserializer[Array[Byte]] =
-    Deserializer(
+    Deserializer[Array[Byte]](
       className = "org.apache.kafka.common.serialization.ByteArrayDeserializer",
       classType = classOf[ByteArrayDeserializer]
     )
 
   implicit val forJavaInteger: Deserializer[java.lang.Integer] =
-    Deserializer(
+    Deserializer[java.lang.Integer](
       className = "org.apache.kafka.common.serialization.IntegerDeserializer",
       classType = classOf[IntegerDeserializer]
     )
 
   implicit val forJavaLong: Deserializer[java.lang.Long] =
-    Deserializer(
+    Deserializer[java.lang.Long](
       className = "org.apache.kafka.common.serialization.LongDeserializer",
       classType = classOf[LongDeserializer]
     )

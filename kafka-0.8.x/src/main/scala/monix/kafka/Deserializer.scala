@@ -26,7 +26,7 @@ import language.existentials
   *
   * @param className is the full package path to the Kafka `Decoder`
   *
-  * @param classType is the actual [[Class]] for [[className]]
+  * @param classType is the `java.lang.Class` for [[className]]
   *
   * @param constructor creates an instance of [[classType]].
   *        This is defaulted with a `Deserializer.Constructor[A]` function that creates a
@@ -59,13 +59,13 @@ object Deserializer {
   }
 
   implicit val forStrings: Deserializer[String] =
-    Deserializer(
+    Deserializer[String](
       className = "kafka.serializer.StringDecoder",
       classType = classOf[StringDecoder]
     )
 
   implicit val forByteArray: Deserializer[Array[Byte]] =
-    Deserializer(
+    Deserializer[Array[Byte]](
       className = "kafka.serializer.DefaultDecoder",
       classType = classOf[DefaultDecoder]
     )
