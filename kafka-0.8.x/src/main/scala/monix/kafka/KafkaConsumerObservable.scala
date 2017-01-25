@@ -92,9 +92,9 @@ final class KafkaConsumerObservable[K, V] private
 
     val cancelable = rawStream
       // In case of error or completion we need to close the connector
-      .doOnTerminate(connectorSubscription.cancel())
+      .doOnTerminate(_ => connectorSubscription.cancel())
       // This might be problematic if the shutdown isn't thread-safe:
-      .doOnSubscriptionCancel(connectorSubscription.cancel())
+      .doOnSubscriptionCancel(() => connectorSubscription.cancel())
       // Ensuring we have an asynchronous boundary
       .executeWithFork
       .unsafeSubscribeFn(out)
