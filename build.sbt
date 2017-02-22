@@ -85,7 +85,7 @@ lazy val sharedSettings = Seq(
   // For warning of unused imports
   scalacOptions += "-Ywarn-unused-import",
   scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) <<= (scalacOptions in (Compile, console)),
+  scalacOptions in (Test, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
 
   scalacOptions in doc ++=
     Opts.doc.title(s"Monix"),
@@ -215,4 +215,3 @@ lazy val kafka8 = project.in(file("kafka-0.8.x"))
       "org.apache.kafka" %% "kafka" % "0.8.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
-
