@@ -1,3 +1,7 @@
+## Version 0.11 (Feb 22, 2017)
+
+- Updates Monix to 2.2.2
+
 ## Version 0.9 (Jan 25, 2016)
 
 - Updates Monix to 2.2.0
