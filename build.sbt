@@ -1,7 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys
 import sbtrelease.ReleaseStateTransformations._
 
-val monixVersion = "2.2.2"
+val monixVersion = "2.2.3"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
