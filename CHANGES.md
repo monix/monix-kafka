@@ -1,3 +1,8 @@
+## Version 0.13 (Mar 27, 2017)
+
+- Updates Monix to 2.2.4
+- Activate Scala 2.10 and 2.12 cross-builds
+
 ## Version 0.12 (Mar 10, 2017)
 
 - Updates Monix to 2.2.3

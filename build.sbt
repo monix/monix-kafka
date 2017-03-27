@@ -1,7 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys
 import sbtrelease.ReleaseStateTransformations._
 
-val monixVersion = "2.2.3"
+val monixVersion = "2.2.4"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
@@ -25,7 +25,9 @@ lazy val sharedSettings = Seq(
     "-language:experimental.macros",
     // possibly deprecated options
     "-Ywarn-dead-code",
-    "-Ywarn-inaccessible"
+    "-Ywarn-inaccessible",
+    "-language:higherKinds",
+    "-language:existentials"
   ),
 
   // Force building with Java 8
@@ -113,21 +115,6 @@ lazy val sharedSettings = Seq(
   testForkedParallel in IntegrationTest := false,
   concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
 
-  resolvers ++= Seq(
-    "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases",
-    Resolver.sonatypeRepo("releases")
-  ),
-
-  libraryDependencies ++= Seq(
-    "io.monix" %% "monix-reactive" % monixVersion,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-    "com.typesafe" % "config" % "1.3.0",
-    "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
-    // For testing ...
-    "ch.qos.logback" % "logback-classic" % "1.1.3" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.0" % "test"
-  ),
-
   // -- Settings meant for deployment on oss.sonatype.org
 
   useGpg := true,
@@ -135,17 +122,18 @@ lazy val sharedSettings = Seq(
   usePgpKeyHex("2673B174C4071B0E"),
 
   publishMavenStyle := true,
-  releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value,
 
+  releaseCrossBuild := false,
   releaseProcess := Seq[ReleaseStep](
     checkSnapshotDependencies,
     inquireVersions,
     runClean,
+    releaseStepCommandAndRemaining("+test:compile"),
     setReleaseVersion,
     commitReleaseVersion,
     tagRelease,
-    publishArtifacts,
+    releaseStepCommandAndRemaining("+publishSigned"),
     setNextVersion,
     commitNextVersion,
     pushChanges
@@ -177,11 +165,28 @@ lazy val sharedSettings = Seq(
     </scm>
     <developers>
       <developer>
-        <id>alex_ndc</id>
+        <id>alexelcu</id>
         <name>Alexandru Nedelcu</name>
         <url>https://alexn.org/</url>
       </developer>
     </developers>
+)
+
+lazy val commonDependencies = Seq(
+  resolvers ++= Seq(
+    "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases",
+    Resolver.sonatypeRepo("releases")
+  ),
+
+  libraryDependencies ++= Seq(
+    "io.monix" %% "monix-reactive" % monixVersion,
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
+    "com.typesafe" % "config" % "1.3.0",
+    "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
+    // For testing ...
+    "ch.qos.logback" % "logback-classic" % "1.1.3" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+  )
 )
 
 lazy val monixKafka = project.in(file("."))
@@ -190,27 +195,39 @@ lazy val monixKafka = project.in(file("."))
   .aggregate(kafka10, kafka9, kafka8)
 
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
+  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
+  .settings(commonDependencies)
   .settings(
     name := "monix-kafka-10",
+    scalaVersion := "2.12.1",
+    crossScalaVersions := Seq("2.11.8", "2.12.1"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.10.1.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
 lazy val kafka9 = project.in(file("kafka-0.9.x"))
+  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
+  .settings(commonDependencies)
   .settings(
     name := "monix-kafka-9",
+    scalaVersion := "2.12.1",
+    crossScalaVersions := Seq("2.11.8", "2.12.1"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
 lazy val kafka8 = project.in(file("kafka-0.8.x"))
+  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
+  .settings(commonDependencies)
   .settings(
     name := "monix-kafka-8",
+    scalaVersion := "2.11.8",
+    crossScalaVersions := Seq("2.11.8"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %% "kafka" % "0.8.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )

@@ -19,7 +19,6 @@ package monix.kafka
 
 import org.apache.kafka.common.serialization._
 import org.apache.kafka.common.serialization.{Serializer => KafkaSerializer}
-import language.existentials
 
 /** Wraps a Kafka `Serializer`, provided for
   * convenience, since it can be implicitly fetched

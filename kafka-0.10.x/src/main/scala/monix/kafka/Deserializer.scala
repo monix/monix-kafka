@@ -21,7 +21,6 @@ import java.nio.ByteBuffer
 import org.apache.kafka.common.serialization._
 import org.apache.kafka.common.serialization.{Deserializer => KafkaDeserializer}
 import org.apache.kafka.common.utils.Bytes
-import language.existentials
 
 /** Wraps a Kafka `Deserializer`, provided for
   * convenience, since it can be implicitly fetched

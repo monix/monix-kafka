@@ -18,7 +18,6 @@
 package monix.kafka
 
 import kafka.serializer.{DefaultDecoder, StringDecoder, Decoder => KafkaDecoder}
-import language.existentials
 
 /** Wraps a Kafka `Decoder`, provided for
   * convenience, since it can be implicitly fetched
