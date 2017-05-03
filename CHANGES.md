@@ -1,3 +1,9 @@
+## Version 0.14 (May 3, 2017)
+
+- Updates Monix to 2.3.0
+- Updates Kafka 10 to 0.10.2.1
+- Updates Scala to 2.11.11 and 2.12.2
+
 ## Version 0.13 (Mar 27, 2017)
 
 - Updates Monix to 2.2.4

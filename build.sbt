@@ -1,7 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys
 import sbtrelease.ReleaseStateTransformations._
 
-val monixVersion = "2.2.4"
+val monixVersion = "2.3.0"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
@@ -12,7 +12,7 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.11.8",
+  scalaVersion := "2.11.11",
 
   scalacOptions ++= Seq(
     // warnings
@@ -200,10 +200,10 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-10",
-    scalaVersion := "2.12.1",
-    crossScalaVersions := Seq("2.11.8", "2.12.1"),
+    scalaVersion := "2.12.2",
+    crossScalaVersions := Seq("2.11.11", "2.12.2"),
     libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.10.1.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+      "org.apache.kafka" %  "kafka-clients" % "0.10.2.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
@@ -213,8 +213,8 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-9",
-    scalaVersion := "2.12.1",
-    crossScalaVersions := Seq("2.11.8", "2.12.1"),
+    scalaVersion := "2.12.2",
+    crossScalaVersions := Seq("2.11.11", "2.12.2"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
@@ -226,8 +226,8 @@ lazy val kafka8 = project.in(file("kafka-0.8.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-8",
-    scalaVersion := "2.11.8",
-    crossScalaVersions := Seq("2.11.8"),
+    scalaVersion := "2.11.11",
+    crossScalaVersions := Seq("2.11.11"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %% "kafka" % "0.8.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
