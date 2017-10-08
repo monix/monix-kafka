@@ -192,7 +192,20 @@ lazy val commonDependencies = Seq(
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka10, kafka9, kafka8)
+  .aggregate(kafka11, kafka10, kafka9, kafka8)
+
+lazy val kafka11 = project.in(file("kafka-0.11.x"))
+  .enablePlugins(CrossPerProjectPlugin)
+  .settings(sharedSettings)
+  .settings(commonDependencies)
+  .settings(
+    name := "monix-kafka-11",
+    scalaVersion := "2.12.3",
+    crossScalaVersions := Seq("2.11.11", "2.12.3"),
+    libraryDependencies ++= Seq(
+      "org.apache.kafka" %  "kafka-clients" % "0.11.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+    )
+  )
 
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .enablePlugins(CrossPerProjectPlugin)
@@ -200,8 +213,8 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-10",
-    scalaVersion := "2.12.2",
-    crossScalaVersions := Seq("2.11.11", "2.12.2"),
+    scalaVersion := "2.12.3",
+    crossScalaVersions := Seq("2.11.11", "2.12.3"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.10.2.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
@@ -213,8 +226,8 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-9",
-    scalaVersion := "2.12.2",
-    crossScalaVersions := Seq("2.11.11", "2.12.2"),
+    scalaVersion := "2.12.3",
+    crossScalaVersions := Seq("2.11.11", "2.12.3"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
