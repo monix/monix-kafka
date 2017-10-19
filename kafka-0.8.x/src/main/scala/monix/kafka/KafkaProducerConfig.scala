@@ -111,6 +111,22 @@ import monix.kafka.config._
   *        tight loop. This backoff applies to all requests sent by the
   *        consumer to the broker.
   *
+  * @param metricReporters is the `metric.reporters` setting.
+  *         A list of classes to use as metrics reporters. Implementing the
+  *         `MetricReporter` interface allows plugging in classes that will
+  *         be notified of new metric creation. The JmxReporter is always
+  *         included to register JMX statistics
+  *
+  * @param metricsNumSamples is the `metrics.num.samples` setting.
+  *         The number of samples maintained to compute metrics.
+  *
+  * @param metricsSampleWindow is the `metrics.sample.window.ms` setting.
+  *         The metrics system maintains a configurable number of samples over
+  *         a fixed window size. This configuration controls the size of the
+  *         window. For example we might maintain two samples each measured
+  *         over a 30 second period. When a window expires we erase and
+  *         overwrite the oldest window.
+  *
   * @param retryBackoffTime is the `retry.backoff.ms` setting.
   *        The amount of time to wait before attempting to retry a failed
   *        request to a given topic partition. This avoids repeatedly
@@ -136,6 +152,9 @@ case class KafkaProducerConfig(
   blockOnBufferFull: Boolean,
   metadataFetchTimeout: FiniteDuration,
   metadataMaxAge: FiniteDuration,
+  metricReporters: List[String],
+  metricsNumSamples: Int,
+  metricsSampleWindow: FiniteDuration,
   reconnectBackoffTime: FiniteDuration,
   retryBackoffTime: FiniteDuration,
   monixSinkParallelism: Int) {
@@ -162,6 +181,9 @@ case class KafkaProducerConfig(
     "block.on.buffer.full" -> blockOnBufferFull.toString,
     "metadata.fetch.timeout.ms" -> metadataFetchTimeout.toMillis.toString,
     "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString,
+    "metric.reporters" -> metricReporters.mkString(","),
+    "metrics.num.samples" -> metricsNumSamples.toString,
+    "metrics.sample.window.ms" -> metricsSampleWindow.toMillis.toString,
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
@@ -269,6 +291,9 @@ object KafkaProducerConfig {
       blockOnBufferFull = config.getBoolean("block.on.buffer.full"),
       metadataFetchTimeout = config.getInt("metadata.fetch.timeout.ms").millis,
       metadataMaxAge = config.getInt("metadata.max.age.ms").millis,
+      metricReporters = config.getString("metric.reporters").trim.split("\\s*,\\s*").toList,
+      metricsNumSamples = config.getInt("metrics.num.samples"),
+      metricsSampleWindow = config.getInt("metrics.sample.window.ms").millis,
       reconnectBackoffTime = config.getInt("reconnect.backoff.ms").millis,
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       monixSinkParallelism = config.getInt("monix.producer.sink.parallelism")
