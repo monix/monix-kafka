@@ -32,7 +32,8 @@ class MonixKafkaTest extends FunSuite {
   test("full producer/consumer test") {
     val count = 10000
     val producerCfg = KafkaProducerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092")
+      bootstrapServers = List("127.0.0.1:9092"),
+      clientId = "monix-kafka-8-producer-test"
     )
 
     val consumerCfg = KafkaConsumerConfig.default.copy(
