@@ -29,6 +29,7 @@ import com.typesafe.config.ConfigException.BadValue
   *    before acknowledgement is received from downstream
   *  - [[ObservableCommitOrder.AfterAck]] specifies to do a commit
   *    after acknowledgement is received from downstream
+  *  - [[ObservableCommitOrder.NoAck]] specifies to skip committing
   */
 sealed trait  ObservableCommitOrder extends Serializable {
   def id: String
@@ -36,11 +37,14 @@ sealed trait  ObservableCommitOrder extends Serializable {
   def isBefore: Boolean =
     this match {
       case ObservableCommitOrder.BeforeAck => true
-      case ObservableCommitOrder.AfterAck => false
+      case _ => false
     }
 
   def isAfter: Boolean =
-    !isBefore
+    this match {
+      case ObservableCommitOrder.AfterAck => true
+      case _ => false
+    }
 }
 
 object ObservableCommitOrder {
@@ -49,6 +53,7 @@ object ObservableCommitOrder {
     id match {
       case BeforeAck.id => BeforeAck
       case AfterAck.id => AfterAck
+      case NoAck.id => NoAck
       case _ =>
         throw new BadValue(
           "kafka.monix.observable.commit.order",
@@ -67,5 +72,11 @@ object ObservableCommitOrder {
     */
   case object AfterAck extends ObservableCommitOrder {
     val id = "after-ack"
+  }
+
+  /** Do not `commit` in the Kafka Consumer.
+    */
+  case object NoAck extends ObservableCommitOrder {
+    val id = "no-ack"
   }
 }
