@@ -120,6 +120,83 @@ And run the tests:
 sbt kafka10/test
 ```
 
+
+## Getting Started with Kafka 0.11.x
+
+In SBT:
+
+```scala
+libraryDependencies += "io.monix" %% "monix-kafka-11" % "0.14"
+```
+
+Or in case you're interested in running the tests of this project,
+first download the Kafka server, version `0.11.x` from their 
+[download page](https://kafka.apache.org/downloads.html), then as the
+[quick start](https://kafka.apache.org/documentation.html#quickstart)
+section says, open a terminal window and first start Zookeeper:
+
+```bash
+bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+Then start Kafka:
+
+```bash
+bin/kafka-server-start.sh config/server.properties
+```
+
+Create the topic we need for our tests:
+
+```bash
+bin/kafka-topics.sh --create --zookeeper localhost:2181 \
+  --replication-factor 1 --partitions 1 \
+  --topic monix-kafka-tests
+```
+
+And run the tests:
+
+```bash
+sbt kafka11/test
+```
+
+## Getting Started with Kafka 1.0.x
+
+In SBT:
+
+```scala
+libraryDependencies += "io.monix" %% "monix-kafka-1x" % "0.14"
+```
+
+Or in case you're interested in running the tests of this project,
+first download the Kafka server, version `1.0.x` from their 
+[download page](https://kafka.apache.org/downloads.html), then as the
+[quick start](https://kafka.apache.org/documentation.html#quickstart)
+section says, open a terminal window and first start Zookeeper:
+
+```bash
+bin/zookeeper-server-start.sh config/zookeeper.properties
+```
+
+Then start Kafka:
+
+```bash
+bin/kafka-server-start.sh config/server.properties
+```
+
+Create the topic we need for our tests:
+
+```bash
+bin/kafka-topics.sh --create --zookeeper localhost:2181 \
+  --replication-factor 1 --partitions 1 \
+  --topic monix-kafka-tests
+```
+
+And run the tests:
+
+```bash
+sbt kafka1x/test
+```
+
 ## Usage
 
 The producer:
