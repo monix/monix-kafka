@@ -199,7 +199,7 @@ lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(
-    name := "monix-kafka-11",
+    name := "monix-kafka-1x",
     scalaVersion := "2.12.4",
     crossScalaVersions := Seq("2.11.11", "2.12.4"),
     libraryDependencies ++= Seq(
