@@ -171,7 +171,7 @@ observable
   .runAsync
 ```
 
-For consuming from Apache Kafka:
+For consuming from Apache Kafka (Version 0.11.x and above):
 
 ```scala
 import monix.kafka._
@@ -181,11 +181,8 @@ val consumerCfg = KafkaConsumerConfig.default.copy(
   groupId = "kafka-tests"
 )
 
-import monix.execution.Scheduler
-val io = Scheduler.io()
-
 val observable = 
-  KafkaConsumerObservable[String,String](consumerCfg, List("my-topic"), io)
+  KafkaConsumerObservable[String,String](consumerCfg, List("my-topic"))
 ```
 
 Enjoy! 
