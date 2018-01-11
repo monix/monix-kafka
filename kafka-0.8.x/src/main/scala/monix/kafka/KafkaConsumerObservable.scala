@@ -21,7 +21,7 @@ import kafka.consumer._
 import kafka.message.MessageAndMetadata
 import monix.eval.{Callback, Task}
 import monix.execution.Cancelable
-import monix.execution.cancelables.{BooleanCancelable, MultiAssignmentCancelable}
+import monix.execution.cancelables.{BooleanCancelable, OrderedCancelable}
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import scala.concurrent.blocking
@@ -42,7 +42,7 @@ final class KafkaConsumerObservable[K, V] private
   def unsafeSubscribeFn(out: Subscriber[MessageAndMetadata[K, V]]): Cancelable = {
     import out.scheduler
 
-    val conn = MultiAssignmentCancelable()
+    val conn = OrderedCancelable()
     val callback = new Callback[ConsumerConnector] {
       def onError(ex: Throwable): Unit =
         out.onError(ex)
@@ -56,7 +56,7 @@ final class KafkaConsumerObservable[K, V] private
 
   private def init(
     connector: ConsumerConnector,
-    conn: MultiAssignmentCancelable,
+    conn: OrderedCancelable,
     out: Subscriber[MessageAndMetadata[K, V]]): Unit = {
 
     val streamsMap = connector.createMessageStreams(
