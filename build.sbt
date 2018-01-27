@@ -1,7 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys
 import sbtrelease.ReleaseStateTransformations._
 
-val monixVersion = "2.3.0"
+val monixVersion = "3.0.0-M3"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
@@ -12,7 +12,7 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.11.11",
+  scalaVersion := "2.11.12",
 
   scalacOptions ++= Seq(
     // warnings
@@ -200,8 +200,8 @@ lazy val kafka11 = project.in(file("kafka-0.11.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-11",
-    scalaVersion := "2.12.3",
-    crossScalaVersions := Seq("2.11.11", "2.12.3"),
+    scalaVersion := "2.12.4",
+    crossScalaVersions := Seq("2.11.12", "2.12.4"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.11.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
@@ -213,8 +213,8 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-10",
-    scalaVersion := "2.12.3",
-    crossScalaVersions := Seq("2.11.11", "2.12.3"),
+    scalaVersion := "2.12.4",
+    crossScalaVersions := Seq("2.11.12", "2.12.4"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.10.2.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
@@ -226,8 +226,8 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-9",
-    scalaVersion := "2.12.3",
-    crossScalaVersions := Seq("2.11.11", "2.12.3"),
+    scalaVersion := "2.12.4",
+    crossScalaVersions := Seq("2.11.12", "2.12.4"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
@@ -239,8 +239,8 @@ lazy val kafka8 = project.in(file("kafka-0.8.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-8",
-    scalaVersion := "2.11.11",
-    crossScalaVersions := Seq("2.11.11"),
+    scalaVersion := "2.11.12",
+    crossScalaVersions := Seq("2.11.12"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %% "kafka" % "0.8.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
