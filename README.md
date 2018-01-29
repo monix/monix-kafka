@@ -4,11 +4,11 @@ Monix integration with Kafka
 
 Work in progress!
 
-1. [Getting Started with Kafka 1.0.x](#Getting Started with Kafka 1.0.x)
-2. [Getting Started with Kafka 0.11.x](#Getting Started with Kafka 0.11.x)
-3. [Getting Started with Kafka 0.10.x](#Getting Started with Kafka 0.10.x)
-4. [Getting Started with Kafka 0.9.x](#Getting Started with Kafka 0.9.x)
-5. [Getting Started with Kafka 0.8.x (support dropped)](#Getting Started with Kafka 0.8.x)
+1. [Getting Started with Kafka 1.0.x](#getting-started-with-kafka-1.0.x)
+2. [Getting Started with Kafka 0.11.x](#getting-started-with-kafka-0.11.x)
+3. [Getting Started with Kafka 0.10.x](#getting-started-with-kafka-0.10.x)
+4. [Getting Started with Kafka 0.9.x](#getting-started-with-kafka-0.9.x)
+5. [Getting Started with Kafka 0.8.x (support dropped)](#getting-started-with-kafka-0.8.x)
 
 ## Getting Started with Kafka 1.0.x 
 
