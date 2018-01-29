@@ -141,7 +141,7 @@ lazy val sharedSettings = Seq(
   usePgpKeyHex("2673B174C4071B0E"),
 
   publishMavenStyle := true,
-  
+
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
@@ -199,7 +199,17 @@ lazy val commonDependencies = Seq(
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka11, kafka10, kafka9)
+  .aggregate(kafka1x, kafka11, kafka10, kafka9)
+
+lazy val kafka1x = project.in(file("kafka-1.0.x"))
+  .settings(sharedSettings)
+  .settings(commonDependencies)
+  .settings(
+    name := "monix-kafka-1x",
+    libraryDependencies ++= Seq(
+      "org.apache.kafka" %  "kafka-clients" % "1.0.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+    )
+  )
 
 lazy val kafka11 = project.in(file("kafka-0.11.x"))
   .settings(sharedSettings)
