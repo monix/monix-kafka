@@ -1,7 +1,9 @@
 import com.typesafe.sbt.pgp.PgpKeys
-import sbtrelease.ReleaseStateTransformations._
 
-val monixVersion = "2.3.0"
+val monixVersion = "2.3.3"
+
+addCommandAlias("ci",      ";+clean ;+test:compile ;+doc")
+addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
@@ -12,7 +14,8 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.11.11",
+  scalaVersion := "2.12.4",
+  crossScalaVersions := Seq("2.11.12", "2.12.4"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -115,6 +118,22 @@ lazy val sharedSettings = Seq(
   testForkedParallel in IntegrationTest := false,
   concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
 
+  headerLicense := Some(HeaderLicense.Custom(
+    """|Copyright (c) 2014-2018 by The Monix Project Developers.
+       |
+       |Licensed under the Apache License, Version 2.0 (the "License");
+       |you may not use this file except in compliance with the License.
+       |You may obtain a copy of the License at
+       |
+       |    http://www.apache.org/licenses/LICENSE-2.0
+       |
+       |Unless required by applicable law or agreed to in writing, software
+       |distributed under the License is distributed on an "AS IS" BASIS,
+       |WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+       |See the License for the specific language governing permissions and
+       |limitations under the License."""
+    .stripMargin)),
+
   // -- Settings meant for deployment on oss.sonatype.org
 
   useGpg := true,
@@ -122,23 +141,7 @@ lazy val sharedSettings = Seq(
   usePgpKeyHex("2673B174C4071B0E"),
 
   publishMavenStyle := true,
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value,
-
-  releaseCrossBuild := false,
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    runClean,
-    releaseStepCommandAndRemaining("+test:compile"),
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    releaseStepCommandAndRemaining("+publishSigned"),
-    setNextVersion,
-    commitNextVersion,
-    pushChanges
-  ),
-
+  
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
@@ -172,6 +175,10 @@ lazy val sharedSettings = Seq(
     </developers>
 )
 
+def mimaSettings(projectName: String) = Seq(
+  mimaPreviousArtifacts := Set("io.monix" %% projectName % "0.14")
+)
+
 lazy val commonDependencies = Seq(
   resolvers ++= Seq(
     "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases",
@@ -180,68 +187,70 @@ lazy val commonDependencies = Seq(
 
   libraryDependencies ++= Seq(
     "io.monix" %% "monix-reactive" % monixVersion,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.5.0",
-    "com.typesafe" % "config" % "1.3.0",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
+    "com.typesafe" % "config" % "1.3.2",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.21",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.1.3" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.0" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.3" % "test"
   )
 )
 
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka11, kafka10, kafka9, kafka8)
+  .aggregate(kafka11, kafka10, kafka9)
 
 lazy val kafka11 = project.in(file("kafka-0.11.x"))
-  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-11",
-    scalaVersion := "2.12.3",
-    crossScalaVersions := Seq("2.11.11", "2.12.3"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.11.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
-  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
   .settings(commonDependencies)
+  .settings(mimaSettings("monix-kafka-10"))
   .settings(
     name := "monix-kafka-10",
-    scalaVersion := "2.12.3",
-    crossScalaVersions := Seq("2.11.11", "2.12.3"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.10.2.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
 lazy val kafka9 = project.in(file("kafka-0.9.x"))
-  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
   .settings(commonDependencies)
+  .settings(mimaSettings("monix-kafka-9"))
   .settings(
     name := "monix-kafka-9",
-    scalaVersion := "2.12.3",
-    crossScalaVersions := Seq("2.11.11", "2.12.3"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
 
-lazy val kafka8 = project.in(file("kafka-0.8.x"))
-  .enablePlugins(CrossPerProjectPlugin)
-  .settings(sharedSettings)
-  .settings(commonDependencies)
-  .settings(
-    name := "monix-kafka-8",
-    scalaVersion := "2.11.11",
-    crossScalaVersions := Seq("2.11.11"),
-    libraryDependencies ++= Seq(
-      "org.apache.kafka" %% "kafka" % "0.8.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
-    )
-  )
+//------------- For Release
+
+useGpg := true
+enablePlugins(GitVersioning)
+
+/* The BaseVersion setting represents the previously released version. */
+git.baseVersion := "0.14"
+
+val ReleaseTag = """^v(\d+\.\d+\.\d+(?:[-.]\w+)?)$""".r
+git.gitTagToVersionNumber := {
+  case ReleaseTag(v) => Some(v)
+  case _ => None
+}
+
+git.formattedShaVersion := {
+  val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, git.uncommittedSignifier.value)
+
+  git.gitHeadCommit.value map { _.substring(0, 7) } map { sha =>
+    git.baseVersion.value + "-" + sha + suffix
+  }
+}
