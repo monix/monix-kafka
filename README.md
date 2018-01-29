@@ -4,11 +4,16 @@ Monix integration with Kafka
 
 Work in progress!
 
+## Table of Contents
 1. [Getting Started with Kafka 1.0.x](#getting-started-with-kafka-10x)
 2. [Getting Started with Kafka 0.11.x](#getting-started-with-kafka-011x)
 3. [Getting Started with Kafka 0.10.x](#getting-started-with-kafka-010x)
 4. [Getting Started with Kafka 0.9.x](#getting-started-with-kafka-09x)
-5. [Getting Started with Kafka 0.8.x (support dropped)](#getting-started-with-kafka-08x)
+5. [Getting Started with Kafka 0.8.x (no longer supported)](#getting-started-with-kafka-08x)
+6. [Usage](#usage)
+7. [How can I contribute to Monix-Kafka?](#how-can-i-contribute-to-monix-kafka?)
+8. [Maintainers](#maintainers)
+9. [License](#license)
 
 ## Getting Started with Kafka 1.0.x 
 
@@ -283,6 +288,8 @@ The current maintainers (people who can merge pull requests) are:
 
 - Alexandru Nedelcu ([alexandru](https://github.com/alexandru))
 - Alex Gryzlov ([clayrat](https://github.com/clayrat))
+- Piotr Gawryś ([Avasil](https://github.com/Avasil))
+- Leandro Bolivar ([leandrob13](https://github.com/leandrob13))
 
 ## License
 
