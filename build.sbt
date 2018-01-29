@@ -202,13 +202,10 @@ lazy val monixKafka = project.in(file("."))
   .aggregate(kafka1x, kafka11, kafka10, kafka9)
 
 lazy val kafka1x = project.in(file("kafka-1.0.x"))
-  .enablePlugins(CrossPerProjectPlugin)
   .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-1x",
-    scalaVersion := "2.12.4",
-    crossScalaVersions := Seq("2.11.11", "2.12.4"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "1.0.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
