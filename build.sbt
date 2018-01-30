@@ -1,5 +1,3 @@
-import com.typesafe.sbt.pgp.PgpKeys
-
 val monixVersion = "2.3.3"
 
 addCommandAlias("ci",      ";+clean ;+test:compile ;+doc")
@@ -135,11 +133,6 @@ lazy val sharedSettings = Seq(
     .stripMargin)),
 
   // -- Settings meant for deployment on oss.sonatype.org
-
-  useGpg := true,
-  useGpgAgent := true,
-  usePgpKeyHex("2673B174C4071B0E"),
-
   publishMavenStyle := true,
 
   publishTo := {
@@ -244,8 +237,6 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
   )
 
 //------------- For Release
-
-useGpg := true
 enablePlugins(GitVersioning)
 
 /* The BaseVersion setting represents the previously released version. */

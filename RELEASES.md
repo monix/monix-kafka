@@ -16,6 +16,31 @@ credentials += Credentials(
 )
 ```
 
+You might also need to configure the [sbt-pgp](http://www.scala-sbt.org/sbt-pgp/)
+plugin. Even if it's included in `plugins.sbt`, you might want to tune it according
+to your local setup. So if it doesn't work out, you can try playing its settings.
+
+For example you could also try adding these in `$HOME/.sbt/1.0/build.sbt`:
+
+```scala
+useGpg := true
+useGpgAgent := true
+```
+
+Plus if you do that, you'd need to add the plugin globally as well, so 
+according to the official docs you need to edit 
+`$HOME/.sbt/1.0/plugins/gpg.sbt` and add something like:
+
+```scala
+addSbtPlugin("com.jsuereth" % "sbt-pgp" % "1.1.0")
+```
+
+You can then test that you can sign packages locally with:
+
+```
+sbt +publishLocalSigned
+```
+
 In order to release a new version, these commands need to be executed:
 
 ```
