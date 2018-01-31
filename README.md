@@ -20,7 +20,7 @@ Work in progress!
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-1x" % "0.14"
+libraryDependencies += "io.monix" %% "monix-kafka-1x" % "0.15"
 ```
 
 Or in case you're interested in running the tests of this project,
@@ -58,7 +58,7 @@ sbt kafka1x/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-11" % "0.14"
+libraryDependencies += "io.monix" %% "monix-kafka-11" % "0.15"
 ```
 
 Or in case you're interested in running the tests of this project,
@@ -96,7 +96,7 @@ sbt kafka11/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-10" % "0.14"
+libraryDependencies += "io.monix" %% "monix-kafka-10" % "0.15"
 ```
 
 Or in case you're interested in running the tests of this project,
@@ -134,7 +134,7 @@ sbt kafka10/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-9" % "0.14"
+libraryDependencies += "io.monix" %% "monix-kafka-9" % "0.15"
 ```
 
 Or in case you're interested in running the tests of this project,
