@@ -237,12 +237,15 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
   )
 
 //------------- For Release
+
 enablePlugins(GitVersioning)
+
+isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
 git.baseVersion := "0.14"
 
-val ReleaseTag = """^v(\d+\.\d+\.\d+(?:[-.]\w+)?)$""".r
+val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {
   case ReleaseTag(v) => Some(v)
   case _ => None
