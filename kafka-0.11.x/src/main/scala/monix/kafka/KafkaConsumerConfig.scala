@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2014-2016 by its authors. Some rights reserved.
- * See the project homepage at: https://github.com/monixio/monix-kafka
+ * Copyright (c) 2014-2018 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -215,6 +214,7 @@ final case class KafkaConsumerConfig(
   enableAutoCommit: Boolean,
   excludeInternalTopics: Boolean,
   maxPollRecords: Int,
+  maxPollInterval: FiniteDuration,
   receiveBufferInBytes: Int,
   requestTimeout: FiniteDuration,
   saslKerberosServiceName: Option[String],
@@ -256,6 +256,7 @@ final case class KafkaConsumerConfig(
     "enable.auto.commit" -> enableAutoCommit.toString,
     "exclude.internal.topics" -> excludeInternalTopics.toString,
     "max.poll.records" -> maxPollRecords.toString,
+    "max.poll.interval.ms" -> maxPollInterval.toMillis.toString,
     "receive.buffer.bytes" -> receiveBufferInBytes.toString,
     "request.timeout.ms" -> requestTimeout.toMillis.toString,
     "sasl.kerberos.service.name" -> saslKerberosServiceName.orNull,
@@ -391,6 +392,7 @@ object KafkaConsumerConfig {
       enableAutoCommit = config.getBoolean("enable.auto.commit"),
       excludeInternalTopics = config.getBoolean("exclude.internal.topics"),
       maxPollRecords = config.getInt("max.poll.records"),
+      maxPollInterval = config.getInt("max.poll.interval.ms").millis,
       receiveBufferInBytes = config.getInt("receive.buffer.bytes"),
       requestTimeout = config.getInt("request.timeout.ms").millis,
       saslKerberosServiceName = getOptString("sasl.kerberos.service.name"),
