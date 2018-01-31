@@ -30,16 +30,19 @@ import scala.collection.JavaConverters._
 class MonixKafkaTest extends FunSuite {
   val topicName = "monix-kafka-tests"
 
-  test("publish one message") {
-    val producerCfg = KafkaProducerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092")
-    )
+  val producerCfg = KafkaProducerConfig.default.copy(
+    bootstrapServers = List("127.0.0.1:9092"),
+    clientId = "monix-kafka-11-producer-test"
+  )
 
-    val consumerCfg = KafkaConsumerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092"),
-      groupId = "kafka-tests",
-      autoOffsetReset = AutoOffsetReset.Earliest
-    )
+  val consumerCfg = KafkaConsumerConfig.default.copy(
+    bootstrapServers = List("127.0.0.1:9092"),
+    groupId = "kafka-tests",
+    clientId = "monix-kafka-11-consumer-test",
+    autoOffsetReset = AutoOffsetReset.Earliest
+  )
+
+  test("publish one message") {
 
     val producer = KafkaProducer[String,String](producerCfg, io)
     val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName)).executeOn(io)
@@ -61,15 +64,6 @@ class MonixKafkaTest extends FunSuite {
   }
 
   test("listen for one message") {
-    val producerCfg = KafkaProducerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092")
-    )
-
-    val consumerCfg = KafkaConsumerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092"),
-      groupId = "kafka-tests",
-      autoOffsetReset = AutoOffsetReset.Earliest
-    )
 
     val producer = KafkaProducer[String,String](producerCfg, io)
     val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io)
@@ -89,15 +83,6 @@ class MonixKafkaTest extends FunSuite {
 
   test("full producer/consumer test") {
     val count = 10000
-    val producerCfg = KafkaProducerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092")
-    )
-
-    val consumerCfg = KafkaConsumerConfig.default.copy(
-      bootstrapServers = List("127.0.0.1:9092"),
-      groupId = "kafka-tests",
-      autoOffsetReset = AutoOffsetReset.Earliest
-    )
 
     val producer = KafkaProducerSink[String,String](producerCfg, io)
     val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io).take(count)

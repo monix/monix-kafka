@@ -161,6 +161,22 @@ import scala.concurrent.duration._
   *        leadership changes to proactively discover any new brokers
   *        or partitions.
   *
+  * @param metricReporters is the `metric.reporters` setting.
+  *         A list of classes to use as metrics reporters. Implementing the
+  *         `MetricReporter` interface allows plugging in classes that will
+  *         be notified of new metric creation. The JmxReporter is always
+  *         included to register JMX statistics
+  *
+  * @param metricsNumSamples is the `metrics.num.samples` setting.
+  *         The number of samples maintained to compute metrics.
+  *
+  * @param metricsSampleWindow is the `metrics.sample.window.ms` setting.
+  *         The metrics system maintains a configurable number of samples over
+  *         a fixed window size. This configuration controls the size of the
+  *         window. For example we might maintain two samples each measured
+  *         over a 30 second period. When a window expires we erase and
+  *         overwrite the oldest window.
+  *
   * @param reconnectBackoffTime is the `reconnect.backoff.ms` setting.
   *        The amount of time to wait before attempting to reconnect to a
   *        given host. This avoids repeatedly connecting to a host in a
@@ -213,6 +229,9 @@ final case class KafkaConsumerConfig(
   clientId: String,
   fetchMaxWaitTime: FiniteDuration,
   metadataMaxAge: FiniteDuration,
+  metricReporters: List[String],
+  metricsNumSamples: Int,
+  metricsSampleWindow: FiniteDuration,
   reconnectBackoffTime: FiniteDuration,
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
@@ -251,6 +270,9 @@ final case class KafkaConsumerConfig(
     "client.id" -> clientId,
     "fetch.max.wait.ms" -> fetchMaxWaitTime.toMillis.toString,
     "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString,
+    "metric.reporters" -> metricReporters.mkString(","),
+    "metrics.num.samples" -> metricsNumSamples.toString,
+    "metrics.sample.window.ms" -> metricsSampleWindow.toMillis.toString,
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
@@ -383,6 +405,9 @@ object KafkaConsumerConfig {
       clientId = config.getString("client.id"),
       fetchMaxWaitTime = config.getInt("fetch.max.wait.ms").millis,
       metadataMaxAge = config.getInt("metadata.max.age.ms").millis,
+      metricReporters = config.getString("metric.reporters").trim.split("\\s*,\\s*").toList,
+      metricsNumSamples = config.getInt("metrics.num.samples"),
+      metricsSampleWindow = config.getInt("metrics.sample.window.ms").millis,
       reconnectBackoffTime = config.getInt("reconnect.backoff.ms").millis,
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
