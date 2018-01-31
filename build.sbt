@@ -116,6 +116,8 @@ lazy val sharedSettings = Seq(
   testForkedParallel in IntegrationTest := false,
   concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
 
+  licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  homepage := Some(url("https://github.com/monix/monix-kafka")),
   headerLicense := Some(HeaderLicense.Custom(
     """|Copyright (c) 2014-2018 by The Monix Project Developers.
        |
@@ -132,9 +134,28 @@ lazy val sharedSettings = Seq(
        |limitations under the License."""
     .stripMargin)),
 
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/monix/monix-kafka"),
+      "scm:git@github.com:monix/monix-kafka.git"
+    )),
+
+  developers := List(
+    Developer(
+      id="alexelcu",
+      name="Alexandru Nedelcu",
+      email="noreply@alexn.org",
+      url=url("https://alexn.org")
+    ),
+    Developer(
+      id="pgawrys",
+      name="Piotr Gawryś",
+      email="pgawrys2@gmail.com",
+      url=url("https://github.com/Avasil")
+    )),
+
   // -- Settings meant for deployment on oss.sonatype.org
   publishMavenStyle := true,
-
   publishTo := {
     val nexus = "https://oss.sonatype.org/"
     if (isSnapshot.value)
@@ -144,28 +165,7 @@ lazy val sharedSettings = Seq(
   },
 
   publishArtifact in Test := false,
-  pomIncludeRepository := { _ => false }, // removes optional dependencies
-
-  pomExtra :=
-    <url>https://github.com/monixio/monix-kafka/</url>
-    <licenses>
-      <license>
-        <name>Apache License, Version 2.0</name>
-        <url>https://www.apache.org/licenses/LICENSE-2.0</url>
-        <distribution>repo</distribution>
-      </license>
-    </licenses>
-    <scm>
-      <url>git@github.com:monixio/monix-kafka.git</url>
-      <connection>scm:git:git@github.com:monixio/monix-kafka.git</connection>
-    </scm>
-    <developers>
-      <developer>
-        <id>alexelcu</id>
-        <name>Alexandru Nedelcu</name>
-        <url>https://alexn.org/</url>
-      </developer>
-    </developers>
+  pomIncludeRepository := { _ => false } // removes optional dependencies
 )
 
 def mimaSettings(projectName: String) = Seq(
