@@ -1,4 +1,4 @@
-val monixVersion = "2.3.3"
+val monixVersion = "3.0.0-M3"
 
 addCommandAlias("ci",      ";+clean ;+test:compile ;+doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
