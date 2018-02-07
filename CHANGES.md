@@ -1,3 +1,8 @@
+## Version 0.16 (Feb 6, 2018)
+
+- Adds [Kip62](https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread) config parameters and default values to Kafka 1.0.0 `default.conf`.
+- Adds configs for metrics
+
 ## Version 0.15 (Jan 31, 2018)
 
 - Updates Monix to 2.3.3
