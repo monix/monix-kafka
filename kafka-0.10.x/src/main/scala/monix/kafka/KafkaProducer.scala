@@ -19,7 +19,7 @@ package monix.kafka
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.atomic.Atomic
-import monix.execution.cancelables.SingleAssignmentCancelable
+import monix.execution.cancelables.SingleAssignCancelable
 import monix.execution.{Cancelable, Scheduler}
 import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata, KafkaProducer => ApacheKafkaProducer}
 
@@ -75,7 +75,7 @@ object KafkaProducer {
           }
           else {
             val isActive = Atomic(true)
-            val cancelable = SingleAssignmentCancelable()
+            val cancelable = SingleAssignCancelable()
             context.connection.push(cancelable)
 
             try {
