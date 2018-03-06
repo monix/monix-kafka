@@ -27,16 +27,16 @@ import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.collection.JavaConverters._
 
-class MonixKafkaTest extends FunSuite {
+class MonixKafkaTest extends FunSuite with KafkaTestKit {
   val topicName = "monix-kafka-tests"
 
   val producerCfg = KafkaProducerConfig.default.copy(
-    bootstrapServers = List("127.0.0.1:9092"),
+    bootstrapServers = List("127.0.0.1:6001"),
     clientId = "monix-kafka-11-producer-test"
   )
 
   val consumerCfg = KafkaConsumerConfig.default.copy(
-    bootstrapServers = List("127.0.0.1:9092"),
+    bootstrapServers = List("127.0.0.1:6001"),
     groupId = "kafka-tests",
     clientId = "monix-kafka-11-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest

@@ -200,7 +200,8 @@ lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(
     name := "monix-kafka-1x",
     libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "1.0.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+      "org.apache.kafka" %  "kafka-clients" % "1.0.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
+      "net.manub"        %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j")
     )
   )
 
@@ -210,7 +211,8 @@ lazy val kafka11 = project.in(file("kafka-0.11.x"))
   .settings(
     name := "monix-kafka-11",
     libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.11.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+      "org.apache.kafka" %  "kafka-clients" % "0.11.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
+      "net.manub"        %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j")
     )
   )
 
@@ -221,7 +223,8 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(
     name := "monix-kafka-10",
     libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.10.2.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+      "org.apache.kafka" %  "kafka-clients" % "0.10.2.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
+      "net.manub"        %% "scalatest-embedded-kafka" % "0.13.1" % "test" exclude ("log4j", "log4j")
     )
   )
 
