@@ -96,7 +96,7 @@ class MonixKafkaTest extends FunSuite {
       .map(_.value())
       .toListL
 
-    val (result, _) = Await.result(Task.zip2(Task.fork(listT), Task.fork(pushT)).runAsync, 60.seconds)
+    val (result, _) = Await.result(Task.zip2(listT.executeAsync, pushT.executeAsync).runAsync, 60.seconds)
     assert(result.map(_.toInt).sum === (0 until count).sum)
   }
 }
