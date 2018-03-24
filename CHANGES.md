@@ -1,3 +1,13 @@
+## Version 1.0.0-RC1 (Mar 23, 2018)
+
+- Updates Monix to 3.0.0-RC1
+- Updates Kafka to 1.0.1
+- Adds tests using Embedded Kafka
+
+## Version 1.0.0-M3 (Feb 8, 2018)
+
+- Updates Monix to 3.0.0-M3
+
 ## Version 0.16 (Feb 6, 2018)
 
 - Adds [Kip62](https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread) config parameters and default values to Kafka 1.0.0 `default.conf`.
