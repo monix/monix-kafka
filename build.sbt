@@ -210,10 +210,11 @@ lazy val kafkaStreams1x = project.in(file("kafka-streams-1.0.x"))
   .settings(commonDependencies)
   .settings(
     name := "monix-kafka-1x",
+    mainClass in Compile := Some("monix.kafka.streams.Main"),
     libraryDependencies ++= Seq(
       "org.apache.kafka" %  "kafka-clients" % "1.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
       "org.apache.kafka" %  "kafka-streams" % "1.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
-      "net.manub"        %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j")
+      "net.manub" %% "scalatest-embedded-kafka-streams" % "1.1.0" % "test" exclude ("log4j", "log4j")
     )
   )
 
