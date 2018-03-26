@@ -141,7 +141,7 @@ case class KafkaStreamsConfig(
   )
 }
 
-object KafkaProducerConfig {
+object KafkaStreamsConfig {
   private val defaultRootPath = "kafka"
 
   lazy private val defaultConf: Config =
