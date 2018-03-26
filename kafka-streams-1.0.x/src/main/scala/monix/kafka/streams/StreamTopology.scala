@@ -6,7 +6,7 @@ import org.apache.kafka.streams.{Consumed, StreamsBuilder, Topology}
 /**
   * Class for managing the stream builder and topology
   */
-class StreamTopology private {
+final class StreamTopology private {
 
   private val builder: StreamsBuilder = new StreamsBuilder
 

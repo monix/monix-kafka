@@ -61,7 +61,7 @@ import scala.concurrent.duration._
   * @param stateDir
   * @param windowstoreChangelogAdditionalRetention
   */
-case class KafkaStreamsConfig(
+final case class KafkaStreamsConfig(
   applicationId: String,
   applicationServer: String,
   bootstrapServers: List[String],

@@ -33,8 +33,10 @@ final case class KafkaStream[K, V] private[streams](underlyingStream: KStream[K,
       }
     )
 
-  def to(topic: String): Unit =
+  def to(topic: String): KafkaStream[K, V] = {
     underlyingStream.to(topic)
+    this
+  }
 
   def producedTo(topic: String)(implicit keySerde: Serde[K], valueSerde: Serde[V]): KafkaStream[K, V] = {
     underlyingStream.to(topic, Produced.`with`(keySerde, valueSerde))

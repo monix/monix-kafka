@@ -7,7 +7,7 @@ import org.apache.kafka.streams.{StreamsConfig, KafkaStreams => ApacheKafkaStrea
   *
   * @param underlying the underlying [[org.apache.kafka.streams.KafkaStreams]] object
   */
-class KafkaStreams private[streams](underlying: ApacheKafkaStreams) {
+final class KafkaStreams private[streams](underlying: ApacheKafkaStreams) {
 
   def start: Task[Unit] =
     Task.eval(underlying.start())
