@@ -42,7 +42,7 @@ final case class KafkaStream[K, V] private[streams](underlyingStream: KStream[K,
   def mapValues[V1](f: V => V1): KafkaStream[K, V1] =
     copy(underlyingStream = underlyingStream.mapValues[V1](f(_)))
 
-  def flatMap[K1, V1](f: (K, V) => Iterable[(K1, V1)]): KafkaStream[K1, V1] =
+  def subFlatMap[K1, V1](f: (K, V) => Iterable[(K1, V1)]): KafkaStream[K1, V1] =
     copy(
       underlyingStream = underlyingStream.flatMap[K1, V1] { (key: K, value: V) =>
         f(key, value).map { case (k, v) => new KeyValue[K1, V1](k, v) } asJava
