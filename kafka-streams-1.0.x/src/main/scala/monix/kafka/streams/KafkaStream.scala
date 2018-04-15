@@ -18,7 +18,7 @@ package monix.kafka.streams
 
 import org.apache.kafka.common.serialization.{Serde, Serdes}
 import org.apache.kafka.streams.KeyValue
-import org.apache.kafka.streams.kstream.{KStream, Printed, Produced}
+import org.apache.kafka.streams.kstream.{KStream, Predicate, Printed, Produced}
 
 import scala.collection.JavaConverters._
 import scala.language.postfixOps
@@ -48,6 +48,28 @@ final case class KafkaStream[K, V] private[streams](underlyingStream: KStream[K,
         f(key, value).map { case (k, v) => new KeyValue[K1, V1](k, v) } asJava
       }
     )
+
+  def filter(f: (K, V) => Boolean): KafkaStream[K, V] = {
+    copy(
+      underlyingStream = underlyingStream.filter(f(_, _))
+    )
+  }
+
+  def filterNot(f: (K, V) => Boolean): KafkaStream[K, V] = {
+    copy(
+      underlyingStream = underlyingStream.filterNot(f(_, _))
+    )
+  }
+
+  def branch(f: ((K, V) => Boolean)*): List[KStream[K, V]] = {
+    underlyingStream.branch(
+      f.map { fs =>
+        new Predicate[K, V] {
+          def test(key: K, value: V): Boolean = fs(key, value)
+        }
+      }:_*
+    ).toList
+  }
 
   def to(topic: String): KafkaStream[K, V] = {
     underlyingStream.to(topic)
