@@ -97,7 +97,13 @@ import scala.concurrent.duration._
   *        and represents the maximum size of a request in bytes.
   *        This is also effectively a cap on the maximum record size.
   *
-  * @param partitionerClass is the `partitioner.class` setting
+  * @param maxInFlightRequestsPerConnection is the `max.in.flight.requests.per.connection` setting
+  *        and represents the maximum number of unacknowledged request the client will send
+  *        on a single connection before blocking.
+  *        If this setting is set to be greater than 1 and there are failed sends,
+  *        there is a risk of message re-ordering due to retries (if enabled).
+  *
+  *  @param partitionerClass is the `partitioner.class` setting
   *        and represents a class that implements the
   *        `org.apache.kafka.clients.producer.Partitioner` interface.
   *
@@ -197,6 +203,7 @@ case class KafkaProducerConfig(
   lingerTime: FiniteDuration,
   maxBlockTime: FiniteDuration,
   maxRequestSizeInBytes: Int,
+  maxInFlightRequestsPerConnection: Int,
   partitionerClass: Option[PartitionerName],
   receiveBufferInBytes: Int,
   requestTimeout: FiniteDuration,
@@ -240,6 +247,7 @@ case class KafkaProducerConfig(
     "linger.ms" -> lingerTime.toMillis.toString,
     "max.block.ms" -> maxBlockTime.toMillis.toString,
     "max.request.size" -> maxRequestSizeInBytes.toString,
+    "max.in.flight.requests.per.connection" -> maxInFlightRequestsPerConnection.toString,
     "partitioner.class" -> partitionerClass.map(_.className).orNull,
     "receive.buffer.bytes" -> receiveBufferInBytes.toString,
     "request.timeout.ms" -> requestTimeout.toMillis.toString,
@@ -367,6 +375,7 @@ object KafkaProducerConfig {
       lingerTime = config.getInt("linger.ms").millis,
       maxBlockTime = config.getInt("max.block.ms").millis,
       maxRequestSizeInBytes = config.getInt("max.request.size"),
+      maxInFlightRequestsPerConnection = config.getInt("max.in.flight.requests.per.connection"),
       partitionerClass = getOptString("partitioner.class").filter(_.nonEmpty).map(PartitionerName.apply),
       receiveBufferInBytes = config.getInt("receive.buffer.bytes"),
       requestTimeout = config.getInt("request.timeout.ms").millis,
