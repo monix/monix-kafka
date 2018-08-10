@@ -16,6 +16,8 @@
 
 package monix.kafka
 
+import java.util.regex.Pattern
+
 import monix.eval.{Callback, Task}
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Cancelable}
@@ -23,6 +25,7 @@ import monix.kafka.config.ObservableCommitType
 import monix.reactive.observers.Subscriber
 import monix.reactive.{Observable, Observer}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
@@ -204,7 +207,22 @@ object KafkaConsumerObservable {
     apply(cfg, consumer)
   }
 
-  /** Returns a `Task` for creating a consumer instance. */
+  /** Builds a [[KafkaConsumerObservable]] instance.
+    *
+    * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
+    *        consumer; also make sure to see `monix/kafka/default.conf` for
+    *        the default values being used.
+    *
+    * @param topicsPattern is the pattern of Kafka topics to subscribe to.
+    */
+  def apply[K,V](cfg: KafkaConsumerConfig, topicsPattern: Pattern)
+                (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
+
+    val consumer = createConsumer[K,V](cfg, topicsPattern)
+    apply(cfg, consumer)
+  }
+
+  /** Returns a `Task` for creating a consumer instance given list of topics. */
   def createConsumer[K,V](config: KafkaConsumerConfig, topics: List[String])
     (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
 
@@ -214,6 +232,19 @@ object KafkaConsumerObservable {
       blocking {
         val consumer = new KafkaConsumer[K,V](props, K.create(), V.create())
         consumer.subscribe(topics.asJava)
+        consumer
+      }
+    }
+  }
+
+  /** Returns a `Task` for creating a consumer instance given topics regex. */
+  def createConsumer[K,V](config: KafkaConsumerConfig, topicsPattern: Pattern)
+                         (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
+    Task {
+      val props = config.toProperties
+      blocking {
+        val consumer = new KafkaConsumer[K,V](props, K.create(), V.create())
+        consumer.subscribe(topicsPattern)
         consumer
       }
     }
