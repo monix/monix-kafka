@@ -36,11 +36,11 @@ trait KafkaProducer[K,V] extends Serializable {
 
 object KafkaProducer {
   /** Builds a [[KafkaProducer]] instance. */
-  def apply[K,V](config: KafkaProducerConfig, io: Scheduler)
+  def apply[K,V](config: KafkaProducerConfig, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V]): KafkaProducer[K,V] =
-    new Implementation[K,V](config, io)
+    new Implementation[K,V](config, sc)
 
-  private final class Implementation[K,V](config: KafkaProducerConfig, io: Scheduler)
+  private final class Implementation[K,V](config: KafkaProducerConfig, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V])
     extends KafkaProducer[K,V] with StrictLogging {
 
@@ -66,8 +66,9 @@ object KafkaProducer {
       send(new ProducerRecord[K,V](topic, key, value))
 
     def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]] =
-      Task.unsafeCreate[Option[RecordMetadata]] { (context, cb) => // Forcing asynchronous boundary on the I/O scheduler!
-        io.executeAsync(() => self.synchronized {
+      Task.unsafeCreate[Option[RecordMetadata]] { (context, cb) =>
+        // Forcing asynchronous boundary
+        sc.executeAsync(() => self.synchronized {
           val s = context.scheduler
           if (isCanceled) {
             cb.asyncOnSuccess(None)(s)
@@ -114,8 +115,8 @@ object KafkaProducer {
 
     def close(): Task[Unit] =
       Task.unsafeCreate { (context, cb) =>
-        // Forcing asynchronous boundary on I/O scheduler!
-        io.executeAsync { () =>
+        // Forcing asynchronous boundary
+        sc.executeAsync { () =>
           self.synchronized {
             val s = context.scheduler
             if (isCanceled) {
