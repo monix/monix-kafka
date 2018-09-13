@@ -148,13 +148,16 @@ The producer:
 
 ```scala
 import monix.kafka._
+import monix.execution.Scheduler
+
+implicit val scheduler: Scheduler = monix.execution.Scheduler.global
 
 // Init
 val producerCfg = KafkaProducerConfig.default.copy(
   bootstrapServers = List("127.0.0.1:9092")
 )
 
-val producer = KafkaProducer[String,String](producerCfg, io)
+val producer = KafkaProducer[String,String](producerCfg, scheduler)
 
 // For sending one message
 val recordMetadataF = producer.send("my-topic", "my-message").runAsync
@@ -163,21 +166,25 @@ val recordMetadataF = producer.send("my-topic", "my-message").runAsync
 val closeF = producer.close().runAsync
 ```
 
-Note that these methods return [Tasks](https://monix.io/docs/2x/eval/task.html),
+Note that these methods return [Tasks](https://monix.io/docs/3x/eval/task.html),
 which can then be transformed into `Future`.
 
 For pushing an entire `Observable` to Apache Kafka:
 
 ```scala
 import monix.kafka._
+import monix.execution.Scheduler
+import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
+
+implicit val scheduler: Scheduler = monix.execution.Scheduler.global
 
 // Initializing the producer
 val producerCfg = KafkaProducerConfig.default.copy(
   bootstrapServers = List("127.0.0.1:9092")
 )
 
-val producer = KafkaProducerSink[String,String](producerCfg, io)
+val producer = KafkaProducerSink[String,String](producerCfg, scheduler)
 
 // Lets pretend we have this observable of records
 val observable: Observable[ProducerRecord[String,String]] = ???
@@ -227,4 +234,4 @@ The current maintainers (people who can merge pull requests) are:
 ## License
 
 All code in this repository is licensed under the Apache License,
-Version 2.0.  See [LICENCE.txt](./LICENSE.txt).
+Version 2.0.  See [LICENSE.txt](./LICENSE.txt).

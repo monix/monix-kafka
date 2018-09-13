@@ -100,10 +100,10 @@ final class KafkaProducerSink[K,V] private (
 
 object KafkaProducerSink {
   /** Builder for [[KafkaProducerSink]]. */
-  def apply[K,V](config: KafkaProducerConfig, io: Scheduler)
+  def apply[K,V](config: KafkaProducerConfig, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V]): KafkaProducerSink[K,V] = {
 
-    val producer = Coeval(KafkaProducer[K,V](config, io))
+    val producer = Coeval(KafkaProducer[K,V](config, sc))
     new KafkaProducerSink(producer, shouldTerminate = true,
       parallelism = config.monixSinkParallelism)
   }
