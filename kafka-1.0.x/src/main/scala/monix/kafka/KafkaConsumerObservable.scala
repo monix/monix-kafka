@@ -16,8 +16,6 @@
 
 package monix.kafka
 
-import java.util.regex.Pattern
-
 import monix.eval.{Callback, Task}
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Cancelable}
@@ -29,6 +27,7 @@ import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
+import scala.util.matching.Regex
 import scala.util.{Failure, Success}
 
 /** Exposes an `Observable` that consumes a Kafka stream by
@@ -213,12 +212,12 @@ object KafkaConsumerObservable {
     *        consumer; also make sure to see `monix/kafka/default.conf` for
     *        the default values being used.
     *
-    * @param topicsPattern is the pattern of Kafka topics to subscribe to.
+    * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
-  def apply[K,V](cfg: KafkaConsumerConfig, topicsPattern: Pattern)
+  def apply[K,V](cfg: KafkaConsumerConfig, topicsRegex: Regex)
                 (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
 
-    val consumer = createConsumer[K,V](cfg, topicsPattern)
+    val consumer = createConsumer[K,V](cfg, topicsRegex)
     apply(cfg, consumer)
   }
 
@@ -238,13 +237,13 @@ object KafkaConsumerObservable {
   }
 
   /** Returns a `Task` for creating a consumer instance given topics regex. */
-  def createConsumer[K,V](config: KafkaConsumerConfig, topicsPattern: Pattern)
+  def createConsumer[K,V](config: KafkaConsumerConfig, topicsRegex: Regex)
                          (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
     Task {
       val props = config.toProperties
       blocking {
         val consumer = new KafkaConsumer[K,V](props, K.create(), V.create())
-        consumer.subscribe(topicsPattern)
+        consumer.subscribe(topicsRegex.pattern)
         consumer
       }
     }
