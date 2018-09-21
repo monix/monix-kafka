@@ -53,7 +53,6 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val send = producer.send(topicName, "my-message")
       Await.result(send.runAsync, 30.seconds)
 
-      consumer.subscribe(List(topicName).asJava)
       val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
       assert(records === List("my-message"))
     }
