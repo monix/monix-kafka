@@ -23,34 +23,36 @@ import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.FunSuite
+
+import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.collection.JavaConverters._
 
-class MonixKafkaTest extends FunSuite {
-  val topicName = "monix-kafka-tests"
+class MonixKafkaTopicRegexTest extends FunSuite with KafkaTestKit {
+  val topicsRegex = "monix-kafka-tests-.*".r
+  val topicMatchingRegex = "monix-kafka-tests-anything"
 
-  val producerCfg: KafkaProducerConfig = KafkaProducerConfig.default.copy(
-    bootstrapServers = List("127.0.0.1:9092"),
-    clientId = "monix-kafka-9-producer-test"
+  val producerCfg = KafkaProducerConfig.default.copy(
+    bootstrapServers = List("127.0.0.1:6001"),
+    clientId = "monix-kafka-1-0-producer-test"
   )
 
-  val consumerCfg: KafkaConsumerConfig = KafkaConsumerConfig.default.copy(
-    bootstrapServers = List("127.0.0.1:9092"),
+  val consumerCfg = KafkaConsumerConfig.default.copy(
+    bootstrapServers = List("127.0.0.1:6001"),
     groupId = "kafka-tests",
-    clientId = "monix-kafka-9-consumer-test",
+    clientId = "monix-kafka-1-0-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest
   )
 
-  test("publish one message") {
+  test("publish one message when subscribed to topics regex") {
 
     val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName)).executeOn(io)
+    val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, topicsRegex).executeOn(io)
     val consumer = Await.result(consumerTask.runAsync, 60.seconds)
 
     try {
       // Publishing one message
-      val send = producer.send(topicName, "my-message")
+      val send = producer.send(topicMatchingRegex, "my-message")
       Await.result(send.runAsync, 30.seconds)
 
       val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
@@ -62,13 +64,13 @@ class MonixKafkaTest extends FunSuite {
     }
   }
 
-  test("listen for one message") {
+  test("listen for one message when subscribed to topics regex") {
 
     val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io)
+    val consumer = KafkaConsumerObservable[String,String](consumerCfg, topicsRegex).executeOn(io)
     try {
       // Publishing one message
-      val send = producer.send(topicName, "test-message")
+      val send = producer.send(topicMatchingRegex, "test-message")
       Await.result(send.runAsync, 30.seconds)
 
       val first = consumer.take(1).map(_.value()).firstL
@@ -80,14 +82,14 @@ class MonixKafkaTest extends FunSuite {
     }
   }
 
-  test("full producer/consumer test") {
+  test("full producer/consumer test when subscribed to topics regex") {
     val count = 10000
 
     val producer = KafkaProducerSink[String,String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io).take(count)
+    val consumer = KafkaConsumerObservable[String,String](consumerCfg, topicsRegex).executeOn(io).take(count)
 
     val pushT = Observable.range(0, count)
-      .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+      .map(msg => new ProducerRecord(topicMatchingRegex, "obs", msg.toString))
       .bufferIntrospective(1024)
       .consumeWith(producer)
 

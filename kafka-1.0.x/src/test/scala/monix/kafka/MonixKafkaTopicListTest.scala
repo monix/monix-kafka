@@ -23,26 +23,27 @@ import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.FunSuite
+
+import scala.collection.JavaConverters._
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.collection.JavaConverters._
 
-class MonixKafkaTest extends FunSuite with KafkaTestKit {
+class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
   val topicName = "monix-kafka-tests"
 
   val producerCfg = KafkaProducerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
-    clientId = "monix-kafka-11-producer-test"
+    clientId = "monix-kafka-1-0-producer-test"
   )
 
   val consumerCfg = KafkaConsumerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
     groupId = "kafka-tests",
-    clientId = "monix-kafka-11-consumer-test",
+    clientId = "monix-kafka-1-0-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest
   )
 
-  test("publish one message") {
+  test("publish one message when subscribed to topics list") {
 
     val producer = KafkaProducer[String,String](producerCfg, io)
     val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName)).executeOn(io)
@@ -53,7 +54,6 @@ class MonixKafkaTest extends FunSuite with KafkaTestKit {
       val send = producer.send(topicName, "my-message")
       Await.result(send.runAsync, 30.seconds)
 
-      consumer.subscribe(List(topicName).asJava)
       val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
       assert(records === List("my-message"))
     }
@@ -63,7 +63,7 @@ class MonixKafkaTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("listen for one message") {
+  test("listen for one message when subscribed to topics list") {
 
     val producer = KafkaProducer[String,String](producerCfg, io)
     val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io)
@@ -81,7 +81,7 @@ class MonixKafkaTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("full producer/consumer test") {
+  test("full producer/consumer test when subscribed to topics list") {
     val count = 10000
 
     val producer = KafkaProducerSink[String,String](producerCfg, io)
