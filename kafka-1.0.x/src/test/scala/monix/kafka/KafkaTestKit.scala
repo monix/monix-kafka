@@ -1,19 +1,19 @@
 package monix.kafka
 
 import net.manub.embeddedkafka.EmbeddedKafka
-import org.scalatest.{BeforeAndAfterEach, Suite}
+import org.scalatest.{BeforeAndAfterAll, Suite}
 
-trait KafkaTestKit extends BeforeAndAfterEach { self: Suite =>
+trait KafkaTestKit extends BeforeAndAfterAll { self: Suite =>
 
   sys.addShutdownHook {
     EmbeddedKafka.stop()
   }
 
-  override def beforeEach(): Unit = {
+  override def beforeAll(): Unit = {
     EmbeddedKafka.start()
   }
 
-  override def afterEach(): Unit = {
+  override def afterAll(): Unit = {
     EmbeddedKafka.stop()
   }
 
