@@ -192,7 +192,19 @@ lazy val commonDependencies = Seq(
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka1x, kafka11, kafka10, kafka9)
+  .aggregate(kafka2x, kafka1x, kafka11, kafka10, kafka9)
+
+lazy val kafka2x = project.in(file("kafka-2.0.x"))
+  .settings(sharedSettings)
+  .settings(commonDependencies)
+  .settings(mimaSettings("monix-kafka-2x"))
+  .settings(
+    name := "monix-kafka-2x",
+    libraryDependencies ++= Seq(
+      "org.apache.kafka" %  "kafka-clients" % "2.0.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
+      "net.manub"        %% "scalatest-embedded-kafka" % "2.0.0" % "test" exclude ("log4j", "log4j")
+    )
+  )
 
 lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(sharedSettings)
