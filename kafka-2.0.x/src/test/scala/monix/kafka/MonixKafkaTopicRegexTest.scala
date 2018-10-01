@@ -34,13 +34,13 @@ class MonixKafkaTopicRegexTest extends FunSuite with KafkaTestKit {
 
   val producerCfg = KafkaProducerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
-    clientId = "monix-kafka-1-0-producer-test"
+    clientId = "monix-kafka-2-0-producer-test"
   )
 
   val consumerCfg = KafkaConsumerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
     groupId = "kafka-tests",
-    clientId = "monix-kafka-1-0-consumer-test",
+    clientId = "monix-kafka-2-0-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest
   )
 
@@ -55,7 +55,7 @@ class MonixKafkaTopicRegexTest extends FunSuite with KafkaTestKit {
       val send = producer.send(topicMatchingRegex, "my-message")
       Await.result(send.runAsync, 30.seconds)
 
-      val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
+      val records = consumer.poll(10.seconds.toJava).asScala.map(_.value()).toList
       assert(records === List("my-message"))
     }
     finally {

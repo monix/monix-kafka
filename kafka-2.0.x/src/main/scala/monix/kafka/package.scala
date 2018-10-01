@@ -14,19 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package monix
 
 import java.time.temporal.ChronoUnit
 import java.time.{Duration => JavaDuration}
 import java.util.concurrent.TimeUnit
 
-import monix.execution.Scheduler
-
 package object kafka {
-  /** I/O scheduler meant for tests. */
-  lazy val io = Scheduler.io("monix-kafka-tests")
-
 
   // TODO alternatively depend on scala-java8-compat package
   implicit class DurationConverter(duration: scala.concurrent.duration.FiniteDuration) {
@@ -47,4 +41,5 @@ package object kafka {
       }
     }
   }
+
 }

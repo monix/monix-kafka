@@ -56,7 +56,7 @@ final class KafkaConsumerObservable[K, V] private
 
   private def feedTask(out: Subscriber[ConsumerRecord[K,V]]): Task[Unit] = {
     // Caching value to save CPU cycles
-    val pollTimeoutMillis = config.fetchMaxWaitTime.toMillis
+    val pollTimeout = config.fetchMaxWaitTime.toJava
     // Boolean value indicating that we should trigger a commit before downstream ack
     val shouldCommitBefore = !config.enableAutoCommit && config.observableCommitOrder.isBefore
     // Boolean value indicating that we should trigger a commit after downstream ack
@@ -94,7 +94,7 @@ final class KafkaConsumerObservable[K, V] private
           val ackFuture =
             try consumer.synchronized {
               if (context.connection.isCanceled) Stop else {
-                val next = blocking(consumer.poll(pollTimeoutMillis))
+                val next = blocking(consumer.poll(pollTimeout))
                 if (shouldCommitBefore) consumerCommit(consumer)
                 // Feeding the observer happens on the Subscriber's scheduler
                 // if any asynchronous boundaries happen
