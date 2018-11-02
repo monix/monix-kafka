@@ -16,6 +16,8 @@
 
 package monix.kafka
 
+import java.util.Properties
+
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.atomic.Atomic
@@ -35,12 +37,17 @@ trait KafkaProducer[K,V] extends Serializable {
 }
 
 object KafkaProducer {
-  /** Builds a [[KafkaProducer]] instance. */
+  /** Builds a [[KafkaProducer]] instance using KafkaProducerConfig. */
   def apply[K,V](config: KafkaProducerConfig, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V]): KafkaProducer[K,V] =
-    new Implementation[K,V](config, sc)
+    new Implementation[K,V](config.toProperties, sc)
 
-  private final class Implementation[K,V](config: KafkaProducerConfig, sc: Scheduler)
+  /** Builds a [[KafkaProducer]] instance using raw Properties map. */
+  def apply[K,V](properties: Properties, sc: Scheduler)
+    (implicit K: Serializer[K], V: Serializer[V]): KafkaProducer[K,V] =
+    new Implementation[K,V](properties, sc)
+
+  private final class Implementation[K,V](properties: Properties, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V])
     extends KafkaProducer[K,V] with StrictLogging {
 
@@ -52,8 +59,8 @@ object KafkaProducer {
 
     // Gets initialized on the first `send`
     private lazy val producerRef = {
-      logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
-      new ApacheKafkaProducer[K,V](config.toProperties, K.create(), V.create())
+      logger.info(s"Kafka producer connecting to servers: ${properties.getProperty("bootstrap.servers")}")
+      new ApacheKafkaProducer[K,V](properties, K.create(), V.create())
     }
 
     def underlying: Task[ApacheKafkaProducer[K, V]] =

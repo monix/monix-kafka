@@ -276,7 +276,10 @@ final case class KafkaConsumerConfig(
     "metrics.num.samples" -> metricsNumSamples.toString,
     "metrics.sample.window.ms" -> metricsSampleWindow.toMillis.toString,
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
-    "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
+    "retry.backoff.ms" -> retryBackoffTime.toMillis.toString,
+    "monix.observable.commit.type" -> observableCommitType.id,
+    "monix.observable.commit.order" -> observableCommitOrder.id,
+    "monix.observable.seekEnd.onStart" -> observableSeekToEndOnStart.toString
   )
 
   def toProperties: Properties = {
