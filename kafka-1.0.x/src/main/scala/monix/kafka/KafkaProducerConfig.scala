@@ -18,8 +18,10 @@ package monix.kafka
 
 import java.io.File
 import java.util.Properties
+
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.kafka.config._
+
 import scala.concurrent.duration._
 
 /** The Kafka Producer config.
@@ -179,6 +181,11 @@ import scala.concurrent.duration._
   * @param monixSinkParallelism is the `monix.producer.sink.parallelism`
   *        setting indicating how many requests the [[KafkaProducerSink]]
   *        can execute in parallel.
+  *
+  * @param properties map of other properties that will be passed to
+  *        the underlying kafka client. Any properties not explicitly handled
+  *        by this object can be set via the map, but in case of a duplicate
+  *        a value set on the case class will overwrite value set via properties.
   */
 case class KafkaProducerConfig(
   bootstrapServers: List[String],
@@ -215,15 +222,10 @@ case class KafkaProducerConfig(
   metricReporters: List[String],
   metricsNumSamples: Int,
   metricsSampleWindow: FiniteDuration,
-  monixSinkParallelism: Int) {
+  monixSinkParallelism: Int,
+  properties: Map[String, String]) {
 
-  def toProperties: Properties = {
-    val props = new Properties()
-    for ((k,v) <- toMap; if v != null) props.put(k,v)
-    props
-  }
-
-  def toMap: Map[String,String] = Map(
+  def toMap: Map[String, String] = properties ++ Map(
     "bootstrap.servers" -> bootstrapServers.mkString(","),
     "acks" -> acks.id,
     "buffer.memory" -> bufferMemoryInBytes.toString,
@@ -259,6 +261,12 @@ case class KafkaProducerConfig(
     "metrics.num.samples" -> metricsNumSamples.toString,
     "metrics.sample.window.ms" -> metricsSampleWindow.toMillis.toString
   )
+
+  def toProperties: Properties = {
+    val props = new Properties()
+    for ((k, v) <- toMap; if v != null) props.put(k, v)
+    props
+  }
 }
 
 object KafkaProducerConfig {
@@ -385,7 +393,8 @@ object KafkaProducerConfig {
       metricReporters = config.getString("metric.reporters").trim.split("\\s*,\\s*").toList,
       metricsNumSamples = config.getInt("metrics.num.samples"),
       metricsSampleWindow = config.getInt("metrics.sample.window.ms").millis,
-      monixSinkParallelism = config.getInt("monix.producer.sink.parallelism")
+      monixSinkParallelism = config.getInt("monix.producer.sink.parallelism"),
+      properties = Map.empty
     )
   }
 }
