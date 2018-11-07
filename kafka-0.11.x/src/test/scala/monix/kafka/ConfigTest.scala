@@ -24,4 +24,16 @@ class ConfigTest extends FunSuite {
       config.toProperties.getProperty("bootstrap.servers") == "localhost:9092"
     )
   }
+
+  test("convert to Java map from producer config and filter null values") {
+    val config = KafkaProducerConfig.default.toJavaMap
+
+    assert(!config.containsValue(null))
+  }
+
+  test("convert to Java map from consumer config and filter null values") {
+    val config = KafkaConsumerConfig.default.toJavaMap
+
+    assert(!config.containsValue(null))
+  }
 }
