@@ -196,6 +196,11 @@ import scala.concurrent.duration._
   * @param observableCommitOrder is the `monix.observable.commit.order` setting.
   *        Specifies when the commit should happen, like before we receive the
   *        acknowledgement from downstream, or afterwards.
+  *
+  * @param properties map of other properties that will be passed to
+  *        the underlying kafka client. Any properties not explicitly handled
+  *        by this object can be set via the map, but in case of a duplicate
+  *        a value set on the case class will overwrite value set via properties.
   */
 final case class KafkaConsumerConfig(
   bootstrapServers: List[String],
@@ -237,9 +242,10 @@ final case class KafkaConsumerConfig(
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
-  observableSeekToEndOnStart: Boolean) {
+  observableSeekToEndOnStart: Boolean,
+  properties: Map[String, String]) {
 
-  def toMap: Map[String,String] = Map(
+  def toMap: Map[String, String] = properties ++ Map(
     "bootstrap.servers" -> bootstrapServers.mkString(","),
     "fetch.min.bytes" -> fetchMinBytes.toString,
     "group.id" -> groupId,
@@ -415,7 +421,8 @@ object KafkaConsumerConfig {
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
-      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart")
+      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart"),
+      properties = Map.empty
     )
   }
 }
