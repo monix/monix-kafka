@@ -1,3 +1,8 @@
+## Version 0.17 (Nov 8, 2018)
+
+- [PR #45](https://github.com/monix/monix-kafka/pull/45)
+- This version uses Monix 2.3.x
+
 ## Version 1.0.0-RC1 (Mar 23, 2018)
 
 - Updates Monix to 3.0.0-RC1
