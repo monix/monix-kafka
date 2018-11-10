@@ -224,7 +224,7 @@ object KafkaConsumerObservable {
     (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
 
     import collection.JavaConverters._
-    Task {
+    Task.evalAsync {
       val props = config.toProperties
       blocking {
         val consumer = new KafkaConsumer[K,V](props, K.create(), V.create())
@@ -237,7 +237,7 @@ object KafkaConsumerObservable {
   /** Returns a `Task` for creating a consumer instance given topics regex. */
   def createConsumer[K,V](config: KafkaConsumerConfig, topicsRegex: Regex)
                          (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
-    Task {
+    Task.evalAsync {
       val props = config.toProperties
       blocking {
         val consumer = new KafkaConsumer[K,V](props, K.create(), V.create())
