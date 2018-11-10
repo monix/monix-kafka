@@ -1,4 +1,4 @@
-val monixVersion = "3.0.0-RC1"
+val monixVersion = "3.0.0-RC2"
 
 addCommandAlias("ci",      ";+clean ;+test:compile ;+doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
@@ -12,8 +12,8 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.6",
-  crossScalaVersions := Seq("2.11.12", "2.12.6"),
+  scalaVersion := "2.12.7",
+  crossScalaVersions := Seq("2.11.12", "2.12.7"),
 
   scalacOptions ++= Seq(
     // warnings
