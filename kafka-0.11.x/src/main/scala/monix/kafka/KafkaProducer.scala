@@ -53,7 +53,7 @@ object KafkaProducer {
     // Gets initialized on the first `send`
     private lazy val producerRef = {
       logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
-      new ApacheKafkaProducer[K,V](config.toProperties, K.create(), V.create())
+      new ApacheKafkaProducer[K,V](config.toJavaMap, K.create(), V.create())
     }
 
     def underlying: Task[ApacheKafkaProducer[K, V]] =

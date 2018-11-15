@@ -19,6 +19,7 @@ package monix.kafka
 import java.io.File
 import java.util.Properties
 
+import collection.JavaConverters._
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.kafka.config._
 
@@ -284,6 +285,9 @@ final case class KafkaConsumerConfig(
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
+
+  def toJavaMap: java.util.Map[String, Object] =
+    toMap.filter(_._2 != null).mapValues(_.asInstanceOf[AnyRef]).asJava
 
   def toProperties: Properties = {
     val props = new Properties()
