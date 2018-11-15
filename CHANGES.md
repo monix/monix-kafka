@@ -1,8 +1,8 @@
 ## Version 1.0.0-RC2 (Nov 15, 2018)
 
 - Updates Monix to 3.0.0-RC2
-- [PR #44](https://github.com/monix/monix-kafka/pull/44)
-- [PR #48](https://github.com/monix/monix-kafka/pull/48)
+- [PR #44](https://github.com/monix/monix-kafka/pull/44) - Add possibility of adding custom configs
+- [PR #48](https://github.com/monix/monix-kafka/pull/48) - Fix Kafka's Config classloader conflicts
 
 ## Version 0.17 (Nov 8, 2018)
 
