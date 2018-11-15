@@ -28,7 +28,6 @@ import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
-import scala.util.matching.Regex
 import scala.util.{Failure, Success}
 
 /** Exposes an `Observable` that consumes a Kafka stream by
