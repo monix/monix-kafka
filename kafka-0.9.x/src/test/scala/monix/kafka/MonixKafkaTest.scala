@@ -46,18 +46,18 @@ class MonixKafkaTest extends FunSuite {
 
     val producer = KafkaProducer[String,String](producerCfg, io)
     val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName)).executeOn(io)
-    val consumer = Await.result(consumerTask.runAsync, 60.seconds)
+    val consumer = Await.result(consumerTask.runToFuture, 60.seconds)
 
     try {
       // Publishing one message
       val send = producer.send(topicName, "my-message")
-      Await.result(send.runAsync, 30.seconds)
+      Await.result(send.runToFuture, 30.seconds)
 
       val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
       assert(records === List("my-message"))
     }
     finally {
-      Await.result(producer.close().runAsync, Duration.Inf)
+      Await.result(producer.close().runToFuture, Duration.Inf)
       consumer.close()
     }
   }
@@ -69,14 +69,14 @@ class MonixKafkaTest extends FunSuite {
     try {
       // Publishing one message
       val send = producer.send(topicName, "test-message")
-      Await.result(send.runAsync, 30.seconds)
+      Await.result(send.runToFuture, 30.seconds)
 
       val first = consumer.take(1).map(_.value()).firstL
-      val result = Await.result(first.runAsync, 30.seconds)
+      val result = Await.result(first.runToFuture, 30.seconds)
       assert(result === "test-message")
     }
     finally {
-      Await.result(producer.close().runAsync, Duration.Inf)
+      Await.result(producer.close().runToFuture, Duration.Inf)
     }
   }
 
@@ -95,7 +95,7 @@ class MonixKafkaTest extends FunSuite {
       .map(_.value())
       .toListL
 
-    val (result, _) = Await.result(Task.zip2(listT.executeAsync, pushT.executeAsync).runAsync, 60.seconds)
+    val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runAsync, 60.seconds)
     assert(result.map(_.toInt).sum === (0 until count).sum)
   }
 }

@@ -19,9 +19,9 @@ package monix.kafka
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.atomic.Atomic
-import monix.execution.cancelables.SingleAssignCancelable
-import monix.execution.{Cancelable, Scheduler}
-import org.apache.kafka.clients.producer.{Callback, ProducerRecord, RecordMetadata, KafkaProducer => ApacheKafkaProducer}
+import monix.execution.cancelables.{SingleAssignCancelable, StackedCancelable}
+import monix.execution.{Callback, Cancelable, Scheduler}
+import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata, Callback => KafkaCallback, KafkaProducer => ApacheKafkaProducer}
 
 import scala.util.control.NonFatal
 
@@ -38,7 +38,7 @@ object KafkaProducer {
   /** Builds a [[KafkaProducer]] instance. */
   def apply[K,V](config: KafkaProducerConfig, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V]): KafkaProducer[K,V] =
-  new Implementation[K,V](config, sc)
+    new Implementation[K,V](config, sc)
 
   private final class Implementation[K,V](config: KafkaProducerConfig, sc: Scheduler)
     (implicit K: Serializer[K], V: Serializer[V])
@@ -66,31 +66,30 @@ object KafkaProducer {
       send(new ProducerRecord[K,V](topic, key, value))
 
     def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]] =
-      Task.unsafeCreate[Option[RecordMetadata]] { (context, cb) =>
+      Task.create[Option[RecordMetadata]] { (s, cb) =>
+        val asyncCb = Callback.forked(cb)(s)
+        val connection = StackedCancelable()
         // Forcing asynchronous boundary
         sc.executeAsync(() => self.synchronized {
-          val s = context.scheduler
           if (isCanceled) {
-            cb.asyncOnSuccess(None)(s)
+            asyncCb.onSuccess(None)
           }
           else {
             val isActive = Atomic(true)
             val cancelable = SingleAssignCancelable()
-            context.connection.push(cancelable)
-
             try {
               // Force evaluation
               val producer = producerRef
 
               // Using asynchronous API
-              val future = producer.send(record, new Callback {
+              val future = producer.send(record, new KafkaCallback {
                 def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
                   if (isActive.getAndSet(false)) {
-                    context.connection.pop()
+                    connection.pop()
                     if (exception != null)
-                      cb.asyncOnError(exception)(s)
+                      asyncCb.onError(exception)
                     else
-                      cb.asyncOnSuccess(Option(meta))(s)
+                      asyncCb.onSuccess(Option(meta))
                   }
                   else if (exception != null) {
                     s.reportFailure(exception)
@@ -103,33 +102,34 @@ object KafkaProducer {
               case NonFatal(ex) =>
                 // Needs synchronization, otherwise we are violating the contract
                 if (isActive.compareAndSet(expect = true, update = false)) {
-                  context.connection.pop()
-                  cb.asyncOnError(ex)(s)
+                  connection.pop()
+                  asyncCb.onError(ex)
                 } else {
                   s.reportFailure(ex)
                 }
             }
           }
         })
+        connection
       }
 
     def close(): Task[Unit] =
-      Task.unsafeCreate { (context, cb) =>
+      Task.create { (s, cb) =>
+        val asyncCb = Callback.forked(cb)(s)
         // Forcing asynchronous boundary
         sc.executeAsync { () =>
           self.synchronized {
-            val s = context.scheduler
             if (isCanceled) {
-              cb.asyncOnSuccess(())(s)
+              asyncCb.onSuccess(())
             }
             else {
               isCanceled = true
               try {
                 producerRef.close()
-                cb.asyncOnSuccess(())(s)
+                asyncCb.onSuccess(())
               } catch {
                 case NonFatal(ex) =>
-                  cb.asyncOnError(ex)(s)
+                  asyncCb.onError(ex)
               }
             }
           }
