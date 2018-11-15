@@ -202,21 +202,6 @@ object KafkaConsumerObservable {
     apply(cfg, consumer)
   }
 
-  /** Builds a [[KafkaConsumerObservable]] instance.
-    *
-    * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
-    *        consumer; also make sure to see `monix/kafka/default.conf` for
-    *        the default values being used.
-    *
-    * @param topicsRegex is the pattern of Kafka topics to subscribe to.
-    */
-  def apply[K,V](cfg: KafkaConsumerConfig, topicsRegex: Regex)
-    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
-
-    val consumer = createConsumer[K,V](cfg, topicsRegex)
-    apply(cfg, consumer)
-  }
-
   /** Returns a `Task` for creating a consumer instance given list of topics. */
   def createConsumer[K,V](config: KafkaConsumerConfig, topics: List[String])
     (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
