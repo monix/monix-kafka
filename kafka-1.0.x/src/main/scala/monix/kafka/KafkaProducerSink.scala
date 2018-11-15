@@ -17,10 +17,10 @@
 package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
-import monix.eval.{Callback, Coeval, Task}
+import monix.eval.{Coeval, Task}
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.cancelables.AssignableCancelable
-import monix.execution.{Ack, Scheduler}
+import monix.execution.{Ack, Callback, Scheduler}
 import monix.reactive.Consumer
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
@@ -40,7 +40,7 @@ final class KafkaProducerSink[K,V] private (
 
   require(parallelism >= 1, "parallelism >= 1")
 
-  def createSubscriber(cb: Callback[Unit], s: Scheduler) = {
+  def createSubscriber(cb: Callback[Throwable, Unit], s: Scheduler) = {
     val out = new Subscriber[Seq[ProducerRecord[K,V]]] { self =>
       implicit val scheduler = s
       private[this] val p = producer.memoize
@@ -69,7 +69,7 @@ final class KafkaProducerSink[K,V] private (
               Continue
             }
 
-            recovered.runAsync
+            recovered.runToFuture
           }
         }
 
@@ -79,7 +79,7 @@ final class KafkaProducerSink[K,V] private (
             isActive = false
 
             if (!shouldTerminate) cb else
-              Task(p.value.close()).flatten.materialize.runAsync.foreach {
+              Task(p.value.close()).flatten.materialize.foreach {
                 case Success(_) => cb
                 case Failure(ex) =>
                   logger.error("Unexpected error in KafkaProducerSink", ex)
