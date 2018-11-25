@@ -160,10 +160,10 @@ val producerCfg = KafkaProducerConfig.default.copy(
 val producer = KafkaProducer[String,String](producerCfg, scheduler)
 
 // For sending one message
-val recordMetadataF = producer.send("my-topic", "my-message").runAsync
+val recordMetadataF = producer.send("my-topic", "my-message").runToFuture
 
 // For closing the producer connection
-val closeF = producer.close().runAsync
+val closeF = producer.close().runToFuture
 ```
 
 Note that these methods return [Tasks](https://monix.io/docs/3x/eval/task.html),
@@ -197,7 +197,7 @@ observable
   // consume everything by pushing into Apache Kafka
   .consumeWith(producer)
   // ready, set, go!
-  .runAsync
+  .runToFuture
 ```
 
 For consuming from Apache Kafka (Version 0.11.x and above):
