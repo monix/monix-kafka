@@ -168,7 +168,7 @@ val closeF = producer.close().runAsync
 
 Calling `producer.send` returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` which can then be run and transformed into a `Future`. 
 
-If the `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and that the message wasn't sucesfully acknowledged by the Kafka broker. In case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`.  All sucesfully delivered messages will complete with `Some[RecordMetatada]`.  
+If the `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and that the message wasn't successfully acknowledged by the Kafka broker. In case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`.  All successfully delivered messages will complete with `Some[RecordMetadata]`.  
 
 For pushing an entire `Observable` to Apache Kafka:
 
