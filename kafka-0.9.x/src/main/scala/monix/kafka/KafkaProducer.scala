@@ -25,7 +25,20 @@ import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata, Callba
 
 import scala.util.control.NonFatal
 
-/** Wraps the Kafka Producer. */
+/**
+  * Wraps the Kafka Producer.
+  *
+  * Calling `producer.send` returns a `Task[Option[RecordMetadata]]`
+  * which can then be run and transformed into a `Future`.
+  *
+  * If the `Task` completes with `None` it means that `producer.send`
+  * method was called after the producer was closed and that
+  * the message wasn't successfully acknowledged by the Kafka broker.
+  * In case of the failure of the underlying Kafka client the producer
+  * will bubble up the exception and fail the `Task`.
+  *
+  * All successfully delivered messages will complete with `Some[RecordMetadata]`.
+  */
 trait KafkaProducer[K,V] extends Serializable {
   def underlying: Task[ApacheKafkaProducer[K,V]]
   def send(topic: String, value: V): Task[Option[RecordMetadata]]
