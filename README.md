@@ -5,7 +5,7 @@ Monix integration with Kafka
 Work in progress!
 
 ## Table of Contents
-1. [Getting Started with Kafka 1.0.x](#getting-started-with-kafka-10x)
+1. [Getting Started with Kafka 1.0.x or above](#getting-started-with-kafka-10x-or-above)
 2. [Getting Started with Kafka 0.11.x](#getting-started-with-kafka-011x)
 3. [Getting Started with Kafka 0.10.x](#getting-started-with-kafka-010x)
 4. [Getting Started with Kafka 0.9.x](#getting-started-with-kafka-09x)
@@ -15,12 +15,18 @@ Work in progress!
 8. [Maintainers](#maintainers)
 9. [License](#license)
 
-## Getting Started with Kafka 1.0.x 
+## Getting Started with Kafka 1.0.x or above
 
 In SBT:
 
 ```scala
 libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC2"
+```
+
+For `kafka` versions higher than `1.0.x` also add a dependency override:
+
+```scala
+dependencyOverrides += "org.apache.kafka" %% "kafka" % "2.1.0"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -71,7 +77,7 @@ libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC2"
 ```
 
 Or in case you're interested in running the tests of this project,
-first download the Kafka server, version `0.9.x` from their 
+first download the Kafka server, version `0.9.x` from their
 [download page](https://kafka.apache.org/downloads.html) (note that
 `0.10.x` or higher do not work with `0.9`), then as the
 [quick start](https://kafka.apache.org/090/documentation.html#quickstart)
@@ -112,7 +118,7 @@ libraryDependencies += "io.monix" %% "monix-kafka-8" % "0.14"
 ```
 
 Or in case you're interested in running the tests of this project,
-first download the Kafka server, version `0.8.x` from their 
+first download the Kafka server, version `0.8.x` from their
 [download page](https://kafka.apache.org/downloads.html) (note that
 `0.9.x` or higher do not work with `0.8`), then as the
 [quick start](https://kafka.apache.org/082/documentation.html#quickstart)
@@ -166,9 +172,9 @@ val recordMetadataF = producer.send("my-topic", "my-message").runToFuture
 val closeF = producer.close().runToFuture
 ```
 
-Calling `producer.send` returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` which can then be run and transformed into a `Future`. 
+Calling `producer.send` returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` which can then be run and transformed into a `Future`.
 
-If the `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and that the message wasn't successfully acknowledged by the Kafka broker. In case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`.  All successfully delivered messages will complete with `Some[RecordMetadata]`.  
+If the `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and that the message wasn't successfully acknowledged by the Kafka broker. In case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`.  All successfully delivered messages will complete with `Some[RecordMetadata]`.
 
 For pushing an entire `Observable` to Apache Kafka:
 
@@ -208,20 +214,20 @@ For consuming from Apache Kafka (Version 0.11.x and above):
 ```scala
 import monix.kafka._
 
-val consumerCfg = KafkaConsumerConfig.default.copy( 
+val consumerCfg = KafkaConsumerConfig.default.copy(
   bootstrapServers = List("127.0.0.1:9092"),
   groupId = "kafka-tests"
 )
 
-val observable = 
+val observable =
   KafkaConsumerObservable[String,String](consumerCfg, List("my-topic"))
 ```
 
-Enjoy! 
+Enjoy!
 
 ## How can I contribute to Monix-Kafka?
 
-We welcome contributions to all projects in the Monix organization and would love 
+We welcome contributions to all projects in the Monix organization and would love
 for you to help build Monix-Kafka. See our [contributor guide](./CONTRIBUTING.md) for
 more information about how you can get involed.
 
