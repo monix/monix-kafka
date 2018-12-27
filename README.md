@@ -5,7 +5,7 @@ Monix integration with Kafka
 Work in progress!
 
 ## Table of Contents
-1. [Getting Started with Kafka 1.0.x](#getting-started-with-kafka-10x)
+1. [Getting Started with Kafka 1.0.x or above](#getting-started-with-kafka-10x-or-above)
 2. [Getting Started with Kafka 0.11.x](#getting-started-with-kafka-011x)
 3. [Getting Started with Kafka 0.10.x](#getting-started-with-kafka-010x)
 4. [Getting Started with Kafka 0.9.x](#getting-started-with-kafka-09x)
@@ -15,7 +15,7 @@ Work in progress!
 8. [Maintainers](#maintainers)
 9. [License](#license)
 
-## Getting Started with Kafka 1.0.x 
+## Getting Started with Kafka 1.0.x or above
 
 In SBT:
 
