@@ -7,7 +7,7 @@ val allProjects = List(
   "monix-kafka-9"
 )
 
-addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "test").mkString(" ;")} ;+doc")
+addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;+doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
 
 lazy val doNotPublishArtifact = Seq(
