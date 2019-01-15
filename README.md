@@ -1,5 +1,11 @@
 # Monix-Kafka
 
+[![Build Status](https://travis-ci.org/monix/monix-kafka.svg?branch=master)](https://travis-ci.org/monix/monix-kafka)
+[![Coverage Status](https://codecov.io/gh/monix/monix-kafka/coverage.svg?branch=master)](https://codecov.io/gh/monix/monix-kafka?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/io.monix/monix-kafka-1x_2.12.svg)](https://search.maven.org/search?q=g:io.monix%20AND%20a:monix-kafka-1x_2.12)
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/monix/monix?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Monix integration with Kafka
 
 Work in progress!
