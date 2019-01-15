@@ -20,11 +20,12 @@ import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.cancelables.BooleanCancelable
 import monix.execution.{Ack, Callback, Cancelable}
-import monix.kafka.config.ObservableCommitType
+import monix.kafka.config.{ObservableCommitOrder, ObservableCommitType}
 import monix.reactive.observers.Subscriber
 import monix.reactive.{Observable, Observer}
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer, OffsetAndMetadata}
+import org.apache.kafka.common.TopicPartition
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{Future, blocking}
@@ -39,11 +40,12 @@ import scala.util.{Failure, Success}
   * [[KafkaConsumerConfig]] needed and see `monix/kafka/default.conf`,
   * (in the resource files) that is exposing all default values.
   */
-final class KafkaConsumerObservable[K, V] private
-  (config: KafkaConsumerConfig, consumer: Task[KafkaConsumer[K,V]])
-  extends Observable[ConsumerRecord[K,V]] {
+final class KafkaConsumerObservable[K, V, Out] private (
+  config: KafkaConsumerConfig,
+  consumer: Task[KafkaConsumer[K,V]],
+  transformOutput: (KafkaConsumer[K, V], Iterable[ConsumerRecord[K,V]]) => Iterable[Out]) extends Observable[Out] {
 
-  def unsafeSubscribeFn(out: Subscriber[ConsumerRecord[K,V]]): Cancelable = {
+  def unsafeSubscribeFn(out: Subscriber[Out]): Cancelable = {
     import out.scheduler
 
     val callback = new Callback[Throwable, Unit] {
@@ -56,7 +58,7 @@ final class KafkaConsumerObservable[K, V] private
     feedTask(out).runAsync(callback)
   }
 
-  private def feedTask(out: Subscriber[ConsumerRecord[K,V]]): Task[Unit] = {
+  private def feedTask(out: Subscriber[Out]): Task[Unit] = {
     // Caching value to save CPU cycles
     val pollTimeoutMillis = config.fetchMaxWaitTime.toMillis
     // Boolean value indicating that we should trigger a commit before downstream ack
@@ -100,7 +102,7 @@ final class KafkaConsumerObservable[K, V] private
                 if (shouldCommitBefore) consumerCommit(consumer)
                 // Feeding the observer happens on the Subscriber's scheduler
                 // if any asynchronous boundaries happen
-                Observer.feed(out, next.asScala)(out.scheduler)
+                Observer.feed(out, transformOutput(consumer, next.asScala))(out.scheduler)
               }
             } catch {
               case NonFatal(ex) =>
@@ -187,8 +189,8 @@ object KafkaConsumerObservable {
     */
   def apply[K,V](
     cfg: KafkaConsumerConfig,
-    consumer: Task[KafkaConsumer[K,V]]): KafkaConsumerObservable[K,V] =
-    new KafkaConsumerObservable[K,V](cfg, consumer)
+    consumer: Task[KafkaConsumer[K,V]]): KafkaConsumerObservable[K,V,ConsumerRecord[K,V]] =
+    new KafkaConsumerObservable[K,V,ConsumerRecord[K,V]](cfg, consumer, (_, messages) => messages)
 
   /** Builds a [[KafkaConsumerObservable]] instance.
     *
@@ -199,7 +201,7 @@ object KafkaConsumerObservable {
     * @param topics is the list of Kafka topics to subscribe to.
     */
   def apply[K,V](cfg: KafkaConsumerConfig, topics: List[String])
-    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
+    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V,ConsumerRecord[K,V]] = {
 
     val consumer = createConsumer[K,V](cfg, topics)
     apply(cfg, consumer)
@@ -214,10 +216,120 @@ object KafkaConsumerObservable {
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
   def apply[K,V](cfg: KafkaConsumerConfig, topicsRegex: Regex)
-    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
+    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V,ConsumerRecord[K,V]] = {
 
     val consumer = createConsumer[K,V](cfg, topicsRegex)
     apply(cfg, consumer)
+  }
+
+  /**
+   * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
+   * and forcibly disables auto commits in configuration.
+   * Such instances emit [[CommittableMessage]] instead of [[ConsumerRecord]].
+   *
+   * Usage example:
+   * {{{
+   *   KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List(topicName))
+   *     .map(message => message.record.value() -> message.committableOffset)
+   *     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+   *     .bufferTimedAndCounted(1.second, 1000)
+   *     .mapTask(offsets => CommittableOffsetBatch(offsets).commit()) 
+   *     .subscribe()
+   * }}}
+   *
+   * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
+   *        consumer; also make sure to see `monix/kafka/default.conf` for
+   *        the default values being used. Auto commit will disabled and
+   *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
+   *
+   * @param consumer is a factory for the
+   *        `org.apache.kafka.clients.consumer.KafkaConsumer`
+   *        instance to use for consuming from Kafka
+   * */
+  def manualCommit[K,V](
+    cfg: KafkaConsumerConfig,
+    consumer: Task[KafkaConsumer[K,V]]): KafkaConsumerObservable[K,V,CommittableMessage[K, V]] = {
+
+    def consumerCommitBatch(consumer: KafkaConsumer[K, V], batch: Map[TopicPartition, Long]): Unit =
+      cfg.observableCommitType match {
+        case ObservableCommitType.Sync =>
+          blocking(consumer.commitSync(batch.map { case (k, v) => k -> new OffsetAndMetadata(v) }.asJava))
+        case ObservableCommitType.Async =>
+          blocking(consumer.commitAsync(batch.map { case (k, v) => k -> new OffsetAndMetadata(v) }.asJava, null))
+      }
+
+    val manualCommitConfig = cfg.copy(observableCommitOrder = ObservableCommitOrder.NoAck, enableAutoCommit = false)
+
+    new KafkaConsumerObservable[K, V, CommittableMessage[K, V]](
+      manualCommitConfig,
+      consumer,
+      (consumer, records) =>
+        records.map { record =>
+          CommittableMessage(
+            record,
+            CommittableOffset(
+              new TopicPartition(record.topic(), record.partition()),
+              record.offset() + 1,
+              batch => Task.eval(consumer.synchronized(consumerCommitBatch(consumer, batch)))))
+        })
+  }
+
+  /**
+   * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
+   * and forcibly disables auto commits in configuration.
+   * Such instances emit [[CommittableMessage]] instead of [[ConsumerRecord]].
+   *
+   * Usage example:
+   * {{{
+   *   KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List(topicName))
+   *     .map(message => message.record.value() -> message.committableOffset)
+   *     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+   *     .bufferTimedAndCounted(1.second, 1000)
+   *     .mapTask(offsets => CommittableOffsetBatch(offsets).commit()) 
+   *     .subscribe()
+   * }}}
+   *
+   * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
+   *        consumer; also make sure to see `monix/kafka/default.conf` for
+   *        the default values being used. Auto commit will disabled and
+   *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
+   *
+   * @param topics is the list of Kafka topics to subscribe to.
+   * */
+  def manualCommit[K,V](cfg: KafkaConsumerConfig, topics: List[String])
+    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V,CommittableMessage[K, V]] = {
+
+    val consumer = createConsumer[K,V](cfg, topics)
+    manualCommit(cfg, consumer)
+  }
+
+  /**
+   * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
+   * and forcibly disables auto commits in configuration.
+   * Such instances emit [[CommittableMessage]] instead of [[ConsumerRecord]].
+   *
+   * Usage example:
+   * {{{
+   *   KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List(topicName))
+   *     .map(message => message.record.value() -> message.committableOffset)
+   *     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+   *     .bufferTimedAndCounted(1.second, 1000)
+   *     .mapTask(offsets => CommittableOffsetBatch(offsets).commit()) 
+   *     .subscribe()
+   * }}}
+   *
+   * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
+   *        consumer; also make sure to see `monix/kafka/default.conf` for
+   *        the default values being used. Auto commit will disabled and
+   *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
+   *
+   * @param topicsRegex is the pattern of Kafka topics to subscribe to.
+   * */
+  def manualCommit[K,V](cfg: KafkaConsumerConfig, topicsRegex: Regex)
+    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V,CommittableMessage[K, V]] = {
+
+    val consumer = createConsumer[K,V](cfg, topicsRegex)
+    manualCommit(cfg, consumer)
   }
 
   /** Returns a `Task` for creating a consumer instance given list of topics. */

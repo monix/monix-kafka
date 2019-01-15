@@ -190,7 +190,7 @@ object KafkaConsumerObservable {
   def apply[K,V](
     cfg: KafkaConsumerConfig,
     consumer: Task[KafkaConsumer[K,V]]): KafkaConsumerObservable[K,V,ConsumerRecord[K, V]] =
-      new KafkaConsumerObservable[K,V,ConsumerRecord[K, V]](cfg, consumer, (_, messages) => messages)
+    new KafkaConsumerObservable[K,V,ConsumerRecord[K, V]](cfg, consumer, (_, messages) => messages)
 
   /** Builds a [[KafkaConsumerObservable]] instance.
     *
@@ -242,9 +242,9 @@ object KafkaConsumerObservable {
    *        the default values being used. Auto commit will disabled and
    *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
    *
-    * @param consumer is a factory for the
-    *        `org.apache.kafka.clients.consumer.KafkaConsumer`
-    *        instance to use for consuming from Kafka
+   * @param consumer is a factory for the
+   *        `org.apache.kafka.clients.consumer.KafkaConsumer`
+   *        instance to use for consuming from Kafka
    * */
   def manualCommit[K,V](
     cfg: KafkaConsumerConfig,
