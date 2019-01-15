@@ -3,8 +3,7 @@ val monixVersion = "3.0.0-RC2"
 val allProjects = List(
   "kafka1x",
   "kafka11",
-  "kafka10",
-  "kafka9"
+  "kafka10"
 )
 
 addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;+doc")
