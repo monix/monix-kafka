@@ -1,6 +1,12 @@
 val monixVersion = "3.0.0-RC2"
 
-addCommandAlias("ci",      ";+clean ;+test:compile ;+doc")
+val allProjects = List(
+  "kafka1x",
+  "kafka11",
+  "kafka10"
+)
+
+addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;+doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
 
 lazy val doNotPublishArtifact = Seq(
@@ -12,8 +18,8 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.7",
-  crossScalaVersions := Seq("2.11.12", "2.12.7"),
+  scalaVersion := "2.12.8",
+  crossScalaVersions := Seq("2.11.12", "2.12.8"),
 
   scalacOptions ++= Seq(
     // warnings
