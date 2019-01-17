@@ -26,7 +26,7 @@ libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC2"
 For `kafka` versions higher than `1.0.x` also add a dependency override:
 
 ```scala
-dependencyOverrides += "org.apache.kafka" %% "kafka" % "2.1.0"
+dependencyOverrides += "org.apache.kafka" % "kafka" % "2.1.0"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -243,4 +243,4 @@ The current maintainers (people who can merge pull requests) are:
 ## License
 
 All code in this repository is licensed under the Apache License,
-Version 2.0.  See [LICENSE.txt](./LICENSE.txt).
+Version 2.0.  See [LICENSE.txt](./LICENSE).
