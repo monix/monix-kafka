@@ -99,7 +99,7 @@ lazy val sharedSettings = Seq(
   scalacOptions in doc ++=
     Opts.doc.title(s"Monix"),
   scalacOptions in doc ++=
-    Opts.doc.sourceUrl(s"https://github.com/monixio/monix-kafka/tree/v${version.value}€{FILE_PATH}.scala"),
+    Opts.doc.sourceUrl(s"https://github.com/monix/monix-kafka/tree/v${version.value}€{FILE_PATH}.scala"),
   scalacOptions in doc ++=
     Seq("-doc-root-content", file("docs/rootdoc.txt").getAbsolutePath),
   scalacOptions in doc ++=
@@ -125,7 +125,7 @@ lazy val sharedSettings = Seq(
   licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   homepage := Some(url("https://github.com/monix/monix-kafka")),
   headerLicense := Some(HeaderLicense.Custom(
-    """|Copyright (c) 2014-2018 by The Monix Project Developers.
+    """|Copyright (c) 2014-2019 by The Monix Project Developers.
        |
        |Licensed under the Apache License, Version 2.0 (the "License");
        |you may not use this file except in compliance with the License.
