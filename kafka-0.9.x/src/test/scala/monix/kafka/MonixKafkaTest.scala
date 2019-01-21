@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2014-2018 by its authors. Some rights reserved.
- * See the project homepage at: https://github.com/monixio/monix-kafka
+ * Copyright (c) 2014-2019 by its authors. Some rights reserved.
+ * See the project homepage at: https://github.com/monix/monix-kafka
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -95,7 +95,7 @@ class MonixKafkaTest extends FunSuite {
       .map(_.value())
       .toListL
 
-    val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runAsync, 60.seconds)
+    val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
     assert(result.map(_.toInt).sum === (0 until count).sum)
   }
 }

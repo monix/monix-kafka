@@ -1,6 +1,12 @@
 val monixVersion = "3.0.0-RC2"
 
-addCommandAlias("ci",      ";+clean ;+test:compile ;+doc")
+val allProjects = List(
+  "kafka1x",
+  "kafka11",
+  "kafka10"
+)
+
+addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;+doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
 
 lazy val doNotPublishArtifact = Seq(
@@ -12,8 +18,8 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.7",
-  crossScalaVersions := Seq("2.11.12", "2.12.7"),
+  scalaVersion := "2.12.8",
+  crossScalaVersions := Seq("2.11.12", "2.12.8"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -93,7 +99,7 @@ lazy val sharedSettings = Seq(
   scalacOptions in doc ++=
     Opts.doc.title(s"Monix"),
   scalacOptions in doc ++=
-    Opts.doc.sourceUrl(s"https://github.com/monixio/monix-kafka/tree/v${version.value}€{FILE_PATH}.scala"),
+    Opts.doc.sourceUrl(s"https://github.com/monix/monix-kafka/tree/v${version.value}€{FILE_PATH}.scala"),
   scalacOptions in doc ++=
     Seq("-doc-root-content", file("docs/rootdoc.txt").getAbsolutePath),
   scalacOptions in doc ++=
@@ -119,7 +125,7 @@ lazy val sharedSettings = Seq(
   licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   homepage := Some(url("https://github.com/monix/monix-kafka")),
   headerLicense := Some(HeaderLicense.Custom(
-    """|Copyright (c) 2014-2018 by The Monix Project Developers.
+    """|Copyright (c) 2014-2019 by The Monix Project Developers.
        |
        |Licensed under the Apache License, Version 2.0 (the "License");
        |you may not use this file except in compliance with the License.
@@ -180,12 +186,12 @@ lazy val commonDependencies = Seq(
 
   libraryDependencies ++= Seq(
     "io.monix" %% "monix-reactive" % monixVersion,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.7.2",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
     "com.typesafe" % "config" % "1.3.3",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.25",
     // For testing ...
-    "ch.qos.logback" % "logback-classic" % "1.1.11" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.3" % "test"
+    "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
+    "org.scalatest" %% "scalatest" % "3.0.5" % "test"
   )
 )
 
