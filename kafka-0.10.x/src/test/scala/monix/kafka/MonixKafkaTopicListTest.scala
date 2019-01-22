@@ -44,8 +44,9 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
   test("publish one message") {
 
-    val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumerTask = KafkaConsumerObservable.createConsumer[String,String](consumerCfg, List(topicName)).executeOn(io)
+    val producer = KafkaProducer[String, String](producerCfg, io)
+    val consumerTask =
+      KafkaConsumerObservable.createConsumer[String, String](consumerCfg, List(topicName)).executeOn(io)
     val consumer = Await.result(consumerTask.runToFuture, 60.seconds)
 
     try {
@@ -55,8 +56,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
       val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
       assert(records === List("my-message"))
-    }
-    finally {
+    } finally {
       Await.result(producer.close().runToFuture, Duration.Inf)
       consumer.close()
     }
@@ -64,8 +64,8 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
   test("listen for one message") {
 
-    val producer = KafkaProducer[String,String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io)
+    val producer = KafkaProducer[String, String](producerCfg, io)
+    val consumer = KafkaConsumerObservable[String, String](consumerCfg, List(topicName)).executeOn(io)
     try {
       // Publishing one message
       val send = producer.send(topicName, "test-message")
@@ -74,8 +74,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val first = consumer.take(1).map(_.value()).firstL
       val result = Await.result(first.runToFuture, 30.seconds)
       assert(result === "test-message")
-    }
-    finally {
+    } finally {
       Await.result(producer.close().runToFuture, Duration.Inf)
     }
   }
@@ -83,10 +82,11 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
   test("full producer/consumer test") {
     val count = 10000
 
-    val producer = KafkaProducerSink[String,String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String,String](consumerCfg, List(topicName)).executeOn(io).take(count)
+    val producer = KafkaProducerSink[String, String](producerCfg, io)
+    val consumer = KafkaConsumerObservable[String, String](consumerCfg, List(topicName)).executeOn(io).take(count)
 
-    val pushT = Observable.range(0, count)
+    val pushT = Observable
+      .range(0, count)
       .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
       .bufferIntrospective(1024)
       .consumeWith(producer)

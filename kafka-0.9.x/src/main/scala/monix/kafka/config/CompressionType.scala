@@ -37,6 +37,7 @@ sealed trait CompressionType extends Serializable {
 }
 
 object CompressionType {
+
   @throws(classOf[BadValue])
   def apply(id: String): CompressionType =
     id match {

@@ -34,6 +34,7 @@ sealed trait SecurityProtocol extends Serializable {
 }
 
 object SecurityProtocol {
+
   @throws(classOf[BadValue])
   def apply(id: String): SecurityProtocol =
     id match {

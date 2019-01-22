@@ -38,13 +38,15 @@ sealed trait SSLProtocol extends Serializable {
   def id: String
 
   def getInstance(): Option[SSLContext] =
-    try Some(SSLContext.getInstance(id)) catch {
+    try Some(SSLContext.getInstance(id))
+    catch {
       case _: NoSuchAlgorithmException =>
         None
     }
 }
 
 object SSLProtocol {
+
   @throws(classOf[BadValue])
   def apply(id: String): SSLProtocol = {
     val algorithm = id match {

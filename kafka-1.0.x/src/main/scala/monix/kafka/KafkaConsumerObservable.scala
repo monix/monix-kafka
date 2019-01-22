@@ -26,7 +26,7 @@ import monix.reactive.{Observable, Observer}
 import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
 
 import scala.collection.JavaConverters._
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import scala.util.control.NonFatal
 import scala.util.matching.Regex
 import scala.util.{Failure, Success}
@@ -38,11 +38,10 @@ import scala.util.{Failure, Success}
   * [[KafkaConsumerConfig]] needed and see `monix/kafka/default.conf`,
   * (in the resource files) that is exposing all default values.
   */
-final class KafkaConsumerObservable[K, V] private
-  (config: KafkaConsumerConfig, consumer: Task[KafkaConsumer[K,V]])
-  extends Observable[ConsumerRecord[K,V]] {
+final class KafkaConsumerObservable[K, V] private (config: KafkaConsumerConfig, consumer: Task[KafkaConsumer[K, V]])
+    extends Observable[ConsumerRecord[K, V]] {
 
-  def unsafeSubscribeFn(out: Subscriber[ConsumerRecord[K,V]]): Cancelable = {
+  def unsafeSubscribeFn(out: Subscriber[ConsumerRecord[K, V]]): Cancelable = {
     import out.scheduler
 
     val callback = new Callback[Throwable, Unit] {
@@ -55,7 +54,7 @@ final class KafkaConsumerObservable[K, V] private
     feedTask(out).runAsync(callback)
   }
 
-  private def feedTask(out: Subscriber[ConsumerRecord[K,V]]): Task[Unit] = {
+  private def feedTask(out: Subscriber[ConsumerRecord[K, V]]): Task[Unit] = {
     // Caching value to save CPU cycles
     val pollTimeoutMillis = config.fetchMaxWaitTime.toMillis
     // Boolean value indicating that we should trigger a commit before downstream ack
@@ -69,7 +68,7 @@ final class KafkaConsumerObservable[K, V] private
      *
      * MUST BE synchronized by `consumer`.
      */
-    def consumerCommit(consumer: KafkaConsumer[K,V]): Unit =
+    def consumerCommit(consumer: KafkaConsumer[K, V]): Unit =
       config.observableCommitType match {
         case ObservableCommitType.Sync =>
           blocking(consumer.commitSync())
@@ -82,7 +81,7 @@ final class KafkaConsumerObservable[K, V] private
      *
      * Creates an asynchronous boundary on every poll.
      */
-    def runLoop(consumer: KafkaConsumer[K,V]): Task[Unit] = {
+    def runLoop(consumer: KafkaConsumer[K, V]): Task[Unit] = {
       // Creates a task that polls the source, then feeds the downstream
       // subscriber, returning the resulting acknowledgement
       val ackTask: Task[Ack] = Task.create { (scheduler, cb) =>
@@ -94,7 +93,8 @@ final class KafkaConsumerObservable[K, V] private
         s.executeAsync { () =>
           val ackFuture =
             try consumer.synchronized {
-              if (cancelable.isCanceled) Stop else {
+              if (cancelable.isCanceled) Stop
+              else {
                 val next = blocking(consumer.poll(pollTimeoutMillis))
                 if (shouldCommitBefore) consumerCommit(consumer)
                 // Feeding the observer happens on the Subscriber's scheduler
@@ -146,7 +146,7 @@ final class KafkaConsumerObservable[K, V] private
     /* Returns a `Task` that triggers the closing of the
      * Kafka Consumer connection.
      */
-    def cancelTask(consumer: KafkaConsumer[K,V]): Task[Unit] = {
+    def cancelTask(consumer: KafkaConsumer[K, V]): Task[Unit] = {
       // Forced asynchronous boundary
       val cancelTask = Task.evalAsync {
         consumer.synchronized(blocking(consumer.close()))
@@ -174,6 +174,7 @@ final class KafkaConsumerObservable[K, V] private
 }
 
 object KafkaConsumerObservable {
+
   /** Builds a [[KafkaConsumerObservable]] instance.
     *
     * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
@@ -184,10 +185,8 @@ object KafkaConsumerObservable {
     *        `org.apache.kafka.clients.consumer.KafkaConsumer`
     *        instance to use for consuming from Kafka
     */
-  def apply[K,V](
-    cfg: KafkaConsumerConfig,
-    consumer: Task[KafkaConsumer[K,V]]): KafkaConsumerObservable[K,V] =
-    new KafkaConsumerObservable[K,V](cfg, consumer)
+  def apply[K, V](cfg: KafkaConsumerConfig, consumer: Task[KafkaConsumer[K, V]]): KafkaConsumerObservable[K, V] =
+    new KafkaConsumerObservable[K, V](cfg, consumer)
 
   /** Builds a [[KafkaConsumerObservable]] instance.
     *
@@ -197,10 +196,11 @@ object KafkaConsumerObservable {
     *
     * @param topics is the list of Kafka topics to subscribe to.
     */
-  def apply[K,V](cfg: KafkaConsumerConfig, topics: List[String])
-    (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
+  def apply[K, V](cfg: KafkaConsumerConfig, topics: List[String])(
+    implicit K: Deserializer[K],
+    V: Deserializer[V]): KafkaConsumerObservable[K, V] = {
 
-    val consumer = createConsumer[K,V](cfg, topics)
+    val consumer = createConsumer[K, V](cfg, topics)
     apply(cfg, consumer)
   }
 
@@ -212,22 +212,24 @@ object KafkaConsumerObservable {
     *
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
-  def apply[K,V](cfg: KafkaConsumerConfig, topicsRegex: Regex)
-                (implicit K: Deserializer[K], V: Deserializer[V]): KafkaConsumerObservable[K,V] = {
+  def apply[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(
+    implicit K: Deserializer[K],
+    V: Deserializer[V]): KafkaConsumerObservable[K, V] = {
 
-    val consumer = createConsumer[K,V](cfg, topicsRegex)
+    val consumer = createConsumer[K, V](cfg, topicsRegex)
     apply(cfg, consumer)
   }
 
   /** Returns a `Task` for creating a consumer instance given list of topics. */
-  def createConsumer[K,V](config: KafkaConsumerConfig, topics: List[String])
-    (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
+  def createConsumer[K, V](config: KafkaConsumerConfig, topics: List[String])(
+    implicit K: Deserializer[K],
+    V: Deserializer[V]): Task[KafkaConsumer[K, V]] = {
 
     import collection.JavaConverters._
     Task.evalAsync {
       val configMap = config.toJavaMap
       blocking {
-        val consumer = new KafkaConsumer[K,V](configMap, K.create(), V.create())
+        val consumer = new KafkaConsumer[K, V](configMap, K.create(), V.create())
         consumer.subscribe(topics.asJava)
         consumer
       }
@@ -235,12 +237,13 @@ object KafkaConsumerObservable {
   }
 
   /** Returns a `Task` for creating a consumer instance given topics regex. */
-  def createConsumer[K,V](config: KafkaConsumerConfig, topicsRegex: Regex)
-    (implicit K: Deserializer[K], V: Deserializer[V]): Task[KafkaConsumer[K,V]] = {
+  def createConsumer[K, V](config: KafkaConsumerConfig, topicsRegex: Regex)(
+    implicit K: Deserializer[K],
+    V: Deserializer[V]): Task[KafkaConsumer[K, V]] = {
     Task.evalAsync {
       val configMap = config.toJavaMap
       blocking {
-        val consumer = new KafkaConsumer[K,V](configMap, K.create(), V.create())
+        val consumer = new KafkaConsumer[K, V](configMap, K.create(), V.create())
         consumer.subscribe(topicsRegex.pattern)
         consumer
       }

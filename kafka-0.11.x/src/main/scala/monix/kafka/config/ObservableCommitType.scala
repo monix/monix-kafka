@@ -32,15 +32,14 @@ sealed trait ObservableCommitType extends Serializable {
 }
 
 object ObservableCommitType {
+
   @throws(classOf[BadValue])
   def apply(id: String): ObservableCommitType =
     id match {
       case Sync.id => Sync
       case Async.id => Async
       case _ =>
-        throw new BadValue(
-          "kafka.monix.observable.commit.type",
-          s"Invalid value: $id")
+        throw new BadValue("kafka.monix.observable.commit.type", s"Invalid value: $id")
     }
 
   /** Uses `consumer.commitSync()` after each batch

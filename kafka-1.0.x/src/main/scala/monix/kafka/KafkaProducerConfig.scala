@@ -334,7 +334,10 @@ object KafkaProducerConfig {
     *        to the default values provided by the `monix-kafka` library
     *        in `monix/kafka/default.conf`
     */
-  def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaProducerConfig =
+  def loadResource(
+    resourceBaseName: String,
+    rootPath: String = defaultRootPath,
+    includeDefaults: Boolean = true): KafkaProducerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
   /** Loads a [[KafkaProducerConfig]] from a specified file.
