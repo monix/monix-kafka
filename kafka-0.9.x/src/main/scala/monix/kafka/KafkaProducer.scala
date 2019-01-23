@@ -21,7 +21,12 @@ import monix.eval.Task
 import monix.execution.atomic.Atomic
 import monix.execution.cancelables.{SingleAssignCancelable, StackedCancelable}
 import monix.execution.{Callback, Cancelable, Scheduler}
-import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata, Callback => KafkaCallback, KafkaProducer => ApacheKafkaProducer}
+import org.apache.kafka.clients.producer.{
+  ProducerRecord,
+  RecordMetadata,
+  Callback => KafkaCallback,
+  KafkaProducer => ApacheKafkaProducer
+}
 
 import scala.util.control.NonFatal
 
@@ -39,23 +44,26 @@ import scala.util.control.NonFatal
   *
   * All successfully delivered messages will complete with `Some[RecordMetadata]`.
   */
-trait KafkaProducer[K,V] extends Serializable {
-  def underlying: Task[ApacheKafkaProducer[K,V]]
+trait KafkaProducer[K, V] extends Serializable {
+  def underlying: Task[ApacheKafkaProducer[K, V]]
   def send(topic: String, value: V): Task[Option[RecordMetadata]]
   def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]]
-  def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]]
+  def send(record: ProducerRecord[K, V]): Task[Option[RecordMetadata]]
   def close(): Task[Unit]
 }
 
 object KafkaProducer {
-  /** Builds a [[KafkaProducer]] instance. */
-  def apply[K,V](config: KafkaProducerConfig, sc: Scheduler)
-    (implicit K: Serializer[K], V: Serializer[V]): KafkaProducer[K,V] =
-    new Implementation[K,V](config, sc)
 
-  private final class Implementation[K,V](config: KafkaProducerConfig, sc: Scheduler)
-    (implicit K: Serializer[K], V: Serializer[V])
-    extends KafkaProducer[K,V] with StrictLogging {
+  /** Builds a [[KafkaProducer]] instance. */
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
+    implicit K: Serializer[K],
+    V: Serializer[V]): KafkaProducer[K, V] =
+    new Implementation[K, V](config, sc)
+
+  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler)(
+    implicit K: Serializer[K],
+    V: Serializer[V])
+      extends KafkaProducer[K, V] with StrictLogging {
 
     // Alias needed for being precise when blocking
     self =>
@@ -66,63 +74,64 @@ object KafkaProducer {
     // Gets initialized on the first `send`
     private lazy val producerRef = {
       logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
-      new ApacheKafkaProducer[K,V](config.toJavaMap, K.create(), V.create())
+      new ApacheKafkaProducer[K, V](config.toJavaMap, K.create(), V.create())
     }
 
     def underlying: Task[ApacheKafkaProducer[K, V]] =
       Task.eval(producerRef)
 
     def send(topic: String, value: V): Task[Option[RecordMetadata]] =
-      send(new ProducerRecord[K,V](topic, value))
+      send(new ProducerRecord[K, V](topic, value))
 
     def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]] =
-      send(new ProducerRecord[K,V](topic, key, value))
+      send(new ProducerRecord[K, V](topic, key, value))
 
-    def send(record: ProducerRecord[K,V]): Task[Option[RecordMetadata]] =
+    def send(record: ProducerRecord[K, V]): Task[Option[RecordMetadata]] =
       Task.create[Option[RecordMetadata]] { (s, cb) =>
         val asyncCb = Callback.forked(cb)(s)
         val connection = StackedCancelable()
         // Forcing asynchronous boundary
-        sc.executeAsync(() => self.synchronized {
-          if (isCanceled) {
-            asyncCb.onSuccess(None)
-          }
-          else {
-            val isActive = Atomic(true)
-            val cancelable = SingleAssignCancelable()
-            try {
-              // Force evaluation
-              val producer = producerRef
+        sc.executeAsync(() =>
+          self.synchronized {
+            if (isCanceled) {
+              asyncCb.onSuccess(None)
+            } else {
+              val isActive = Atomic(true)
+              val cancelable = SingleAssignCancelable()
+              try {
+                // Force evaluation
+                val producer = producerRef
 
-              // Using asynchronous API
-              val future = producer.send(record, new KafkaCallback {
-                def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
-                  if (isActive.getAndSet(false)) {
+                // Using asynchronous API
+                val future = producer.send(
+                  record,
+                  new KafkaCallback {
+                    def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
+                      if (isActive.getAndSet(false)) {
+                        connection.pop()
+                        if (exception != null)
+                          asyncCb.onError(exception)
+                        else
+                          asyncCb.onSuccess(Option(meta))
+                      } else if (exception != null) {
+                        s.reportFailure(exception)
+                      }
+                  }
+                )
+
+                cancelable := Cancelable(() => future.cancel(false))
+              } catch {
+                case NonFatal(ex) =>
+                  // Needs synchronization, otherwise we are violating the contract
+                  if (isActive.compareAndSet(expect = true, update = false)) {
                     connection.pop()
-                    if (exception != null)
-                      asyncCb.onError(exception)
-                    else
-                      asyncCb.onSuccess(Option(meta))
+                    asyncCb.onError(ex)
+                  } else {
+                    s.reportFailure(ex)
                   }
-                  else if (exception != null) {
-                    s.reportFailure(exception)
-                  }
-              })
-
-              cancelable := Cancelable(() => future.cancel(false))
+              }
             }
-            catch {
-              case NonFatal(ex) =>
-                // Needs synchronization, otherwise we are violating the contract
-                if (isActive.compareAndSet(expect = true, update = false)) {
-                  connection.pop()
-                  asyncCb.onError(ex)
-                } else {
-                  s.reportFailure(ex)
-                }
-            }
-          }
-        })
+          })
         connection
       }
 
@@ -134,8 +143,7 @@ object KafkaProducer {
           self.synchronized {
             if (isCanceled) {
               asyncCb.onSuccess(())
-            }
-            else {
+            } else {
               isCanceled = true
               try {
                 producerRef.close()

@@ -283,7 +283,7 @@ final case class KafkaConsumerConfig(
 
   def toProperties: Properties = {
     val props = new Properties()
-    for ((k,v) <- toMap; if v != null) props.put(k,v)
+    for ((k, v) <- toMap; if v != null) props.put(k, v)
     props
   }
 }
@@ -341,7 +341,10 @@ object KafkaConsumerConfig {
     *        to the default values provided by the `monix-kafka` library
     *        in `monix/kafka/default.conf`
     */
-  def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaConsumerConfig =
+  def loadResource(
+    resourceBaseName: String,
+    rootPath: String = defaultRootPath,
+    includeDefaults: Boolean = true): KafkaConsumerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
   /** Loads a [[KafkaConsumerConfig]] from a specified file.

@@ -31,22 +31,21 @@ import scala.util.{Failure, Success}
 /** A `monix.reactive.Consumer` that pushes incoming messages into
   * a [[KafkaProducer]].
   */
-final class KafkaProducerSink[K,V] private (
-  producer: Coeval[KafkaProducer[K,V]],
+final class KafkaProducerSink[K, V] private (
+  producer: Coeval[KafkaProducer[K, V]],
   shouldTerminate: Boolean,
   parallelism: Int)
-  extends Consumer[Seq[ProducerRecord[K,V]], Unit]
-    with StrictLogging with Serializable {
+    extends Consumer[Seq[ProducerRecord[K, V]], Unit] with StrictLogging with Serializable {
 
   require(parallelism >= 1, "parallelism >= 1")
 
   def createSubscriber(cb: Callback[Throwable, Unit], s: Scheduler) = {
-    val out = new Subscriber[Seq[ProducerRecord[K,V]]] { self =>
+    val out = new Subscriber[Seq[ProducerRecord[K, V]]] { self =>
       implicit val scheduler = s
       private[this] val p = producer.memoize
       private[this] var isActive = true
 
-      private def sendAll(batch: Seq[ProducerRecord[K,V]]): Seq[Task[Option[RecordMetadata]]] =
+      private def sendAll(batch: Seq[ProducerRecord[K, V]]): Seq[Task[Option[RecordMetadata]]] =
         for (record <- batch) yield {
           try p.value.send(record)
           catch { case NonFatal(ex) => Task.raiseError(ex) }
@@ -54,7 +53,8 @@ final class KafkaProducerSink[K,V] private (
 
       def onNext(list: Seq[ProducerRecord[K, V]]): Future[Ack] =
         self.synchronized {
-          if (!isActive) Stop else {
+          if (!isActive) Stop
+          else {
             val sendTask: Task[Seq[Option[RecordMetadata]]] =
               if (parallelism == 1)
                 Task.sequence(sendAll(list))
@@ -78,7 +78,8 @@ final class KafkaProducerSink[K,V] private (
           if (isActive) {
             isActive = false
 
-            if (!shouldTerminate) cb else
+            if (!shouldTerminate) cb
+            else
               Task(p.value.close()).flatten.materialize.foreach {
                 case Success(_) => cb
                 case Failure(ex) =>
@@ -99,17 +100,17 @@ final class KafkaProducerSink[K,V] private (
 }
 
 object KafkaProducerSink {
-  /** Builder for [[KafkaProducerSink]]. */
-  def apply[K,V](config: KafkaProducerConfig, sc: Scheduler)
-    (implicit K: Serializer[K], V: Serializer[V]): KafkaProducerSink[K,V] = {
 
-    val producer = Coeval(KafkaProducer[K,V](config, sc))
-    new KafkaProducerSink(producer, shouldTerminate = true,
-      parallelism = config.monixSinkParallelism)
+  /** Builder for [[KafkaProducerSink]]. */
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
+    implicit K: Serializer[K],
+    V: Serializer[V]): KafkaProducerSink[K, V] = {
+
+    val producer = Coeval(KafkaProducer[K, V](config, sc))
+    new KafkaProducerSink(producer, shouldTerminate = true, parallelism = config.monixSinkParallelism)
   }
 
   /** Builder for [[KafkaProducerSink]]. */
-  def apply[K,V](producer: Coeval[KafkaProducer[K,V]], parallelism: Int): KafkaProducerSink[K,V] =
-  new KafkaProducerSink(producer, shouldTerminate = false,
-    parallelism = parallelism)
+  def apply[K, V](producer: Coeval[KafkaProducer[K, V]], parallelism: Int): KafkaProducerSink[K, V] =
+    new KafkaProducerSink(producer, shouldTerminate = false, parallelism = parallelism)
 }
