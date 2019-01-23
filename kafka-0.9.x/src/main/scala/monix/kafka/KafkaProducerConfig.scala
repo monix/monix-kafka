@@ -270,7 +270,7 @@ case class KafkaProducerConfig(
 
   def toProperties: Properties = {
     val props = new Properties()
-    for ((k,v) <- toMap; if v != null) props.put(k,v)
+    for ((k, v) <- toMap; if v != null) props.put(k, v)
     props
   }
 }
@@ -328,7 +328,10 @@ object KafkaProducerConfig {
     *        to the default values provided by the `monix-kafka` library
     *        in `monix/kafka/default.conf`
     */
-  def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaProducerConfig =
+  def loadResource(
+    resourceBaseName: String,
+    rootPath: String = defaultRootPath,
+    includeDefaults: Boolean = true): KafkaProducerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
   /** Loads a [[KafkaProducerConfig]] from a specified file.

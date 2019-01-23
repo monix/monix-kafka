@@ -19,8 +19,7 @@ package monix.kafka.config
 import org.apache.kafka.clients.producer.Partitioner
 import scala.reflect.ClassTag
 
-final case class PartitionerName(className: String)
-  extends ClassName[Partitioner] {
+final case class PartitionerName(className: String) extends ClassName[Partitioner] {
 
   /** Creates a new instance of the referenced `Serializer`. */
   def createInstance(): Partitioner =
@@ -28,6 +27,7 @@ final case class PartitionerName(className: String)
 }
 
 object PartitionerName {
+
   /** Builds a [[PartitionerName]], given a class. */
   def apply[C <: Partitioner](implicit C: ClassTag[C]): PartitionerName =
     PartitionerName(C.runtimeClass.getCanonicalName)
@@ -36,4 +36,3 @@ object PartitionerName {
   val default: PartitionerName =
     PartitionerName("org.apache.kafka.clients.producer.internals.DefaultPartitioner")
 }
-

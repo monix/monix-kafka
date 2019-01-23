@@ -33,6 +33,7 @@ sealed trait AutoOffsetReset extends Serializable {
 }
 
 object AutoOffsetReset {
+
   @throws(classOf[BadValue])
   def apply(id: String): AutoOffsetReset =
     id.trim.toLowerCase match {
@@ -60,5 +61,3 @@ object AutoOffsetReset {
     val id = "none"
   }
 }
-
-

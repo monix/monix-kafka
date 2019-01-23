@@ -20,6 +20,7 @@ package monix
 import monix.execution.Scheduler
 
 package object kafka {
+
   /** I/O scheduler meant for tests. */
   lazy val io = Scheduler.io("monix-kafka-tests")
 }

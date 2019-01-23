@@ -36,6 +36,7 @@ sealed trait Acks extends Product with Serializable {
 }
 
 object Acks {
+
   @throws(classOf[BadValue])
   def apply(id: String): Acks =
     id match {
