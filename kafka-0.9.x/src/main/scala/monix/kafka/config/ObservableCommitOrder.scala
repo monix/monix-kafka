@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 by The Monix Project Developers.
+ * Copyright (c) 2014-2019 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import com.typesafe.config.ConfigException.BadValue
   *    after acknowledgement is received from downstream
   *  - [[ObservableCommitOrder.NoAck]] specifies to skip committing
   */
-sealed trait  ObservableCommitOrder extends Serializable {
+sealed trait ObservableCommitOrder extends Serializable {
   def id: String
 
   def isBefore: Boolean =
@@ -47,6 +47,7 @@ sealed trait  ObservableCommitOrder extends Serializable {
 }
 
 object ObservableCommitOrder {
+
   @throws(classOf[BadValue])
   def apply(id: String): ObservableCommitOrder =
     id match {
@@ -54,9 +55,7 @@ object ObservableCommitOrder {
       case AfterAck.id => AfterAck
       case NoAck.id => NoAck
       case _ =>
-        throw new BadValue(
-          "kafka.monix.observable.commit.order",
-          s"Invalid value: $id")
+        throw new BadValue("kafka.monix.observable.commit.order", s"Invalid value: $id")
     }
 
   /** Do a `commit` in the Kafka Consumer before

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 by The Monix Project Developers.
+ * Copyright (c) 2014-2019 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -334,7 +334,10 @@ object KafkaProducerConfig {
     *        to the default values provided by the `monix-kafka` library
     *        in `monix/kafka/default.conf`
     */
-  def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaProducerConfig =
+  def loadResource(
+    resourceBaseName: String,
+    rootPath: String = defaultRootPath,
+    includeDefaults: Boolean = true): KafkaProducerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
   /** Loads a [[KafkaProducerConfig]] from a specified file.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 by The Monix Project Developers.
+ * Copyright (c) 2014-2019 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -291,7 +291,7 @@ final case class KafkaConsumerConfig(
 
   def toProperties: Properties = {
     val props = new Properties()
-    for ((k,v) <- toMap; if v != null) props.put(k,v)
+    for ((k, v) <- toMap; if v != null) props.put(k, v)
     props
   }
 }
@@ -349,7 +349,10 @@ object KafkaConsumerConfig {
     *        to the default values provided by the `monix-kafka` library
     *        in `monix/kafka/default.conf`
     */
-  def loadResource(resourceBaseName: String, rootPath: String = defaultRootPath, includeDefaults: Boolean = true): KafkaConsumerConfig =
+  def loadResource(
+    resourceBaseName: String,
+    rootPath: String = defaultRootPath,
+    includeDefaults: Boolean = true): KafkaConsumerConfig =
     apply(ConfigFactory.load(resourceBaseName).getConfig(rootPath), includeDefaults)
 
   /** Loads a [[KafkaConsumerConfig]] from a specified file.

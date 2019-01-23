@@ -1,5 +1,11 @@
 # Monix-Kafka
 
+[![Build Status](https://travis-ci.org/monix/monix-kafka.svg?branch=master)](https://travis-ci.org/monix/monix-kafka)
+[![Coverage Status](https://codecov.io/gh/monix/monix-kafka/coverage.svg?branch=master)](https://codecov.io/gh/monix/monix-kafka?branch=master)
+[![Maven Central](https://img.shields.io/maven-central/v/io.monix/monix-kafka-1x_2.12.svg)](https://search.maven.org/search?q=g:io.monix%20AND%20a:monix-kafka-1x_2.12)
+
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/monix/monix?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Monix integration with Kafka
 
 Work in progress!
@@ -26,7 +32,7 @@ libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC2"
 For `kafka` versions higher than `1.0.x` also add a dependency override:
 
 ```scala
-dependencyOverrides += "org.apache.kafka" %% "kafka" % "2.1.0"
+dependencyOverrides += "org.apache.kafka" % "kafka" % "2.1.0"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -268,4 +274,4 @@ The current maintainers (people who can merge pull requests) are:
 ## License
 
 All code in this repository is licensed under the Apache License,
-Version 2.0.  See [LICENSE.txt](./LICENSE.txt).
+Version 2.0.  See [LICENSE.txt](./LICENSE).

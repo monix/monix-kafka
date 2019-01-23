@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 by The Monix Project Developers.
+ * Copyright (c) 2014-2019 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ sealed trait Acks extends Product with Serializable {
 }
 
 object Acks {
+
   @throws(classOf[BadValue])
   def apply(id: String): Acks =
     id match {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2018 by The Monix Project Developers.
+ * Copyright (c) 2014-2019 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +33,7 @@ sealed trait AutoOffsetReset extends Serializable {
 }
 
 object AutoOffsetReset {
+
   @throws(classOf[BadValue])
   def apply(id: String): AutoOffsetReset =
     id.trim.toLowerCase match {
@@ -60,5 +61,3 @@ object AutoOffsetReset {
     val id = "none"
   }
 }
-
-

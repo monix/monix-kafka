@@ -22,7 +22,7 @@ import org.apache.kafka.common.TopicPartition
 /** Represents offset for specified topic and partition that can be
   * committed by [[commit]] method call.
   * To achieve good performance it is recommended to use batched commit with
-  * [[CommittableOffsetBatch]] class. 
+  * [[CommittableOffsetBatch]] class.
   *
   * @param topicPartition is the topic and partition identifier
   *
@@ -30,7 +30,7 @@ import org.apache.kafka.common.TopicPartition
   *
   * @param commitBatch is the function for batched commit realized as closure
   *        in [[KafkaConsumerObservable]] context. This decision was made for
-  *        thread-safety reasons. 
+  *        thread-safety reasons.
   */
 final class CommittableOffset(
   val topicPartition: TopicPartition,
@@ -38,13 +38,14 @@ final class CommittableOffset(
   private[kafka] val commitBatch: Map[TopicPartition, Long] => Task[Unit]) {
 
   /**
-   * Commits [[offset]] for the [[topicPartition]] to Kafka. It is recommended
-   * to use batched commit with [[CommittableOffsetBatch]] class. 
-   * */
+    * Commits [[offset]] for the [[topicPartition]] to Kafka. It is recommended
+    * to use batched commit with [[CommittableOffsetBatch]] class.
+    * */
   def commit(): Task[Unit] = commitBatch(Map(topicPartition -> offset))
 }
 
 object CommittableOffset {
+
   def apply(
     topicPartition: TopicPartition,
     offset: Long,

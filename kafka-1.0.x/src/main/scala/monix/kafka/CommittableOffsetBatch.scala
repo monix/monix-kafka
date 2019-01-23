@@ -19,7 +19,7 @@ package monix.kafka
 import monix.eval.Task
 import org.apache.kafka.common.TopicPartition
 
-/** Batch of Kafka offsets which can be committed together. 
+/** Batch of Kafka offsets which can be committed together.
   * Can be builded from offsets sequence by [[CommittableOffsetBatch#apply]] method.
   * Besides you can use [[CommittableOffsetBatch#empty]] method to create empty batch and
   * add offsets to it by [[updated]] method.
@@ -38,16 +38,16 @@ import org.apache.kafka.common.TopicPartition
 final class CommittableOffsetBatch(
   val offsets: Map[TopicPartition, Long],
   commitBatch: Map[TopicPartition, Long] => Task[Unit]) {
-  
+
   /**
-   * Commits [[offsets]] to Kafka
-   * */
+    * Commits [[offsets]] to Kafka
+    * */
   def commit(): Task[Unit] = commitBatch(offsets)
 
   /**
-   * Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
-   * for same topic and partition.
-   * */
+    * Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
+    * for same topic and partition.
+    * */
   def updated(committableOffset: CommittableOffset): CommittableOffsetBatch =
     new CommittableOffsetBatch(
       offsets.updated(committableOffset.topicPartition, committableOffset.offset),
@@ -56,19 +56,20 @@ final class CommittableOffsetBatch(
 }
 
 object CommittableOffsetBatch {
+
   /**
-   * Creates empty [[CommittableOffsetBatch]]. Can be used as neutral element in fold:
-   * {{{
-   *   offsets.foldLeft(CommittableOffsetBatch.empty)(_ updated _)
-   * }}}
-   * */
+    * Creates empty [[CommittableOffsetBatch]]. Can be used as neutral element in fold:
+    * {{{
+    *   offsets.foldLeft(CommittableOffsetBatch.empty)(_ updated _)
+    * }}}
+    * */
   def empty: CommittableOffsetBatch = new CommittableOffsetBatch(Map.empty, _ => Task.pure(()))
 
   /**
-   * Builds [[CommittableOffsetBatch]] from offsets sequence. Be careful with
-   * sequence order. If there is more than once offset for a topic and partition in the
-   * sequence then the last one will remain.
-   * */
+    * Builds [[CommittableOffsetBatch]] from offsets sequence. Be careful with
+    * sequence order. If there is more than once offset for a topic and partition in the
+    * sequence then the last one will remain.
+    * */
   def apply(offsets: Seq[CommittableOffset]): CommittableOffsetBatch =
     if (offsets.nonEmpty) {
       val aggregatedOffsets = offsets.foldLeft(Map.empty[TopicPartition, Long]) { (acc, o) =>
