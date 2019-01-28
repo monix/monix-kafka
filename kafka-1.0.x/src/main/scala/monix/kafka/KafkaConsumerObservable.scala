@@ -230,7 +230,7 @@ object KafkaConsumerObservable {
   /**
     * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
     * and forcibly disables auto commits in configuration.
-    * Such instances emit [[CommittableMessage]] instead of [[ConsumerRecord]].
+    * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
     *
     * Usage example:
     * {{{
@@ -245,7 +245,7 @@ object KafkaConsumerObservable {
     * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
     *        consumer; also make sure to see `monix/kafka/default.conf` for
     *        the default values being used. Auto commit will disabled and
-    *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
+    *        observable commit order will turned to [[monix.kafka.config.ObservableCommitOrder.NoAck NoAck]] forcibly!
     *
     * @param consumer is a factory for the
     *        `org.apache.kafka.clients.consumer.KafkaConsumer`
@@ -283,7 +283,7 @@ object KafkaConsumerObservable {
   /**
     * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
     * and forcibly disables auto commits in configuration.
-    * Such instances emit [[CommittableMessage]] instead of [[ConsumerRecord]].
+    * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
     *
     * Usage example:
     * {{{
@@ -298,7 +298,7 @@ object KafkaConsumerObservable {
     * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
     *        consumer; also make sure to see `monix/kafka/default.conf` for
     *        the default values being used. Auto commit will disabled and
-    *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
+    *        observable commit order will turned to [[monix.kafka.config.ObservableCommitOrder.NoAck NoAck]] forcibly!
     *
     * @param topics is the list of Kafka topics to subscribe to.
     * */
@@ -313,7 +313,7 @@ object KafkaConsumerObservable {
   /**
     * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
     * and forcibly disables auto commits in configuration.
-    * Such instances emit [[CommittableMessage]] instead of [[ConsumerRecord]].
+    * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
     *
     * Usage example:
     * {{{
@@ -328,7 +328,7 @@ object KafkaConsumerObservable {
     * @param cfg is the [[KafkaConsumerConfig]] needed for initializing the
     *        consumer; also make sure to see `monix/kafka/default.conf` for
     *        the default values being used. Auto commit will disabled and
-    *        observable commit order will turned to [[ObservableCommitOrder.NoAck]] forcibly!
+    *        observable commit order will turned to [[monix.kafka.config.ObservableCommitOrder.NoAck NoAck]] forcibly!
     *
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     * */
