@@ -32,7 +32,7 @@ import org.apache.kafka.common.TopicPartition
   *        in [[KafkaConsumerObservable]] context. This decision was made for
   *        thread-safety reasons.
   */
-final class CommittableOffset(
+final class CommittableOffset private[kafka] (
   val topicPartition: TopicPartition,
   val offset: Long,
   private[kafka] val commitBatch: Map[TopicPartition, Long] => Task[Unit]) {

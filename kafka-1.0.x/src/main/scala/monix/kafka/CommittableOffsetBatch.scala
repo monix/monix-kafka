@@ -35,7 +35,7 @@ import org.apache.kafka.common.TopicPartition
   *        thread-safety reasons. This parameter is obtained from last [[CommittableOffset]]
   *        added to batch.
   */
-final class CommittableOffsetBatch(
+final class CommittableOffsetBatch private[kafka] (
   val offsets: Map[TopicPartition, Long],
   commitBatch: Map[TopicPartition, Long] => Task[Unit]) {
 
@@ -63,7 +63,7 @@ object CommittableOffsetBatch {
     *   offsets.foldLeft(CommittableOffsetBatch.empty)(_ updated _)
     * }}}
     * */
-  def empty: CommittableOffsetBatch = new CommittableOffsetBatch(Map.empty, _ => Task.pure(()))
+  val empty: CommittableOffsetBatch = new CommittableOffsetBatch(Map.empty, _ => Task.pure(()))
 
   /**
     * Builds [[CommittableOffsetBatch]] from offsets sequence. Be careful with
