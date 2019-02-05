@@ -17,10 +17,11 @@
 package monix.kafka
 
 import monix.eval.Task
+import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.common.TopicPartition
 
 /** Batch of Kafka offsets which can be committed together.
-  * Can be builded from offsets sequence by [[CommittableOffsetBatch#apply]] method.
+  * Can be built from offsets sequence by [[CommittableOffsetBatch#apply]] method.
   * Besides you can use [[CommittableOffsetBatch#empty]] method to create empty batch and
   * add offsets to it by [[updated]] method.
   *
@@ -30,19 +31,27 @@ import org.apache.kafka.common.TopicPartition
   * @param offsets is the offsets batch for a few topics and partitions.
   *        Make sure that each of them was received from one [[KafkaConsumerObservable]].
   *
-  * @param commitBatch is the function for batched commit realized as closure
+  * @param commitCallback is the set of callbacks for batched commit realized as closure
   *        in [[KafkaConsumerObservable]] context. This decision was made for
   *        thread-safety reasons. This parameter is obtained from last [[CommittableOffset]]
   *        added to batch.
   */
-final class CommittableOffsetBatch private[kafka] (
-  val offsets: Map[TopicPartition, Long],
-  commitBatch: Map[TopicPartition, Long] => Task[Unit]) {
+final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartition, Long], commitCallback: Commit) {
 
   /**
-    * Commits [[offsets]] to Kafka
+    * Synchronously commits [[offsets]] to Kafka
     * */
-  def commit(): Task[Unit] = commitBatch(offsets)
+  def commitSync(): Task[Unit] = commitCallback.commitBatchSync(offsets)
+
+  /**
+    * Asynchronously commits [[offsets]] to Kafka
+    * */
+  def commitAsync(): Task[Unit] = commitCallback.commitBatchAsync(offsets)
+
+  /**
+    * Asynchronously commits [[offsets]] to Kafka
+    * */
+  def commitAsync(callback: OffsetCommitCallback): Task[Unit] = commitCallback.commitBatchAsync(offsets)
 
   /**
     * Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
@@ -51,7 +60,7 @@ final class CommittableOffsetBatch private[kafka] (
   def updated(committableOffset: CommittableOffset): CommittableOffsetBatch =
     new CommittableOffsetBatch(
       offsets.updated(committableOffset.topicPartition, committableOffset.offset),
-      committableOffset.commitBatch
+      committableOffset.commitCallback
     )
 }
 
@@ -63,7 +72,7 @@ object CommittableOffsetBatch {
     *   offsets.foldLeft(CommittableOffsetBatch.empty)(_ updated _)
     * }}}
     * */
-  val empty: CommittableOffsetBatch = new CommittableOffsetBatch(Map.empty, _ => Task.pure(()))
+  val empty: CommittableOffsetBatch = new CommittableOffsetBatch(Map.empty, Commit.empty)
 
   /**
     * Builds [[CommittableOffsetBatch]] from offsets sequence. Be careful with
@@ -75,7 +84,7 @@ object CommittableOffsetBatch {
       val aggregatedOffsets = offsets.foldLeft(Map.empty[TopicPartition, Long]) { (acc, o) =>
         acc.updated(o.topicPartition, o.offset)
       }
-      new CommittableOffsetBatch(aggregatedOffsets, offsets.head.commitBatch)
+      new CommittableOffsetBatch(aggregatedOffsets, offsets.head.commitCallback)
     } else {
       empty
     }

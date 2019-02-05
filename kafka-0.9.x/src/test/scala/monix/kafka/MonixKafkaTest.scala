@@ -120,7 +120,7 @@ class MonixKafkaTest extends FunSuite {
       .map { messages =>
         messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
       }
-      .flatMap { case (values, batch) => batch.commit().map(_ => values -> batch.offsets) }
+      .flatMap { case (values, batch) => batch.commitSync().map(_ => values -> batch.offsets) }
 
     val ((result, offsets), _) =
       Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)

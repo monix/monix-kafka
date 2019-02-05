@@ -251,7 +251,7 @@ val observable =
     .map(message => message.record.value() -> message.committableOffset)
     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
     .bufferTimedAndCounted(1.second, 1000)
-    .mapTask(offsets => CommittableOffsetBatch(offsets).commit())
+    .mapTask(offsets => CommittableOffsetBatch(offsets).commitSync())
 ```
 
 Enjoy!
