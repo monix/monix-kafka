@@ -33,8 +33,8 @@ import scala.util.{Failure, Success}
 /** KafkaConsumerObservable implementation which commits offsets itself.
   */
 final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
-  override val config: KafkaConsumerConfig,
-  override val consumer: Task[KafkaConsumer[K, V]])
+  override protected val config: KafkaConsumerConfig,
+  override protected val consumer: Task[KafkaConsumer[K, V]])
     extends KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] {
 
   /* Based on the [[KafkaConsumerConfig.observableCommitType]] it
@@ -58,8 +58,8 @@ final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
   // Boolean value indicating that we should trigger a commit after downstream ack
   private val shouldCommitAfter = !config.enableAutoCommit && config.observableCommitOrder.isAfter
 
-  override def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[ConsumerRecord[K, V]]): Task[Ack] = Task.create {
-    (scheduler, cb) =>
+  override protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[ConsumerRecord[K, V]]): Task[Ack] =
+    Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val asyncCb = Callback.forked(cb)
       val cancelable = BooleanCancelable()
@@ -110,5 +110,5 @@ final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
         }
       }
       cancelable
-  }
+    }
 }

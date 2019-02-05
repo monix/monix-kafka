@@ -36,14 +36,14 @@ import scala.util.matching.Regex
   * (in the resource files) that is exposing all default values.
   */
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
-  def config: KafkaConsumerConfig
-  def consumer: Task[KafkaConsumer[K, V]]
+  protected def config: KafkaConsumerConfig
+  protected def consumer: Task[KafkaConsumer[K, V]]
 
   /**
     * Creates a task that polls the source, then feeds the downstream
     * subscriber, returning the resulting acknowledgement
     * */
-  def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[Out]): Task[Ack]
+  protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[Out]): Task[Ack]
 
   override final def unsafeSubscribeFn(out: Subscriber[Out]): Cancelable = {
     import out.scheduler

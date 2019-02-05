@@ -35,14 +35,14 @@ import scala.util.{Failure, Success}
   * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
   */
 final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
-  override val config: KafkaConsumerConfig,
-  override val consumer: Task[KafkaConsumer[K, V]])
+  override protected val config: KafkaConsumerConfig,
+  override protected val consumer: Task[KafkaConsumer[K, V]])
     extends KafkaConsumerObservable[K, V, CommittableMessage[K, V]] {
 
   // Caching value to save CPU cycles
   private val pollTimeoutMillis = config.fetchMaxWaitTime.toMillis
 
-  override def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =
+  override protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val asyncCb = Callback.forked(cb)
