@@ -54,7 +54,8 @@ final class CommittableOffset private[kafka] (
     * Asynchronously commits [[offset]] to Kafka. It is recommended
     * to use batched commit with [[CommittableOffsetBatch]] class.
     * */
-  def commitAsync(callback: OffsetCommitCallback): Task[Unit] = commitCallback.commitBatchAsync(Map(topicPartition -> offset), callback)
+  def commitAsync(callback: OffsetCommitCallback): Task[Unit] =
+    commitCallback.commitBatchAsync(Map(topicPartition -> offset), callback)
 }
 
 object CommittableOffset {
