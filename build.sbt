@@ -254,7 +254,7 @@ enablePlugins(GitVersioning)
 isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "0.14"
+git.baseVersion := "1.0.0-RC2"
 
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {
