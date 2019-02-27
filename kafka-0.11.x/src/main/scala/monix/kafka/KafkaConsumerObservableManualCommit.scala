@@ -92,7 +92,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
             // Not really required, but we don't want to depend on the
             // scheduler implementation.
             var streamErrors = true
-            try consumer.synchronized {
+            try {
               // In case the task has been cancelled, there's no point
               // in continuing to do anything else
               if (cancelable.isCanceled) {
