@@ -17,6 +17,7 @@
 
 package monix.kafka
 
+import cats.syntax.apply._
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.kafka.config.AutoOffsetReset
@@ -115,12 +116,12 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
     val listT = consumer
       .executeOn(io)
-      .take(count)
-      .toListL
+      .bufferTumbling(count)
       .map { messages =>
         messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
       }
-      .flatMap { case (values, batch) => batch.commitSync().map(_ => values -> batch.offsets) }
+      .mapEval { case (values, batch) => Task.shift *> batch.commitSync().map(_ => values -> batch.offsets) }
+      .headL
 
     val ((result, offsets), _) =
       Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
