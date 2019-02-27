@@ -160,9 +160,9 @@ object KafkaConsumerObservable {
     * {{{
     *   KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List(topicName))
     *     .map(message => message.record.value() -> message.committableOffset)
-    *     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+    *     .mapEval { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
     *     .bufferTimedAndCounted(1.second, 1000)
-    *     .mapTask(offsets => CommittableOffsetBatch(offsets).commitSync())
+    *     .mapEval(offsets => CommittableOffsetBatch(offsets).commitSync())
     *     .subscribe()
     * }}}
     *
@@ -192,9 +192,9 @@ object KafkaConsumerObservable {
     * {{{
     *   KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List(topicName))
     *     .map(message => message.record.value() -> message.committableOffset)
-    *     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+    *     .mapEval { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
     *     .bufferTimedAndCounted(1.second, 1000)
-    *     .mapTask(offsets => CommittableOffsetBatch(offsets).commitSync())
+    *     .mapEval(offsets => CommittableOffsetBatch(offsets).commitSync())
     *     .subscribe()
     * }}}
     *
@@ -222,9 +222,9 @@ object KafkaConsumerObservable {
     * {{{
     *   KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List(topicName))
     *     .map(message => message.record.value() -> message.committableOffset)
-    *     .mapTask { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+    *     .mapEval { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
     *     .bufferTimedAndCounted(1.second, 1000)
-    *     .mapTask(offsets => CommittableOffsetBatch(offsets).commitSync())
+    *     .mapEval(offsets => CommittableOffsetBatch(offsets).commitSync())
     *     .subscribe()
     * }}}
     *
