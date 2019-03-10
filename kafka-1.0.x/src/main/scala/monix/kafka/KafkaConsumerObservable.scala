@@ -16,13 +16,16 @@
 
 package monix.kafka
 
+import java.time.Instant
+
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable}
 import monix.kafka.config.ObservableCommitOrder
+import monix.kafka.config.StartFrom._
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.blocking
@@ -58,12 +61,26 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     feedTask(out).runAsync(callback)
   }
 
+  private def seekAt(c: Consumer[_, _], instant: Instant) = {
+    val partitionsAtTime = c.assignment().asScala.map(tp => tp -> Long.box(instant.toEpochMilli)).toMap
+    c.offsetsForTimes(partitionsAtTime.asJava)
+  }
+
   private def feedTask(out: Subscriber[Out]): Task[Unit] = {
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val feedTask = consumer.flatMap { c =>
         // Skipping all available messages on all partitions
-        if (config.observableSeekToEndOnStart) c.seekToEnd(Nil.asJavaCollection)
+        config.observableStartFrom match {
+          case FromEarliest => c.seekToBeginning(Nil.asJavaCollection)
+          case FromLatest => c.seekToEnd(Nil.asJavaCollection)
+          case FromCommited => ()
+          case PriorToNow(period) =>
+            val time = Instant.now().minusMillis(period.toMillis)
+            seekAt(c, time)
+          case StartAt(instant) => seekAt(c, instant)
+        }
+
         // A task to execute on both cancellation and normal termination
         val onCancel = cancelTask(c)
         runLoop(c, out).guarantee(onCancel)
@@ -78,6 +95,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
    * Creates an asynchronous boundary on every poll.
    */
   private def runLoop(consumer: KafkaConsumer[K, V], out: Subscriber[Out]): Task[Unit] = {
+
     ackTask(consumer, out).flatMap {
       case Stop => Task.unit
       case Continue => runLoop(consumer, out)

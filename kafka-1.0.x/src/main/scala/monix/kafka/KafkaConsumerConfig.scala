@@ -21,6 +21,7 @@ import java.util.Properties
 
 import collection.JavaConverters._
 import com.typesafe.config.{Config, ConfigFactory}
+import monix.kafka.config.StartFrom._
 import monix.kafka.config._
 
 import scala.concurrent.duration._
@@ -243,7 +244,7 @@ final case class KafkaConsumerConfig(
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
-  observableSeekToEndOnStart: Boolean,
+  observableStartFrom: StartFrom,
   properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
@@ -428,7 +429,7 @@ object KafkaConsumerConfig {
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
-      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart"),
+      observableStartFrom = if (config.getBoolean("monix.observable.seekEnd.onStart")) FromLatest else FromCommited,
       properties = Map.empty
     )
   }
