@@ -1,6 +1,6 @@
 package monix.kafka
 
-import net.manub.embeddedkafka.EmbeddedKafka
+import net.manub.embeddedkafka.{EmbeddedKafka, EmbeddedKafkaConfig}
 import org.scalatest.{BeforeAndAfterAll, Suite}
 
 trait KafkaTestKit extends BeforeAndAfterAll { self: Suite =>
@@ -10,7 +10,16 @@ trait KafkaTestKit extends BeforeAndAfterAll { self: Suite =>
   }
 
   override def beforeAll(): Unit = {
-    EmbeddedKafka.start()
+    val default = EmbeddedKafkaConfig.defaultConfig
+    val config = EmbeddedKafkaConfig(
+      default.kafkaPort,
+      default.zooKeeperPort,
+      default.customBrokerProperties ++ Map("advertised.host.name" -> "PLAINTEXT://localhost", "listeners" -> s"PLAINTEXT://0.0.0.0:${default.kafkaPort}"),
+      default.customProducerProperties,
+      default.customConsumerProperties,
+    )
+
+    EmbeddedKafka.start()(config)
   }
 
   override def afterAll(): Unit = {

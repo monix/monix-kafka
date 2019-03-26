@@ -70,14 +70,11 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val feedTask = consumer.flatMap { c =>
-        // Skipping all available messages on all partitions
+
         config.observableStartFrom match {
           case FromEarliest => c.seekToBeginning(Nil.asJavaCollection)
           case FromLatest => c.seekToEnd(Nil.asJavaCollection)
-          case FromCommited => ()
-          case PriorToNow(period) =>
-            val time = Instant.now().minusMillis(period.toMillis)
-            seekAt(c, time)
+          case FromCommitted => ()
           case StartAt(instant) => seekAt(c, instant)
         }
 
@@ -95,7 +92,6 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
    * Creates an asynchronous boundary on every poll.
    */
   private def runLoop(consumer: KafkaConsumer[K, V], out: Subscriber[Out]): Task[Unit] = {
-
     ackTask(consumer, out).flatMap {
       case Stop => Task.unit
       case Continue => runLoop(consumer, out)

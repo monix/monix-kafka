@@ -429,7 +429,7 @@ object KafkaConsumerConfig {
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
-      observableStartFrom = if (config.getBoolean("monix.observable.seekEnd.onStart")) FromLatest else FromCommited,
+      observableStartFrom = if (config.getBoolean("monix.observable.seekEnd.onStart")) FromLatest else FromCommitted,
       properties = Map.empty
     )
   }
