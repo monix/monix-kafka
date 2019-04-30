@@ -21,9 +21,7 @@ import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.clients.consumer.OffsetCommitCallback
 
 /**
-  * Callback for batched commit realized as closure
-  * in [[KafkaConsumerObservable]] context. This decision was made for
-  * thread-safety reasons.
+  * Callback for batched commit realized as closure in [[KafkaConsumerObservable]] context.
   * */
 trait Commit {
   def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit]

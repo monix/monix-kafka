@@ -30,8 +30,7 @@ import org.apache.kafka.common.TopicPartition
   * @param offset is the offset to be committed
   *
   * @param commitCallback is the set of callbacks for batched commit realized as closures
-  *        in [[KafkaConsumerObservable]] context. This decision was made for
-  *        thread-safety reasons.
+  *        in [[KafkaConsumerObservable]] context.
   */
 final class CommittableOffset private[kafka] (
   val topicPartition: TopicPartition,

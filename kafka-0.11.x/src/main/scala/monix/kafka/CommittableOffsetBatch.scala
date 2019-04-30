@@ -32,8 +32,7 @@ import org.apache.kafka.common.TopicPartition
   *        Make sure that each of them was received from one [[KafkaConsumerObservable]].
   *
   * @param commitCallback is the set of callbacks for batched commit realized as closure
-  *        in [[KafkaConsumerObservable]] context. This decision was made for
-  *        thread-safety reasons. This parameter is obtained from last [[CommittableOffset]]
+  *        in [[KafkaConsumerObservable]] context. This parameter is obtained from the last [[CommittableOffset]]
   *        added to batch.
   */
 final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartition, Long], commitCallback: Commit) {

@@ -22,18 +22,17 @@ import org.apache.kafka.common.TopicPartition
 
 /** Batch of Kafka offsets which can be committed together.
   * Can be built from offsets sequence by [[CommittableOffsetBatch#apply]] method.
-  * Besides you can use [[CommittableOffsetBatch#empty]] method to create empty batch and
-  * add offsets to it by [[updated]] method.
+  * You can also use [[CommittableOffsetBatch#empty]] method to create empty batch and
+  * add offsets to it using [[updated]] method.
   *
-  * Anyway offsets order make sense! Only last added offset for topic and partition will
-  * be committed to Kafka.
+  * WARNING: Order of the offsets is important. Only the last added offset
+  * for topic and partition will be committed to Kafka.
   *
-  * @param offsets is the offsets batch for a few topics and partitions.
+  * @param offsets is the offsets batch for a provided topics and partitions.
   *        Make sure that each of them was received from one [[KafkaConsumerObservable]].
   *
   * @param commitCallback is the set of callbacks for batched commit realized as closure
-  *        in [[KafkaConsumerObservable]] context. This decision was made for
-  *        thread-safety reasons. This parameter is obtained from last [[CommittableOffset]]
+  *        in [[KafkaConsumerObservable]] context. This parameter is obtained from the last [[CommittableOffset]]
   *        added to batch.
   */
 final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartition, Long], commitCallback: Commit) {
