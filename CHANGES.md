@@ -1,3 +1,13 @@
+## Version 1.0.0-RC3 (May 1, 2019)
+
+Changes:
+- [PR #64](https://github.com/monix/monix-kafka/pull/64) Manual commits support
+- [PR #68](https://github.com/monix/monix-kafka/pull/68) Scalafmt
+- Updates of dependencies
+
+Depends on Monix `3.0.0-RC2`.
+
+
 ## Version 1.0.0-RC2 (Nov 15, 2018)
 
 - Updates Monix to 3.0.0-RC2
