@@ -46,57 +46,63 @@ class MonixKafkaTopicRegexTest extends FunSuite with KafkaTestKit {
 
   test("publish one message when subscribed to topics regex") {
 
-    val producer = KafkaProducer[String, String](producerCfg, io)
-    val consumerTask = KafkaConsumerObservable.createConsumer[String, String](consumerCfg, topicsRegex).executeOn(io)
-    val consumer = Await.result(consumerTask.runToFuture, 60.seconds)
+    withRunningKafka {
+      val producer = KafkaProducer[String, String](producerCfg, io)
+      val consumerTask = KafkaConsumerObservable.createConsumer[String, String](consumerCfg, topicsRegex).executeOn(io)
+      val consumer = Await.result(consumerTask.runToFuture, 60.seconds)
 
-    try {
-      // Publishing one message
-      val send = producer.send(topicMatchingRegex, "my-message")
-      Await.result(send.runToFuture, 30.seconds)
+      try {
+        // Publishing one message
+        val send = producer.send(topicMatchingRegex, "my-message")
+        Await.result(send.runToFuture, 30.seconds)
 
-      val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
-      assert(records === List("my-message"))
-    } finally {
-      Await.result(producer.close().runToFuture, Duration.Inf)
-      consumer.close()
+        val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
+        assert(records === List("my-message"))
+      } finally {
+        Await.result(producer.close().runToFuture, Duration.Inf)
+        consumer.close()
+      }
     }
   }
 
   test("listen for one message when subscribed to topics regex") {
 
-    val producer = KafkaProducer[String, String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String, String](consumerCfg, topicsRegex).executeOn(io)
-    try {
-      // Publishing one message
-      val send = producer.send(topicMatchingRegex, "test-message")
-      Await.result(send.runToFuture, 30.seconds)
+    withRunningKafka {
+      val producer = KafkaProducer[String, String](producerCfg, io)
+      val consumer = KafkaConsumerObservable[String, String](consumerCfg, topicsRegex).executeOn(io)
+      try {
+        // Publishing one message
+        val send = producer.send(topicMatchingRegex, "test-message")
+        Await.result(send.runToFuture, 30.seconds)
 
-      val first = consumer.take(1).map(_.value()).firstL
-      val result = Await.result(first.runToFuture, 30.seconds)
-      assert(result === "test-message")
-    } finally {
-      Await.result(producer.close().runToFuture, Duration.Inf)
+        val first = consumer.take(1).map(_.value()).firstL
+        val result = Await.result(first.runToFuture, 30.seconds)
+        assert(result === "test-message")
+      } finally {
+        Await.result(producer.close().runToFuture, Duration.Inf)
+      }
     }
   }
 
   test("full producer/consumer test when subscribed to topics regex") {
-    val count = 10000
+    withRunningKafka {
+      val count = 10000
 
-    val producer = KafkaProducerSink[String, String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String, String](consumerCfg, topicsRegex).executeOn(io).take(count)
+      val producer = KafkaProducerSink[String, String](producerCfg, io)
+      val consumer = KafkaConsumerObservable[String, String](consumerCfg, topicsRegex).executeOn(io).take(count)
 
-    val pushT = Observable
-      .range(0, count)
-      .map(msg => new ProducerRecord(topicMatchingRegex, "obs", msg.toString))
-      .bufferIntrospective(1024)
-      .consumeWith(producer)
+      val pushT = Observable
+        .range(0, count)
+        .map(msg => new ProducerRecord(topicMatchingRegex, "obs", msg.toString))
+        .bufferIntrospective(1024)
+        .consumeWith(producer)
 
-    val listT = consumer
-      .map(_.value())
-      .toListL
+      val listT = consumer
+        .map(_.value())
+        .toListL
 
-    val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
-    assert(result.map(_.toInt).sum === (0 until count).sum)
+      val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      assert(result.map(_.toInt).sum === (0 until count).sum)
+    }
   }
 }

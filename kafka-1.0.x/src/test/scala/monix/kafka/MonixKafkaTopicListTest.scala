@@ -47,87 +47,96 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
   test("publish one message when subscribed to topics list") {
 
-    val producer = KafkaProducer[String, String](producerCfg, io)
-    val consumerTask =
-      KafkaConsumerObservable.createConsumer[String, String](consumerCfg, List(topicName)).executeOn(io)
-    val consumer = Await.result(consumerTask.runToFuture, 60.seconds)
+    withRunningKafka {
+      val producer = KafkaProducer[String, String](producerCfg, io)
 
-    try {
-      // Publishing one message
-      val send = producer.send(topicName, "my-message")
-      Await.result(send.runToFuture, 30.seconds)
+      val consumerTask =
+        KafkaConsumerObservable.createConsumer[String, String](consumerCfg, List(topicName)).executeOn(io)
+      val consumer = Await.result(consumerTask.runToFuture, 60.seconds)
 
-      val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
-      assert(records === List("my-message"))
-    } finally {
-      Await.result(producer.close().runToFuture, Duration.Inf)
-      consumer.close()
+      try {
+        // Publishing one message
+        val send = producer.send(topicName, "my-message")
+        Await.result(send.runToFuture, 30.seconds)
+
+        val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
+        assert(records === List("my-message"))
+      } finally {
+        Await.result(producer.close().runToFuture, Duration.Inf)
+        consumer.close()
+      }
     }
   }
 
   test("listen for one message when subscribed to topics list") {
+    withRunningKafka {
+      val producer = KafkaProducer[String, String](producerCfg, io)
+      val consumer = KafkaConsumerObservable[String, String](consumerCfg, List(topicName)).executeOn(io)
+      try {
+        // Publishing one message
+        val send = producer.send(topicName, "test-message")
+        Await.result(send.runToFuture, 30.seconds)
 
-    val producer = KafkaProducer[String, String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String, String](consumerCfg, List(topicName)).executeOn(io)
-    try {
-      // Publishing one message
-      val send = producer.send(topicName, "test-message")
-      Await.result(send.runToFuture, 30.seconds)
-
-      val first = consumer.take(1).map(_.value()).firstL
-      val result = Await.result(first.runToFuture, 30.seconds)
-      assert(result === "test-message")
-    } finally {
-      Await.result(producer.close().runToFuture, Duration.Inf)
+        val first = consumer.take(1).map(_.value()).firstL
+        val result = Await.result(first.runToFuture, 30.seconds)
+        assert(result === "test-message")
+      } finally {
+        Await.result(producer.close().runToFuture, Duration.Inf)
+      }
     }
   }
 
   test("full producer/consumer test when subscribed to topics list") {
-    val count = 10000
+    withRunningKafka {
+      val count = 10000
 
-    val producer = KafkaProducerSink[String, String](producerCfg, io)
-    val consumer = KafkaConsumerObservable[String, String](consumerCfg, List(topicName)).executeOn(io).take(count)
+      val producer = KafkaProducerSink[String, String](producerCfg, io)
+      val consumer = KafkaConsumerObservable[String, String](consumerCfg, List(topicName)).executeOn(io).take(count)
 
-    val pushT = Observable
-      .range(0, count)
-      .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
-      .bufferIntrospective(1024)
-      .consumeWith(producer)
+      val pushT = Observable
+        .range(0, count)
+        .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+        .bufferIntrospective(1024)
+        .consumeWith(producer)
 
-    val listT = consumer
-      .map(_.value())
-      .toListL
+      val listT = consumer
+        .map(_.value())
+        .toListL
 
-    val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
-    assert(result.map(_.toInt).sum === (0 until count).sum)
+      val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      assert(result.map(_.toInt).sum === (0 until count).sum)
+    }
   }
 
   test("manual commit consumer test when subscribed to topics list") {
-    val count = 10000
-    val topicName = "monix-kafka-manual-commit-tests"
+    withRunningKafka {
 
-    val producer = KafkaProducerSink[String, String](producerCfg, io)
-    val consumer = KafkaConsumerObservable.manualCommit[String, String](consumerCfg, List(topicName))
+      val count = 10000
+      val topicName = "monix-kafka-manual-commit-tests"
 
-    val pushT = Observable
-      .range(0, count)
-      .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
-      .bufferIntrospective(1024)
-      .consumeWith(producer)
+      val producer = KafkaProducerSink[String, String](producerCfg, io)
+      val consumer = KafkaConsumerObservable.manualCommit[String, String](consumerCfg, List(topicName))
 
-    val listT = consumer
-      .executeOn(io)
-      .bufferTumbling(count)
-      .map { messages =>
-        messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
-      }
-      .mapEval { case (values, batch) => Task.shift *> batch.commitSync().map(_ => values -> batch.offsets) }
-      .headL
+      val pushT = Observable
+        .range(0, count)
+        .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+        .bufferIntrospective(1024)
+        .consumeWith(producer)
 
-    val ((result, offsets), _) =
-      Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      val listT = consumer
+        .executeOn(io)
+        .bufferTumbling(count)
+        .map { messages =>
+          messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
+        }
+        .mapEval { case (values, batch) => Task.shift *> batch.commitSync().map(_ => values -> batch.offsets) }
+        .headL
 
-    val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
-    assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
+      val ((result, offsets), _) =
+        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+
+      val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
+      assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
+    }
   }
 }
