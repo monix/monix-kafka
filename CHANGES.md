@@ -1,3 +1,7 @@
+## Version 1.0.0-RC4 (June 16, 2019)
+
+Depends on Monix `3.0.0-RC3`.
+
 ## Version 1.0.0-RC3 (May 1, 2019)
 
 Changes:
