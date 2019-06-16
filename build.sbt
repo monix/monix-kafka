@@ -1,4 +1,4 @@
-val monixVersion = "3.0.0-RC2"
+val monixVersion = "3.0.0-RC3"
 
 val allProjects = List(
   "kafka1x",
@@ -254,7 +254,7 @@ enablePlugins(GitVersioning)
 isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "1.0.0-RC2"
+git.baseVersion := "1.0.0-RC3"
 
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {
