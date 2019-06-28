@@ -26,7 +26,7 @@ Work in progress!
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC2"
+libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC4"
 ```
 
 For `kafka` versions higher than `1.0.x` also add a dependency override:
@@ -47,7 +47,7 @@ sbt kafka1x/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-11" % "1.0.0-RC2"
+libraryDependencies += "io.monix" %% "monix-kafka-11" % "1.0.0-RC4"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -62,7 +62,7 @@ sbt kafka11/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-10" % "1.0.0-RC2"
+libraryDependencies += "io.monix" %% "monix-kafka-10" % "1.0.0-RC4"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -79,7 +79,7 @@ Please note that `EmbeddedKafka` is not supported for Kafka `0.9.x`
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC2"
+libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC4"
 ```
 
 Or in case you're interested in running the tests of this project,
@@ -140,12 +140,15 @@ Then start Kafka:
 bin/kafka-server-start.sh config/server.properties
 ```
 
-Create the topic we need for our tests:
+Create the topics we need for our tests:
 
 ```bash
 bin/kafka-topics.sh --create --zookeeper localhost:2181 \
   --replication-factor 1 --partitions 1 \
   --topic monix-kafka-tests
+bin/kafka-topics.sh --create --zookeeper localhost:2181 \
+  --replication-factor 1 --partitions 1 \
+  --topic monix-kafka-manual-commit-tests
 ```
 
 And run the tests:
@@ -215,8 +218,26 @@ observable
 
 ### Consumer
 
-For consuming from Apache Kafka (Version 0.11.x and above):
+There are several ways for consuming from Apache Kafka (Version 0.11.x and above):
 
+Consumer which commits offsets itself:
+```scala
+import monix.kafka._
+
+val consumerCfg = KafkaConsumerConfig.default.copy(
+  bootstrapServers = List("127.0.0.1:9092"),
+  groupId = "kafka-tests"
+  // you can use this settings for At Most Once semantics:
+  // observableCommitOrder = ObservableCommitOrder.BeforeAck
+)
+
+val observable =
+  KafkaConsumerObservable[String,String](consumerCfg, List("my-topic"))
+    .take(10000)
+    .map(_.value())
+```
+
+Consumer which allows you to commit offsets manually:
 ```scala
 import monix.kafka._
 
@@ -226,7 +247,11 @@ val consumerCfg = KafkaConsumerConfig.default.copy(
 )
 
 val observable =
-  KafkaConsumerObservable[String,String](consumerCfg, List("my-topic"))
+  KafkaConsumerObservable.manualCommit[String,String](consumerCfg, List("my-topic"))
+    .map(message => message.record.value() -> message.committableOffset)
+    .mapEval { case (value, offset) => performBusinessLogic(value).map(_ => offset) }
+    .bufferTimedAndCounted(1.second, 1000)
+    .mapEval(offsets => CommittableOffsetBatch(offsets).commitSync())
 ```
 
 Enjoy!

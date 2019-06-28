@@ -1,4 +1,4 @@
-val monixVersion = "3.0.0-RC2"
+val monixVersion = "3.0.0-RC3"
 
 val allProjects = List(
   "kafka1x",
@@ -187,11 +187,11 @@ lazy val commonDependencies = Seq(
   libraryDependencies ++= Seq(
     "io.monix" %% "monix-reactive" % monixVersion,
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.0",
-    "com.typesafe" % "config" % "1.3.3",
-    "org.slf4j" % "log4j-over-slf4j" % "1.7.25",
+    "com.typesafe" % "config" % "1.3.4",
+    "org.slf4j" % "log4j-over-slf4j" % "1.7.26",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.5" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.7" % "test"
   )
 )
 
@@ -254,7 +254,7 @@ enablePlugins(GitVersioning)
 isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "0.14"
+git.baseVersion := "1.0.0-RC3"
 
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {
