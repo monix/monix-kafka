@@ -40,6 +40,10 @@ import scala.concurrent.duration._
   *        the minimum amount of data the server should return
   *        for a fetch request.
   *
+  * @param fetchMaxBytes is the `fetch.max.bytes` setting,
+  *        the maximum amount of data the server should return
+  *        for a fetch request.
+  *
   * @param groupId is the `group.id` setting, a unique string
   *        that identifies the consumer group this consumer
   *        belongs to.
@@ -206,6 +210,7 @@ import scala.concurrent.duration._
 final case class KafkaConsumerConfig(
   bootstrapServers: List[String],
   fetchMinBytes: Int,
+  fetchMaxBytes: Int,
   groupId: String,
   heartbeatInterval: FiniteDuration,
   maxPartitionFetchBytes: Int,
@@ -249,6 +254,7 @@ final case class KafkaConsumerConfig(
   def toMap: Map[String, String] = properties ++ Map(
     "bootstrap.servers" -> bootstrapServers.mkString(","),
     "fetch.min.bytes" -> fetchMinBytes.toString,
+    "fetch.max.bytes" -> fetchMaxBytes.toString,
     "group.id" -> groupId,
     "heartbeat.interval.ms" -> heartbeatInterval.toMillis.toString,
     "max.partition.fetch.bytes" -> maxPartitionFetchBytes.toString,
@@ -391,6 +397,7 @@ object KafkaConsumerConfig {
     KafkaConsumerConfig(
       bootstrapServers = config.getString("bootstrap.servers").trim.split("\\s*,\\s*").toList,
       fetchMinBytes = config.getInt("fetch.min.bytes"),
+      fetchMaxBytes = config.getInt("fetch.max.bytes"),
       groupId = config.getString("group.id"),
       heartbeatInterval = config.getInt("heartbeat.interval.ms").millis,
       maxPartitionFetchBytes = config.getInt("max.partition.fetch.bytes"),
