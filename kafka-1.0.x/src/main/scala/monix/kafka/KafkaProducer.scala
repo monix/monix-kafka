@@ -121,7 +121,7 @@ object KafkaProducer {
                 if (isActive.compareAndSet(expect = true, update = false)) {
                   connection.pop()
                   ex match {
-                    case _: IllegalStateException =>
+                    case _: IllegalStateException if isCanceled.get() =>
                       asyncCb.onSuccess(None)
                     case _ =>
                       asyncCb.onError(ex)

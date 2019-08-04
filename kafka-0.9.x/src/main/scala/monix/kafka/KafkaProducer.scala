@@ -116,15 +116,12 @@ object KafkaProducer {
 
               cancelable := Cancelable(() => future.cancel(false))
             } catch {
-              case _: IllegalStateException if isCanceled.get =>
-                connection.pop()
-                asyncCb.onSuccess(None)
               case NonFatal(ex) =>
                 // Needs synchronization, otherwise we are violating the contract
                 if (isActive.compareAndSet(expect = true, update = false)) {
                   connection.pop()
                   ex match {
-                    case _: IllegalStateException =>
+                    case _: IllegalStateException if isCanceled.get() =>
                       asyncCb.onSuccess(None)
                     case _ =>
                       asyncCb.onError(ex)
