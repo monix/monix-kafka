@@ -65,11 +65,7 @@ object KafkaProducer {
     V: Serializer[V])
       extends KafkaProducer[K, V] with StrictLogging {
 
-    // Alias needed for being precise when blocking
-    self =>
-
-    // MUST BE synchronized by `self`
-    private[this] var isCanceled = false
+    private val isCanceled = Atomic(false)
 
     // Gets initialized on the first `send`
     private lazy val producerRef = {
@@ -91,47 +87,54 @@ object KafkaProducer {
         val asyncCb = Callback.forked(cb)(s)
         val connection = StackedCancelable()
         // Forcing asynchronous boundary
-        sc.executeAsync(() =>
-          self.synchronized {
-            if (isCanceled) {
-              asyncCb.onSuccess(None)
-            } else {
-              val isActive = Atomic(true)
-              val cancelable = SingleAssignCancelable()
-              try {
-                // Force evaluation
-                val producer = producerRef
+        sc.executeAsync(() => {
+          if (isCanceled.get()) {
+            asyncCb.onSuccess(None)
+          } else {
+            val isActive = Atomic(true)
+            val cancelable = SingleAssignCancelable()
+            try {
+              // Force evaluation
+              val producer = producerRef
 
-                // Using asynchronous API
-                val future = producer.send(
-                  record,
-                  new KafkaCallback {
-                    def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
-                      if (isActive.getAndSet(false)) {
-                        connection.pop()
-                        if (exception != null)
-                          asyncCb.onError(exception)
-                        else
-                          asyncCb.onSuccess(Option(meta))
-                      } else if (exception != null) {
-                        s.reportFailure(exception)
-                      }
-                  }
-                )
+              // Using asynchronous API
+              val future = producer.send(
+                record,
+                new KafkaCallback {
+                  def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
+                    if (isActive.getAndSet(false)) {
+                      connection.pop()
+                      if (exception != null)
+                        asyncCb.onError(exception)
+                      else
+                        asyncCb.onSuccess(Option(meta))
+                    } else if (exception != null) {
+                      s.reportFailure(exception)
+                    }
+                }
+              )
 
-                cancelable := Cancelable(() => future.cancel(false))
-              } catch {
-                case NonFatal(ex) =>
-                  // Needs synchronization, otherwise we are violating the contract
-                  if (isActive.compareAndSet(expect = true, update = false)) {
-                    connection.pop()
-                    asyncCb.onError(ex)
-                  } else {
-                    s.reportFailure(ex)
+              cancelable := Cancelable(() => future.cancel(false))
+            } catch {
+              case _: IllegalStateException if isCanceled.get =>
+                connection.pop()
+                asyncCb.onSuccess(None)
+              case NonFatal(ex) =>
+                // Needs synchronization, otherwise we are violating the contract
+                if (isActive.compareAndSet(expect = true, update = false)) {
+                  connection.pop()
+                  ex match {
+                    case _: IllegalStateException =>
+                      asyncCb.onSuccess(None)
+                    case _ =>
+                      asyncCb.onError(ex)
                   }
-              }
+                } else {
+                  s.reportFailure(ex)
+                }
             }
-          })
+          }
+        })
         connection
       }
 
@@ -140,11 +143,10 @@ object KafkaProducer {
         val asyncCb = Callback.forked(cb)(s)
         // Forcing asynchronous boundary
         sc.executeAsync { () =>
-          self.synchronized {
-            if (isCanceled) {
+          {
+            if (!isCanceled.compareAndSet(expect = false, update = true)) {
               asyncCb.onSuccess(())
             } else {
-              isCanceled = true
               try {
                 producerRef.close()
                 asyncCb.onSuccess(())

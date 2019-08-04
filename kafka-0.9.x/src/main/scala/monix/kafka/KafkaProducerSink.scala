@@ -16,6 +16,7 @@
 
 package monix.kafka
 
+import cats.effect.concurrent.Semaphore
 import com.typesafe.scalalogging.StrictLogging
 import monix.eval.{Coeval, Task}
 import monix.execution.Ack.{Continue, Stop}
@@ -24,8 +25,8 @@ import monix.execution.{Ack, Callback, Scheduler}
 import monix.reactive.Consumer
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.producer.{ProducerRecord, RecordMetadata}
+
 import scala.concurrent.Future
-import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 /** A `monix.reactive.Consumer` that pushes incoming messages into
@@ -39,17 +40,13 @@ final class KafkaProducerSink[K, V] private (
 
   require(parallelism >= 1, "parallelism >= 1")
 
-  def createSubscriber(cb: Callback[Throwable, Unit], s: Scheduler) = {
+  def createSubscriber(
+    cb: Callback[Throwable, Unit],
+    s: Scheduler): (Subscriber[Seq[ProducerRecord[K, V]]], AssignableCancelable.Multi) = {
     val out = new Subscriber[Seq[ProducerRecord[K, V]]] { self =>
-      implicit val scheduler = s
+      implicit val scheduler: Scheduler = s
       private[this] val p = producer.memoize
       private[this] var isActive = true
-
-      private def sendAll(batch: Seq[ProducerRecord[K, V]]): Seq[Task[Option[RecordMetadata]]] =
-        for (record <- batch) yield {
-          try p.value.send(record)
-          catch { case NonFatal(ex) => Task.raiseError(ex) }
-        }
 
       def onNext(list: Seq[ProducerRecord[K, V]]): Future[Ack] =
         self.synchronized {
@@ -57,11 +54,12 @@ final class KafkaProducerSink[K, V] private (
           else {
             val sendTask: Task[Seq[Option[RecordMetadata]]] =
               if (parallelism == 1)
-                Task.sequence(sendAll(list))
+                Task.traverse(list)(p.value().send(_))
               else {
-                val batches = list.sliding(parallelism, parallelism)
-                val tasks = for (b <- batches) yield Task.gather(sendAll(b))
-                Task.sequence(tasks.toList).map(_.flatten)
+                for {
+                  s <- Semaphore[Task](parallelism)
+                  res <- Task.wander(list)(r => s.withPermit(p.value().send(r)))
+                } yield res
               }
 
             val recovered = sendTask.map(_ => Continue).onErrorHandle { ex =>
