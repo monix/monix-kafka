@@ -115,6 +115,7 @@ object KafkaProducer {
               )
 
               cancelable := Cancelable(() => future.cancel(false))
+              connection.push(cancelable)
             } catch {
               case NonFatal(ex) =>
                 // Needs synchronization, otherwise we are violating the contract
