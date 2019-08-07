@@ -140,4 +140,22 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
     }
   }
+
+  test("publish to closed producer when subscribed to topics list") {
+    withRunningKafka {
+      val producer = KafkaProducer[String, String](producerCfg, io)
+      val sendTask = producer.send(topicName, "test-message")
+
+      val result = for {
+        //Force creation of producer
+        s1 <- producer.send(topicName, "test-message-1")
+        res <- Task.parZip2(producer.close(), Task.gather(List.fill(10)(sendTask)).attempt)
+        (_, s2) = res
+        s3 <- sendTask
+      } yield (s1, s2, s3)
+
+      val (first, second, third) = Await.result(result.runToFuture, 60.seconds)
+      assert(first.isDefined && second.isRight && third.isEmpty)
+    }
+  }
 }
