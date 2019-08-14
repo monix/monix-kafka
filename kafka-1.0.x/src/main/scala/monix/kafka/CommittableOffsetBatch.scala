@@ -87,4 +87,20 @@ object CommittableOffsetBatch {
     } else {
       empty
     }
+
+  /**
+   * Builds [[CommittableOffsetBatch]] list from offsets sequence by grouping the offsets by commitCallback.
+   *
+   * */
+  def mergeByCommitCallback(committableOffsets: Seq[CommittableOffset]): List[CommittableOffsetBatch] = {
+    if (committableOffsets.nonEmpty) {
+      committableOffsets
+        .groupBy(_.commitCallback)
+        .mapValues(CommittableOffsetBatch(_))
+        .values
+        .toList
+    } else {
+      List.empty
+    }
+  }
 }
