@@ -259,6 +259,7 @@ Enjoy!
 
 ### Caveats
 
+[Issue#101](https://github.com/monix/monix-kafka/issues/101)
 Starting from Kafka 0.10.1.0, there is `max.poll.interval.ms` setting:
 
     The maximum delay between invocations of poll() when using consumer group management. 
