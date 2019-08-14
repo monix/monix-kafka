@@ -257,6 +257,20 @@ val observable =
 
 Enjoy!
 
+### Caveats
+
+Starting from Kafka 0.10.1.0, there is `max.poll.interval.ms` setting:
+
+    The maximum delay between invocations of poll() when using consumer group management. 
+    This places an upper bound on the amount of time that the consumer can be idle before 
+    fetching more records. If poll() is not called before expiration of this timeout, 
+    then the consumer is considered failed and  the group will rebalance in order 
+    to reassign the partitions to another member.
+
+Since, monix-kafka backpressures until all records has been processed. 
+This could be a problem if processing takes time.
+You can reduce `max.poll.records` if you are experiencing this issue.
+
 ## How can I contribute to Monix-Kafka?
 
 We welcome contributions to all projects in the Monix organization and would love
