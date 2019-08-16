@@ -87,4 +87,25 @@ object CommittableOffsetBatch {
     } else {
       empty
     }
+
+  /**
+    * Builds [[CommittableOffsetBatch]] list from offsets sequence by merging the offsets
+    * that have the same commit callback. This will help when the committable offsets are
+    * from different consumers.
+    * {{{
+    *   CommittableOffsetBatch.mergeByCommitCallback(offsets)
+    * }}}
+    *
+    * */
+  def mergeByCommitCallback(committableOffsets: Seq[CommittableOffset]): List[CommittableOffsetBatch] = {
+    if (committableOffsets.nonEmpty) {
+      committableOffsets
+        .groupBy(_.commitCallback)
+        .mapValues(CommittableOffsetBatch(_))
+        .values
+        .toList
+    } else {
+      List.empty
+    }
+  }
 }
