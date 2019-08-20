@@ -42,24 +42,26 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
   // Caching value to save CPU cycles
   private val pollTimeoutMillis = config.fetchMaxWaitTime.toMillis
 
+  case class CommitWithConsumer(consumer: KafkaConsumer[K, V]) extends Commit {
+    override def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit] =
+      Task(blocking(consumer.synchronized(consumer.commitSync(batch.map {
+        case (k, v) => k -> new OffsetAndMetadata(v)
+      }.asJava))))
+    override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
+      Task {
+        blocking(consumer.synchronized(consumer.commitAsync(batch.map {
+          case (k, v) => k -> new OffsetAndMetadata(v)
+        }.asJava, callback)))
+      }
+  }
+
   override protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val asyncCb = Callback.forked(cb)
       val cancelable = BooleanCancelable()
 
-      val commit: Commit = new Commit {
-        override def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit] =
-          Task(blocking(consumer.synchronized(consumer.commitSync(batch.map {
-            case (k, v) => k -> new OffsetAndMetadata(v)
-          }.asJava))))
-        override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
-          Task {
-            blocking(consumer.synchronized(consumer.commitAsync(batch.map {
-              case (k, v) => k -> new OffsetAndMetadata(v)
-            }.asJava, callback)))
-          }
-      }
+      val commit: Commit = CommitWithConsumer(consumer)
 
       // Forced asynchronous boundary (on the I/O scheduler)
       s.executeAsync { () =>
