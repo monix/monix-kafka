@@ -16,8 +16,11 @@
 
 package monix.kafka
 
+import java.util
+
 import monix.eval.Task
 import monix.execution.Ack.Stop
+import monix.execution.atomic.Atomic
 import monix.execution.cancelables.BooleanCancelable
 import monix.execution.{Ack, Callback}
 import monix.reactive.Observer
@@ -47,12 +50,45 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       Task(blocking(consumer.synchronized(consumer.commitSync(batch.map {
         case (k, v) => k -> new OffsetAndMetadata(v)
       }.asJava))))
-    override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
-      Task {
-        blocking(consumer.synchronized(consumer.commitAsync(batch.map {
-          case (k, v) => k -> new OffsetAndMetadata(v)
-        }.asJava, callback)))
-      }
+    override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Task[Unit]] = {
+      Task
+        .async0[Unit] { (s, cb) =>
+          val asyncCb = Callback.forked(cb)(s)
+          s.executeAsync { () =>
+            consumer.synchronized {
+              val isActive = Atomic(true)
+              try {
+                val offsets = batch.map {
+                  case (k, v) => k -> new OffsetAndMetadata(v)
+                }.asJava
+                consumer.commitAsync(
+                  offsets,
+                  new OffsetCommitCallback {
+                    override def onComplete(offsets: util.Map[TopicPartition, OffsetAndMetadata], exception: Exception)
+                      : Unit = {
+                      if (isActive.compareAndSet(expect = true, update = false)) {
+                        if (exception != null)
+                          asyncCb.onError(exception)
+                        else
+                          asyncCb.onSuccess(())
+                      } else if (exception != null)
+                        s.reportFailure(exception)
+                    }
+                  }
+                )
+              } catch {
+                case NonFatal(ex) =>
+                  if (isActive.compareAndSet(expect = true, update = false)) {
+                    asyncCb.onError(ex)
+                  } else
+                    s.reportFailure(ex)
+              }
+            }
+          }
+        }
+        .start
+        .map(_.join)
+    }
   }
 
   override protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =

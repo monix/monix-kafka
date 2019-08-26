@@ -17,8 +17,9 @@
 
 package monix.kafka
 
+import cats.effect.concurrent.{Deferred}
 import cats.syntax.apply._
-import monix.eval.Task
+import monix.eval.{Coeval, Task}
 import monix.execution.Scheduler.Implicits.global
 import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
@@ -137,6 +138,45 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
       val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
       assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
+    }
+  }
+
+  test("manual async commit consumer test when subscribed to topics list") {
+    withRunningKafka {
+
+      val count = 10000
+      val topicName = "monix-kafka-manual-commit-tests"
+
+      val producer = KafkaProducerSink[String, String](producerCfg, io)
+      val consumer = KafkaConsumerObservable.manualCommit[String, String](consumerCfg, List(topicName))
+
+      val pushT = Observable
+        .range(0, count)
+        .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+        .bufferIntrospective(1024)
+        .consumeWith(producer)
+
+      val promise = Deferred.in[Coeval, Task, Task[(Seq[String], Map[TopicPartition, Long])]].value()
+
+      val listT = consumer
+        .executeOn(io)
+        .bufferTumbling(count)
+        .map { messages =>
+          messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
+        }
+        .mapEval { case (values, batch) => Task.shift *> batch.commitAsync().map(_.map(_ => values -> batch.offsets)) }
+        .mapEval { complete =>
+          promise.complete(complete)
+        }
+        .subscribe()
+
+
+      val ((result, offsets), _) =
+        Await.result(Task.parZip2(promise.get.flatten, pushT.executeAsync).runToFuture, 60.seconds)
+
+      val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
+      assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
+      listT.cancel()
     }
   }
 
