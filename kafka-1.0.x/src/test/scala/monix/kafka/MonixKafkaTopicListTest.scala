@@ -17,9 +17,8 @@
 
 package monix.kafka
 
-import cats.effect.concurrent.{Deferred}
 import cats.syntax.apply._
-import monix.eval.{Coeval, Task}
+import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
@@ -156,27 +155,20 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
         .bufferIntrospective(1024)
         .consumeWith(producer)
 
-      val promise = Deferred.in[Coeval, Task, Task[(Seq[String], Map[TopicPartition, Long])]].value()
-
       val listT = consumer
         .executeOn(io)
         .bufferTumbling(count)
         .map { messages =>
           messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
         }
-        .mapEval { case (values, batch) => Task.shift *> batch.commitAsync().map(_.map(_ => values -> batch.offsets)) }
-        .mapEval { complete =>
-          promise.complete(complete)
-        }
-        .subscribe()
-
+        .mapEval { case (values, batch) => Task.shift *> batch.commitAsync().map(_ => values -> batch.offsets) }
+        .headL
 
       val ((result, offsets), _) =
-        Await.result(Task.parZip2(promise.get.flatten, pushT.executeAsync).runToFuture, 60.seconds)
+        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
 
       val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
       assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
-      listT.cancel()
     }
   }
 

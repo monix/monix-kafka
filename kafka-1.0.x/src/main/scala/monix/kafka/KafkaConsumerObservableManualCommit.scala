@@ -50,7 +50,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       Task(blocking(consumer.synchronized(consumer.commitSync(batch.map {
         case (k, v) => k -> new OffsetAndMetadata(v)
       }.asJava))))
-    override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Task[Unit]] = {
+    override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Unit] = {
       Task
         .async0[Unit] { (s, cb) =>
           val asyncCb = Callback.forked(cb)(s)
@@ -64,8 +64,9 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
                 consumer.commitAsync(
                   offsets,
                   new OffsetCommitCallback {
-                    override def onComplete(offsets: util.Map[TopicPartition, OffsetAndMetadata], exception: Exception)
-                      : Unit = {
+                    override def onComplete(
+                      offsets: util.Map[TopicPartition, OffsetAndMetadata],
+                      exception: Exception): Unit = {
                       if (isActive.compareAndSet(expect = true, update = false)) {
                         if (exception != null)
                           asyncCb.onError(exception)
@@ -86,8 +87,6 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
             }
           }
         }
-        .start
-        .map(_.join)
     }
   }
 
@@ -103,9 +102,12 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       s.executeAsync { () =>
         val ackFuture =
           try consumer.synchronized {
+            val assignment = consumer.assignment()
             if (cancelable.isCanceled) Stop
             else {
+              consumer.resume(assignment)
               val next = blocking(consumer.poll(pollTimeoutMillis))
+              consumer.pause(assignment)
               // Feeding the observer happens on the Subscriber's scheduler
               // if any asynchronous boundaries happen
               val result = next.asScala.map { record =>
@@ -116,6 +118,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
                     record.offset() + 1,
                     commit))
               }
+              isAcked.set(false)
               Observer.feed(out, result)(out.scheduler)
             }
           } catch {
@@ -125,6 +128,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
 
         ackFuture.syncOnComplete {
           case Success(ack) =>
+            isAcked.set(true)
             // The `streamError` flag protects against contract violations
             // (i.e. onSuccess/onError should happen only once).
             // Not really required, but we don't want to depend on the
@@ -147,6 +151,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
             }
 
           case Failure(ex) =>
+            isAcked.set(true)
             asyncCb.onError(ex)
         }
       }

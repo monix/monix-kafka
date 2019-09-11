@@ -44,7 +44,7 @@ final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartiti
   /**
     * Asynchronously commits [[offsets]] to Kafka
     * */
-  def commitAsync(): Task[Task[Unit]] = commitCallback.commitBatchAsync(offsets)
+  def commitAsync(): Task[Unit] = commitCallback.commitBatchAsync(offsets)
 
   /**
     * Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
