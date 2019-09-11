@@ -126,7 +126,6 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
           Task.unit
         }
       }
-      .flatMap(_ => pollConsumer(consumer))
   }
 }
 
