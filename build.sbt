@@ -16,7 +16,20 @@ lazy val doNotPublishArtifact = Seq(
   publishArtifact in (Compile, packageBin) := false
 )
 
-lazy val sharedSettings = Seq(
+lazy val warnUnusedImport = Seq(
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 11)) =>
+        Seq("-Ywarn-unused-import")
+      case _ =>
+        Seq("-Ywarn-unused:imports")
+    }
+  },
+  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports"),
+  scalacOptions in Test --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports")
+)
+
+lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
   scalaVersion := "2.12.10",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.0"),
@@ -73,7 +86,7 @@ lazy val sharedSettings = Seq(
       // For 2.12 we are targeting the Java 8 class format
       Seq.empty
   }),
-  
+
   // Linter
   scalacOptions ++= Seq(
     // Turns all warnings into errors ;-)
@@ -92,11 +105,6 @@ lazy val sharedSettings = Seq(
     "-Xlint:delayedinit-select", // Selecting member of DelayedInit
     "-Xlint:package-object-classes", // Class or object defined in package object
   ),
-
-  // For warning of unused imports
-  scalacOptions += "-Ywarn-unused-import",
-  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
 
   scalacOptions in doc ++=
     Opts.doc.title(s"Monix"),
