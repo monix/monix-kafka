@@ -32,10 +32,20 @@ lazy val sharedSettings = Seq(
     "-language:experimental.macros",
     // possibly deprecated options
     "-Ywarn-dead-code",
-    "-Ywarn-inaccessible",
     "-language:higherKinds",
     "-language:existentials"
   ),
+
+  scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, majorVersion)) if majorVersion <= 12 =>
+      Seq(
+        "-Xlint:inaccessible", // warn about inaccessible types in method signatures
+        "-Xlint:by-name-right-associative", // By-name parameter of right associative operator
+        "-Xlint:unsound-match" // Pattern match may not be typesafe
+      )
+    case _ =>
+      Seq.empty
+  }),
 
   // Force building with Java 8
   initialize := {
