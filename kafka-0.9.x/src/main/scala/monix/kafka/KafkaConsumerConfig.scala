@@ -279,7 +279,7 @@ final case class KafkaConsumerConfig(
   )
 
   def toJavaMap: java.util.Map[String, Object] =
-    toMap.filter(_._2 != null).mapValues(_.asInstanceOf[AnyRef]).asJava
+    toMap.filter(_._2 != null).mapValues(_.asInstanceOf[AnyRef]).toMap.asJava
 
   def toProperties: Properties = {
     val props = new Properties()
