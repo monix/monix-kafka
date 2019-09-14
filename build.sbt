@@ -6,7 +6,7 @@ val allProjects = List(
   "kafka10"
 )
 
-addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;+doc")
+addCommandAlias("ci",      s";clean ;test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
 
 lazy val doNotPublishArtifact = Seq(
@@ -31,7 +31,7 @@ lazy val warnUnusedImport = Seq(
 
 lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
-  scalaVersion := "2.13.0",
+  scalaVersion := "2.12.10",
   crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.0"),
 
   scalacOptions ++= Seq(
