@@ -18,7 +18,6 @@ package monix.kafka
 
 import monix.eval.{Fiber, Task}
 import monix.execution.Ack.{Continue, Stop}
-import monix.execution.atomic.Atomic
 import monix.execution.{Ack, Callback, Cancelable}
 import monix.kafka.config.ObservableCommitOrder
 import monix.reactive.Observable
@@ -40,7 +39,8 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
   protected def consumer: Task[KafkaConsumer[K, V]]
 
-  protected val isAcked = Atomic(true)
+  @volatile
+  protected var isAcked = true
 
   /**
     * Creates a task that polls the source, then feeds the downstream
@@ -116,9 +116,9 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     Task
       .sleep(config.pollInterval)
       .flatMap { _ =>
-        if (!isAcked.get()) {
+        if (!isAcked) {
           Task.evalAsync {
-            consumer.synchronized{
+            consumer.synchronized {
               blocking(consumer.poll(0))
             }
           }
