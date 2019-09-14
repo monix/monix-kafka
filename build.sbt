@@ -1,4 +1,4 @@
-val monixVersion = "3.0.0-RC3"
+val monixVersion = "3.0.0"
 
 val allProjects = List(
   "kafka1x",
@@ -6,7 +6,7 @@ val allProjects = List(
   "kafka10"
 )
 
-addCommandAlias("ci",      s";+clean ;+test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;+doc")
+addCommandAlias("ci",      s";clean ;test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;doc")
 addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
 
 lazy val doNotPublishArtifact = Seq(
@@ -16,10 +16,23 @@ lazy val doNotPublishArtifact = Seq(
   publishArtifact in (Compile, packageBin) := false
 )
 
-lazy val sharedSettings = Seq(
+lazy val warnUnusedImport = Seq(
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 11)) =>
+        Seq("-Ywarn-unused-import")
+      case _ =>
+        Seq("-Ywarn-unused:imports")
+    }
+  },
+  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports"),
+  scalacOptions in Test --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports")
+)
+
+lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.11.12", "2.12.8"),
+  scalaVersion := "2.12.10",
+  crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.0"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -32,10 +45,20 @@ lazy val sharedSettings = Seq(
     "-language:experimental.macros",
     // possibly deprecated options
     "-Ywarn-dead-code",
-    "-Ywarn-inaccessible",
     "-language:higherKinds",
     "-language:existentials"
   ),
+
+  scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
+    case Some((2, majorVersion)) if majorVersion <= 12 =>
+      Seq(
+        "-Xlint:inaccessible", // warn about inaccessible types in method signatures
+        "-Xlint:by-name-right-associative", // By-name parameter of right associative operator
+        "-Xlint:unsound-match" // Pattern match may not be typesafe
+      )
+    case _ =>
+      Seq.empty
+  }),
 
   // Force building with Java 8
   initialize := {
@@ -64,37 +87,25 @@ lazy val sharedSettings = Seq(
       Seq.empty
   }),
 
-  // version specific compiler options
-  scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, majorVersion)) if majorVersion >= 11 =>
-      Seq(
-        // Turns all warnings into errors ;-)
-        "-Xfatal-warnings",
-        // Enables linter options
-        "-Xlint:adapted-args", // warn if an argument list is modified to match the receiver
-        "-Xlint:nullary-unit", // warn when nullary methods return Unit
-        "-Xlint:inaccessible", // warn about inaccessible types in method signatures
-        "-Xlint:nullary-override", // warn when non-nullary `def f()' overrides nullary `def f'
-        "-Xlint:infer-any", // warn when a type argument is inferred to be `Any`
-        "-Xlint:missing-interpolator", // a string literal appears to be missing an interpolator id
-        "-Xlint:doc-detached", // a ScalaDoc comment appears to be detached from its element
-        "-Xlint:private-shadow", // a private field (or class parameter) shadows a superclass field
-        "-Xlint:type-parameter-shadow", // a local type parameter shadows a type already in scope
-        "-Xlint:poly-implicit-overload", // parameterized overloaded implicit methods are not visible as view bounds
-        "-Xlint:option-implicit", // Option.apply used implicit view
-        "-Xlint:delayedinit-select", // Selecting member of DelayedInit
-        "-Xlint:by-name-right-associative", // By-name parameter of right associative operator
-        "-Xlint:package-object-classes", // Class or object defined in package object
-        "-Xlint:unsound-match" // Pattern match may not be typesafe
-      )
-    case _ =>
-      Seq.empty
-  }),
-
-  // For warning of unused imports
-  scalacOptions += "-Ywarn-unused-import",
-  scalacOptions in (Compile, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
-  scalacOptions in (Test, console) ~= {_.filterNot("-Ywarn-unused-import" == _)},
+  // Linter
+  scalacOptions ++= Seq(
+    // Turns all warnings into errors ;-)
+    // TODO: enable after fixing deprecations for Scala 2.13
+//    "-Xfatal-warnings",
+    // Enables linter options
+    "-Xlint:adapted-args", // warn if an argument list is modified to match the receiver
+    "-Xlint:nullary-unit", // warn when nullary methods return Unit
+    "-Xlint:nullary-override", // warn when non-nullary `def f()' overrides nullary `def f'
+    "-Xlint:infer-any", // warn when a type argument is inferred to be `Any`
+    "-Xlint:missing-interpolator", // a string literal appears to be missing an interpolator id
+    "-Xlint:doc-detached", // a ScalaDoc comment appears to be detached from its element
+    "-Xlint:private-shadow", // a private field (or class parameter) shadows a superclass field
+    "-Xlint:type-parameter-shadow", // a local type parameter shadows a type already in scope
+    "-Xlint:poly-implicit-overload", // parameterized overloaded implicit methods are not visible as view bounds
+    "-Xlint:option-implicit", // Option.apply used implicit view
+    "-Xlint:delayedinit-select", // Selecting member of DelayedInit
+    "-Xlint:package-object-classes", // Class or object defined in package object
+  ),
 
   scalacOptions in doc ++=
     Opts.doc.title(s"Monix"),
@@ -191,7 +202,8 @@ lazy val commonDependencies = Seq(
     "org.slf4j" % "log4j-over-slf4j" % "1.7.28",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
   )
 )
 
@@ -206,10 +218,11 @@ lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(mimaSettings("monix-kafka-1x"))
   .settings(
     name := "monix-kafka-1x",
-    libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "1.0.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
-      "net.manub"        %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j")
-    )
+    libraryDependencies ++= {
+      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j"))
+      else Seq.empty[ModuleID]
+    },
+    libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "1.0.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
   )
 
 lazy val kafka11 = project.in(file("kafka-0.11.x"))
@@ -218,10 +231,11 @@ lazy val kafka11 = project.in(file("kafka-0.11.x"))
   .settings(mimaSettings("monix-kafka-11"))
   .settings(
     name := "monix-kafka-11",
-    libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.11.0.3" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
-      "net.manub"        %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j")
-    )
+    libraryDependencies ++= {
+      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j"))
+      else Seq.empty[ModuleID]
+    },
+    libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "0.11.0.3" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
   )
 
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
@@ -230,10 +244,11 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(mimaSettings("monix-kafka-10"))
   .settings(
     name := "monix-kafka-10",
-    libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.10.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j"),
-      "net.manub"        %% "scalatest-embedded-kafka" % "0.16.0" % "test" exclude ("log4j", "log4j")
-    )
+    libraryDependencies ++= {
+      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "0.16.0" % "test" exclude ("log4j", "log4j"))
+      else Seq.empty[ModuleID]
+    },
+    libraryDependencies += "org.apache.kafka" % "kafka-clients" % "0.10.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
   )
 
 lazy val kafka9 = project.in(file("kafka-0.9.x"))
@@ -254,7 +269,7 @@ enablePlugins(GitVersioning)
 isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "1.0.0-RC3"
+git.baseVersion := "1.0.0-RC4"
 
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {
