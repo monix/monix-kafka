@@ -8,11 +8,11 @@ matrix:
   # Scala 2.11
   - jdk: oraclejdk8
     scala: 2.11.12
-    env: COMMAND=ci COVERAGE=
+    env: COMMAND=ci
   # Scala 2.12
   - jdk: oraclejdk8
-    scala: 2.12.8
-    env: COMMAND=ci COVERAGE=coverage
+    scala: 2.12.10
+    env: COMMAND=ci
 
 env:
   global:
@@ -24,10 +24,7 @@ install:
 
 script:
 - export SBT_PROFILE=$COVERAGE
-- sbt -J-Xmx6144m ++$TRAVIS_SCALA_VERSION $COVERAGE $COMMAND
-
-after_success:
-- ./project/upload-coverage
+- sbt -J-Xmx6144m ++$TRAVIS_SCALA_VERSION $COMMAND
 
 cache:
   directories:
