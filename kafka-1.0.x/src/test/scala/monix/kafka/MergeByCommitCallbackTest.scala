@@ -61,13 +61,13 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
 
       val listT = Observable
         .range(0, 4)
-        .mergeMap(i => createConsumer(i.toInt, topicName))
-        .bufferTumbling(count)
+        .mergeMap(i => createConsumer(i.toInt, topicName).take(500))
+        .bufferTumbling(2000)
         .map(CommittableOffsetBatch.mergeByCommitCallback)
         .map { offsetBatches =>
           assert(offsetBatches.length == 4)
         }
-        .headL
+        .completedL
 
       Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
     }

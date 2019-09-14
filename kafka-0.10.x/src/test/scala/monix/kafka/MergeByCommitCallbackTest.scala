@@ -1,18 +1,18 @@
 package monix.kafka
 
 import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
 import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
-import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.clients.producer.ProducerRecord
+import org.scalatest.{FunSuite, Matchers}
+
+import scala.concurrent.duration._
+import scala.concurrent.Await
+import monix.execution.Scheduler.Implicits.global
+import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Gen
-import org.scalatest.{FunSuite, Matchers}
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
 
 class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaCheckDrivenPropertyChecks with Matchers {
 
@@ -61,13 +61,13 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
 
       val listT = Observable
         .range(0, 4)
-        .mergeMap(i => createConsumer(i.toInt, topicName))
-        .bufferTumbling(count)
+        .mergeMap(i => createConsumer(i.toInt, topicName).take(500))
+        .bufferTumbling(2000)
         .map(CommittableOffsetBatch.mergeByCommitCallback)
         .map { offsetBatches =>
           assert(offsetBatches.length == 4)
         }
-        .headL
+        .completedL
 
       Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
     }
