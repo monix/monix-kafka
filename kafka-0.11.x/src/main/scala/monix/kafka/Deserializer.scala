@@ -46,6 +46,12 @@ final case class Deserializer[A](
 
 object Deserializer {
 
+  implicit def fromKafkaDeserializer[A](implicit des: KafkaDeserializer[A]): Deserializer[A] =
+    Deserializer[A](
+      className = des.getClass.getName,
+      classType = des.getClass
+    )
+
   /** Alias for the function that provides an instance of
     * the Kafka `Deserializer`.
     */
