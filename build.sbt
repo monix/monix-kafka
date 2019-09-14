@@ -1,4 +1,4 @@
-val monixVersion = "3.0.0-RC3"
+val monixVersion = "3.0.0"
 
 val allProjects = List(
   "kafka1x",
@@ -18,8 +18,8 @@ lazy val doNotPublishArtifact = Seq(
 
 lazy val sharedSettings = Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.8",
-  crossScalaVersions := Seq("2.11.12", "2.12.8"),
+  scalaVersion := "2.12.10",
+  crossScalaVersions := Seq("2.11.12", "2.12.10", "2.13.0"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -191,7 +191,8 @@ lazy val commonDependencies = Seq(
     "org.slf4j" % "log4j-over-slf4j" % "1.7.28",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.8" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
   )
 )
 
@@ -254,7 +255,7 @@ enablePlugins(GitVersioning)
 isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "1.0.0-RC3"
+git.baseVersion := "1.0.0-RC4"
 
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {
