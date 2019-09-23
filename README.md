@@ -1,7 +1,6 @@
 # Monix-Kafka
 
 [![Build Status](https://travis-ci.org/monix/monix-kafka.svg?branch=master)](https://travis-ci.org/monix/monix-kafka)
-[![Coverage Status](https://codecov.io/gh/monix/monix-kafka/coverage.svg?branch=master)](https://codecov.io/gh/monix/monix-kafka?branch=master)
 [![Maven Central](https://img.shields.io/maven-central/v/io.monix/monix-kafka-1x_2.12.svg)](https://search.maven.org/search?q=g:io.monix%20AND%20a:monix-kafka-1x_2.12)
 [![Scala Steward badge](https://img.shields.io/badge/Scala_Steward-helping-brightgreen.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=)](https://scala-steward.org)
 
@@ -27,7 +26,7 @@ Work in progress!
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC4"
+libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC5"
 ```
 
 For `kafka` versions higher than `1.0.x` also add a dependency override:
@@ -48,7 +47,7 @@ sbt kafka1x/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-11" % "1.0.0-RC4"
+libraryDependencies += "io.monix" %% "monix-kafka-11" % "1.0.0-RC5"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -63,7 +62,7 @@ sbt kafka11/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-10" % "1.0.0-RC4"
+libraryDependencies += "io.monix" %% "monix-kafka-10" % "1.0.0-RC5"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -80,7 +79,7 @@ Please note that `EmbeddedKafka` is not supported for Kafka `0.9.x`
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC4"
+libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC5"
 ```
 
 Or in case you're interested in running the tests of this project,

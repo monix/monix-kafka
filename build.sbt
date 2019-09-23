@@ -203,7 +203,7 @@ lazy val commonDependencies = Seq(
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.8" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.14.0" % "test"
+    "org.scalacheck" %% "scalacheck" % "1.14.1" % "test"
   )
 )
 
@@ -269,7 +269,7 @@ enablePlugins(GitVersioning)
 isSnapshot := version.value endsWith "SNAPSHOT"
 
 /* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "1.0.0-RC4"
+git.baseVersion := "1.0.0-RC5"
 
 val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
 git.gitTagToVersionNumber := {

@@ -44,6 +44,12 @@ final case class Serializer[A](
 
 object Serializer {
 
+  implicit def fromKafkaSerializer[A](implicit ser: KafkaSerializer[A]): Serializer[A] =
+    Serializer[A](
+      className = ser.getClass.getName,
+      classType = ser.getClass
+    )
+
   /** Alias for the function that provides an instance of
     * the Kafka `Serializer`.
     */

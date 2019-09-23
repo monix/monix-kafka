@@ -1,3 +1,16 @@
+## Version 1.0.0-RC5 (September 15, 2019)
+
+Depends on Monix 3.0.0
+
+Main changes:
+
+- PR #89: Added fetch.max.bytes setting
+- PR #95: Improve Producer performance
+- PR #100: Add method `mergeByCommitCallback`
+- PR #115: Allow to use Kafka Serializers
+
+Thanks to all the contributors!
+
 ## Version 1.0.0-RC4 (June 16, 2019)
 
 Depends on Monix `3.0.0-RC3`.
