@@ -63,10 +63,13 @@ final class KafkaProducerSink[K, V] private (
                 } yield res
               }
 
-            val recovered = sendTask.map(_ => Continue).onErrorHandle { ex =>
-              logger.error("Unexpected error in KafkaProducerSink", ex)
-              Continue
-            }
+            val recovered = sendTask.redeem(
+              ex => {
+                logger.error("Unexpected error in KafkaProducerSink", ex)
+                Continue
+              },
+              _ => Continue
+            )
 
             recovered.runToFuture
           }
