@@ -97,7 +97,7 @@ class MonixKafkaTest extends FunSuite {
       .map(_.value())
       .toListL
 
-    val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+    val (result, _) = Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)
     assert(result.map(_.toInt).sum === (0 until count).sum)
   }
 
@@ -124,7 +124,7 @@ class MonixKafkaTest extends FunSuite {
       .headL
 
     val ((result, offsets), _) =
-      Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)
 
     val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
     assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
@@ -188,6 +188,6 @@ class MonixKafkaTest extends FunSuite {
         assert(offsetBatches.length == 2)
       }
       .headL
-    Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+    Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)
   }
 }

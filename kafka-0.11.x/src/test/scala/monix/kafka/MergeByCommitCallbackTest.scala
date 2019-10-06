@@ -69,7 +69,7 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
         }
         .completedL
 
-      Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)
     }
   }
 
