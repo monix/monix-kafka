@@ -1,4 +1,4 @@
-val monixVersion = "3.0.0"
+val monixVersion = "3.1.0"
 
 val allProjects = List(
   "kafka1x",
