@@ -6,14 +6,14 @@ import monix.eval.Task
 import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
-import org.scalatest.FunSuite
 import org.apache.kafka.common.serialization.{Serializer => KafkaSerializer}
 import org.apache.kafka.common.serialization.{Deserializer => KafkaDeserializer}
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import monix.execution.Scheduler.Implicits.global
+import org.scalatest.funsuite.AnyFunSuite
 
-class SerializationTest extends FunSuite with KafkaTestKit {
+class SerializationTest extends AnyFunSuite with KafkaTestKit {
   val topicName = "monix-kafka-serialization-tests"
 
   val producerCfg = KafkaProducerConfig.default.copy(
