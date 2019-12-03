@@ -35,7 +35,8 @@ import scala.util.{Failure, Success}
 final class KafkaProducerSink[K, V] private (
   producer: Coeval[KafkaProducer[K, V]],
   shouldTerminate: Boolean,
-  parallelism: Int)
+  parallelism: Int,
+  onSendError: Throwable => Task[Unit])
     extends Consumer[Seq[ProducerRecord[K, V]], Unit] with StrictLogging with Serializable {
 
   require(parallelism >= 1, "parallelism >= 1")
@@ -63,12 +64,9 @@ final class KafkaProducerSink[K, V] private (
                 } yield res
               }
 
-            val recovered = sendTask.redeem(
-              ex => {
-                logger.error("Unexpected error in KafkaProducerSink", ex)
-                Continue
-              },
-              _ => Continue
+            val recovered = sendTask.redeemWith(
+              ex => onSendError(ex).map(_ => Continue),
+              _ => Task.pure(Continue)
             )
 
             recovered.runToFuture
@@ -101,18 +99,31 @@ final class KafkaProducerSink[K, V] private (
   }
 }
 
-object KafkaProducerSink {
+object KafkaProducerSink extends StrictLogging {
+
+  private[this] def logOnSendError = (ex: Throwable) => Task {
+    logger.error("Unexpected error in KafkaProducerSink", ex)
+  }
 
   /** Builder for [[KafkaProducerSink]]. */
   def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
     implicit K: Serializer[K],
+    V: Serializer[V]): KafkaProducerSink[K, V] = apply(config, sc, logOnSendError)
+
+  /** Builder for [[KafkaProducerSink]]. */
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, onSendError: Throwable => Task[Unit])(
+    implicit K: Serializer[K],
     V: Serializer[V]): KafkaProducerSink[K, V] = {
 
     val producer = Coeval(KafkaProducer[K, V](config, sc))
-    new KafkaProducerSink(producer, shouldTerminate = true, parallelism = config.monixSinkParallelism)
+    new KafkaProducerSink(producer, shouldTerminate = true, parallelism = config.monixSinkParallelism, onSendError)
   }
 
   /** Builder for [[KafkaProducerSink]]. */
   def apply[K, V](producer: Coeval[KafkaProducer[K, V]], parallelism: Int): KafkaProducerSink[K, V] =
-    new KafkaProducerSink(producer, shouldTerminate = false, parallelism = parallelism)
+    apply(producer, parallelism, logOnSendError)
+
+  /** Builder for [[KafkaProducerSink]]. */
+  def apply[K, V](producer: Coeval[KafkaProducer[K, V]], parallelism: Int, onSendError: Throwable => Task[Unit]): KafkaProducerSink[K, V] =
+    new KafkaProducerSink(producer, shouldTerminate = false, parallelism = parallelism, onSendError)
 }
