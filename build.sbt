@@ -60,13 +60,6 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
       Seq.empty
   }),
 
-  // Force building with Java 8
-  initialize := {
-    val required = "1.8"
-    val current  = sys.props("java.specification.version")
-    assert(current == required, s"Unsupported build JDK: java.specification.version $current != $required")
-  },
-
   // Targeting Java 6, but only for Scala <= 2.11
   javacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, majorVersion)) if majorVersion <= 11 =>
