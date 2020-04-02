@@ -13,10 +13,6 @@ matrix:
   - jdk: oraclejdk8
     scala: 2.12.10
     env: COMMAND=ci
-    # Scala 2.13
-  - jdk: oraclejdk8
-    scala: 2.13.1
-    env: COMMAND=ci
 
 env:
   global:
