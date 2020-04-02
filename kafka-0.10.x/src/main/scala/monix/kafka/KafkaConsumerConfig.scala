@@ -244,6 +244,7 @@ final case class KafkaConsumerConfig(
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
   observableSeekToEndOnStart: Boolean,
+  observableSeekToBeginningOnStart: Boolean,
   properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
@@ -429,6 +430,7 @@ object KafkaConsumerConfig {
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
       observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart"),
+      observableSeekToBeginningOnStart = config.getBoolean("monix.observable.seekBeginning.onStart"),
       properties = Map.empty
     )
   }
