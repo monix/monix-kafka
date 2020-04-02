@@ -13,6 +13,7 @@ import org.apache.kafka.common.serialization.{Deserializer => KafkaDeserializer}
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import monix.execution.Scheduler.Implicits.global
+import monix.execution.exceptions.DummyException
 
 class SerializationTest extends FunSuite with KafkaTestKit {
 
@@ -54,27 +55,27 @@ class SerializationTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("failing with error serialization/deserialization using kafka.common.serialization") {
+  test("allow to fail the stream if serialization throws") {
     withRunningKafka {
       val topicName = "monix-kafka-serialization-failing-tests"
+      val dummy = DummyException("boom")
 
       implicit val serializer: KafkaSerializer[A] = new AFailingSerializer
-      implicit val deserializer: KafkaDeserializer[A] = new ADeserializer
 
-      val producer = KafkaProducerSink[String, A](producerCfg, io, (ex: Throwable) => Task.raiseError(ex))
+      val producer = KafkaProducerSink[String, A](producerCfg, io, (_: Throwable) => Task.raiseError(dummy))
 
       val pushT = Observable
         .evalOnce(new ProducerRecord(topicName, "obs", A(1.toString)))
         .bufferIntrospective(1024)
         .consumeWith(producer)
 
-      assertThrows[RuntimeException] {
+      assertThrows[DummyException] {
         Await.result(pushT.runToFuture, 60.seconds)
       }
     }
   }
 
-  test("failing with continue serialization/deserialization using kafka.common.serialization") {
+  test("allow to recover from serialization errors") {
     withRunningKafka {
       val topicName = "monix-kafka-serialization-continuing-tests"
       val count = 100
