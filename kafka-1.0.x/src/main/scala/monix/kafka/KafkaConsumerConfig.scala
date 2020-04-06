@@ -155,6 +155,11 @@ import scala.concurrent.duration._
   *        requests beyond just ip/port by allowing a logical application
   *        name to be included in server-side request logging.
   *
+  * @param clientRack is the `client.rack` setting.
+  *        A rack identifier for this client.
+  *        This can be any string value which indicates where this client is physically located. 
+  *        It corresponds with the broker config 'broker.rack'
+  *
   * @param fetchMaxWaitTime is the `fetch.max.wait.ms` setting,
   *        the maximum amount of time the server will block before
   *        answering the fetch request if there isn't sufficient data to
@@ -239,6 +244,7 @@ final case class KafkaConsumerConfig(
   sslTruststoreType: String,
   checkCRCs: Boolean,
   clientId: String,
+  clientRack: String,
   fetchMaxWaitTime: FiniteDuration,
   metadataMaxAge: FiniteDuration,
   metricReporters: List[String],
@@ -283,6 +289,7 @@ final case class KafkaConsumerConfig(
     "ssl.truststore.type" -> sslTruststoreType,
     "check.crcs" -> checkCRCs.toString,
     "client.id" -> clientId,
+    "client.rack" -> clientRack,
     "fetch.max.wait.ms" -> fetchMaxWaitTime.toMillis.toString,
     "metadata.max.age.ms" -> metadataMaxAge.toMillis.toString,
     "metric.reporters" -> metricReporters.mkString(","),
@@ -426,6 +433,7 @@ object KafkaConsumerConfig {
       sslTruststoreType = config.getString("ssl.truststore.type"),
       checkCRCs = config.getBoolean("check.crcs"),
       clientId = config.getString("client.id"),
+      clientRack = config.getString("client.rack"),
       fetchMaxWaitTime = config.getInt("fetch.max.wait.ms").millis,
       metadataMaxAge = config.getInt("metadata.max.age.ms").millis,
       metricReporters = config.getString("metric.reporters").trim.split("\\s*,\\s*").toList,
