@@ -18,6 +18,7 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
 
   val commitCallbacks: List[Commit] = List.fill(4)(new Commit {
     override def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit] = Task.unit
+
     override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
       Task.unit
   })
@@ -33,9 +34,7 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
       val partitions = offsets.map(_.topicPartition)
       val received: List[CommittableOffsetBatch] = CommittableOffsetBatch.mergeByCommitCallback(offsets)
 
-      received.foreach { batch =>
-        partitions should contain allElementsOf batch.offsets.keys
-      }
+      received.foreach { batch => partitions should contain allElementsOf batch.offsets.keys }
 
       received.size should be <= 4
     }
@@ -64,9 +63,7 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
         .mergeMap(i => createConsumer(i.toInt, topicName).take(500))
         .bufferTumbling(2000)
         .map(CommittableOffsetBatch.mergeByCommitCallback)
-        .map { offsetBatches =>
-          assert(offsetBatches.length == 4)
-        }
+        .map { offsetBatches => assert(offsetBatches.length == 4) }
         .completedL
 
       Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)

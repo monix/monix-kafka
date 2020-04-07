@@ -62,7 +62,7 @@ final class KafkaProducerSink[K, V] private (
               if (parallelism == 1)
                 Task.traverse(list)(p.value().send(_))
               else {
-                 Task.wanderN(parallelism)(list)(r => p.value().send(r))
+                Task.wanderN(parallelism)(list)(r => p.value().send(r))
               }
 
             val recovered = sendTask.redeemWith(
@@ -102,10 +102,11 @@ final class KafkaProducerSink[K, V] private (
 
 object KafkaProducerSink extends StrictLogging {
 
-  private[this] val onSendErrorDefault = (ex: Throwable) => Task {
-    logger.error("Unexpected error in KafkaProducerSink", ex)
-    Continue
-  }
+  private[this] val onSendErrorDefault = (ex: Throwable) =>
+    Task {
+      logger.error("Unexpected error in KafkaProducerSink", ex)
+      Continue
+    }
 
   /** Builder for [[KafkaProducerSink]]. */
   def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
@@ -126,6 +127,9 @@ object KafkaProducerSink extends StrictLogging {
     apply(producer, parallelism, onSendErrorDefault)
 
   /** Builder for [[KafkaProducerSink]]. */
-  def apply[K, V](producer: Coeval[KafkaProducer[K, V]], parallelism: Int, onSendError: Throwable => Task[Ack]): KafkaProducerSink[K, V] =
+  def apply[K, V](
+    producer: Coeval[KafkaProducer[K, V]],
+    parallelism: Int,
+    onSendError: Throwable => Task[Ack]): KafkaProducerSink[K, V] =
     new KafkaProducerSink(producer, shouldTerminate = false, parallelism = parallelism, onSendError)
 }

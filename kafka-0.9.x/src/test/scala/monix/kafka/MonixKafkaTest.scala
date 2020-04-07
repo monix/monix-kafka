@@ -117,9 +117,7 @@ class MonixKafkaTest extends FunSuite {
     val listT = consumer
       .executeOn(io)
       .bufferTumbling(count)
-      .map { messages =>
-        messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
-      }
+      .map { messages => messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset)) }
       .mapEval { case (values, batch) => Task.shift *> batch.commitSync().map(_ => values -> batch.offsets) }
       .headL
 
@@ -184,9 +182,7 @@ class MonixKafkaTest extends FunSuite {
       .merge
       .bufferTumbling(count)
       .map(CommittableOffsetBatch.mergeByCommitCallback)
-      .map { offsetBatches =>
-        assert(offsetBatches.length == 2)
-      }
+      .map { offsetBatches => assert(offsetBatches.length == 2) }
       .headL
     Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)
   }

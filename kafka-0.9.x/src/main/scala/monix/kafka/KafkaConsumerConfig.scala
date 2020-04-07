@@ -237,7 +237,7 @@ final case class KafkaConsumerConfig(
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
-  observableSeekToEndOnStart: Boolean,
+  observableSeekOnStart: ObservableSeekOnStart,
   properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
@@ -418,7 +418,7 @@ object KafkaConsumerConfig {
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
-      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart"),
+      observableSeekOnStart = ObservableSeekOnStart(config.getString("monix.observable.seek.onStart")),
       properties = Map.empty
     )
   }

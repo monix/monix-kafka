@@ -49,7 +49,8 @@ object Serializer {
   implicit def fromKafkaSerializer[A](implicit ser: KafkaSerializer[A]): Serializer[A] =
     Serializer[A](
       className = ser.getClass.getName,
-      classType = ser.getClass
+      classType = ser.getClass,
+      constructor = _ => ser
     )
 
   /** Alias for the function that provides an instance of
