@@ -124,9 +124,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val listT = consumer
         .executeOn(io)
         .bufferTumbling(count)
-        .map { messages =>
-          messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
-        }
+        .map { messages => messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset)) }
         .mapEval { case (values, batch) => Task.shift *> batch.commitSync().map(_ => values -> batch.offsets) }
         .headL
 

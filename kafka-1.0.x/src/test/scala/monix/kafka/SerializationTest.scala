@@ -127,6 +127,7 @@ class AFailingSerializer extends ASerializer {
 }
 
 class AHalfFailingSerializer extends ASerializer {
+
   override def serialize(topic: String, data: A): Array[Byte] = {
     if (data.value.toInt % 2 == 0) super.serialize(topic, data)
     else throw new RuntimeException("fail")

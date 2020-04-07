@@ -61,8 +61,8 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
       implicit val s = scheduler
       val feedTask = consumer.flatMap { c =>
         // Skipping all available messages on all partitions
-        if (config.observableSeekToEndOnStart) c.seekToEnd()
-        else if (config.observableSeekToBeginningOnStart) c.seekToBeginning()
+        if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd()
+        else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning()
         // A task to execute on both cancellation and normal termination
         val onCancel = cancelTask(c)
         runLoop(c, out).guarantee(onCancel)
