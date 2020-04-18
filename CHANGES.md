@@ -1,3 +1,16 @@
+## Version 1.0.0-RC6 (April 18, 2020)
+
+Depends on Monix 3.x
+
+Main changes:
+
+- PR #133: Configure serializers in kafka producer after creating
+- PR #150: Allow customization of error handling in ProducerSink
+- PR #179: Add seekToBeginning option and reuse instances of kafka (de)serializers
+- PR #180: Add client.rack option
+
+Thanks to all the contributors!
+
 ## Version 1.0.0-RC5 (September 15, 2019)
 
 Depends on Monix 3.0.0

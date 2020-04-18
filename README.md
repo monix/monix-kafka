@@ -26,7 +26,7 @@ Work in progress!
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC5"
+libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC6"
 ```
 
 For `kafka` versions higher than `1.0.x` also add a dependency override:
@@ -47,7 +47,7 @@ sbt kafka1x/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-11" % "1.0.0-RC5"
+libraryDependencies += "io.monix" %% "monix-kafka-11" % "1.0.0-RC6"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -62,7 +62,7 @@ sbt kafka11/test
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-10" % "1.0.0-RC5"
+libraryDependencies += "io.monix" %% "monix-kafka-10" % "1.0.0-RC6"
 ```
 
 Or in case you're interested in running the tests of this project, it
@@ -79,7 +79,7 @@ Please note that `EmbeddedKafka` is not supported for Kafka `0.9.x`
 In SBT:
 
 ```scala
-libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC5"
+libraryDependencies += "io.monix" %% "monix-kafka-9" % "1.0.0-RC6"
 ```
 
 Or in case you're interested in running the tests of this project,
