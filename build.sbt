@@ -179,12 +179,12 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
 )
 
 def mimaSettings(projectName: String) = Seq(
-  mimaPreviousArtifacts := Set("io.monix" %% projectName % "0.14")
+  mimaPreviousArtifacts := Set("io.monix" %% projectName % "1.0.0-RC5")
 )
 
 lazy val commonDependencies = Seq(
   resolvers ++= Seq(
-    "Typesafe Releases" at "http://repo.typesafe.com/typesafe/releases",
+    "Typesafe Releases" at "https://repo.typesafe.com/typesafe/releases",
     Resolver.sonatypeRepo("releases")
   ),
 
