@@ -16,3 +16,11 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 .idea
+
+#website
+/website/blog/
+/website/build/
+/website/node_modules/
+/website/static/api/
+/website/variables.js
+/website/yarn.lock

@@ -4,4 +4,7 @@ addSbtPlugin("org.xerial.sbt"    %  "sbt-sonatype"    % "3.8.1")
 addSbtPlugin("com.typesafe.sbt"  %  "sbt-git"         % "1.0.0")
 addSbtPlugin("com.typesafe"      %  "sbt-mima-plugin" % "0.6.4")
 addSbtPlugin("org.scoverage"     %  "sbt-scoverage"   % "1.6.0")
-addSbtPlugin("org.scalameta"        % "sbt-scalafmt"    % "2.3.0")
+addSbtPlugin("org.scalameta"     % "sbt-scalafmt"     % "2.3.0")
+addSbtPlugin("org.scalameta"     % "sbt-mdoc"         % "2.2.1")
+addSbtPlugin("com.eed3si9n"      % "sbt-unidoc"       % "0.4.3")
+
