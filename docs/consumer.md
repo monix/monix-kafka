@@ -9,25 +9,28 @@ Below table shows the two different ways of consuming from Kafka topics are avai
 
 | __Offsets handling__ | __Signature__  | __Stream element type__ |
   | :---: | :---: | :---: |
-  | No (auto commit can be enabled)_| KafkaConsumerObservable_.apply_ | _ConsumerRecord[K, V]_ |
-  | Manual commit | KafkaConsumerObservable_.manualCommit_ | _CommittableMessage[K, V]_ |
+  | No _(auto commit can be enabled)_| _KafkaConsumerObservable.apply_ | _ConsumerRecord[K, V]_ |
+  | Manual commit | _KafkaConsumerObservable.manualCommit_ | _CommittableMessage[K, V]_ |
   
 These two will be further explained in code on next sections, but first let's review the _Consumer configuration_.
   
 ### Consumer configuration
 
 As it was mentioned on the [previous]() sections, configuration can be specified either from [default.conf](https://github.com/monix/monix-kafka/blob/master/kafka-1.0.x/src/main/resources/monix/kafka/default.conf#L49) or 
-overwriting default values from the same code. Such file aggregates all Kafka related config, but you would better get used to the following ones before using the kafka consumer api: 
+overwriting default values from the same code. Below list of properties represents the parameters
+of the _HOCON_ file that are __only__ consumer related properties which could give you a first glance of what to look at when configuring the consumer, but of course there 
+are more configurable parameters related to Kafka:
 
 ```hocon
 kafka {
-  # these only represents consumer related configurable parameters
-  client.rack = ""
+  # these represents ony consumer related configurable parameters
+  # but you might want to set other kafka configurations that affect can consumer too
   fetch.min.bytes = 1
   fetch.max.bytes = 52428800
   group.id = "" 
   heartbeat.interval.ms = 3000
   max.partition.fetch.bytes = 1048576
+  session.timeout.ms = 10000
   auto.offset.reset = "latest"
   enable.auto.commit = false
   exclude.internal.topics = true
@@ -46,6 +49,9 @@ kafka {
 
 For more details about what each of these configurable parameters mean, please directly review the [official confluent documentation](https://docs.confluent.io/current/installation/configuration/consumer-configs.html#cp-config-consumer) 
 for _Kafka Consumer Configuration_.
+You would also better check `monix.kafka.KafkaConsumerConfig` in order to know exactly what are the properties the consumer takes care of.
+Note that `monix.observable.commit.type` and `monix.observable.commit.order` are not passed to Kafka, since they are monix self configurations that would be taken into account only for the 
+`plain consumer` but not for `manualCommit`. See next section for more info about these.  
 
 ### Plain consumer
 
@@ -81,13 +87,14 @@ val observable =
 
 ### Manual commit consumer:
 
-The `manualCommit` makes it possible to commit offset positions to Kafka. In this case the emitted record would `CommitableMessage`, 
+The `manualCommit` makes it possible to commit offset positions to Kafka. In this case the emitted record would be `CommitableMessage`, 
 this is just a wrapper for `ConsumerRecord` with `CommittableOffset`.
 
 Committable offset represents the offset for specified topic and partition that can be committed synchronously by `commitSync` method call or asynchronously by one of commitAsync methods.
  To achieve good performance it is recommended to use batched commit with `CommittableOffsetBatch` class.
   
-Let's see an example on how to use the batch committable offset.
+Let's now see an example on how to use the batch committable offset:
+
 ```scala
 import monix.kafka._
 

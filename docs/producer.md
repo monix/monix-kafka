@@ -3,6 +3,15 @@ id: producer
 title: Producer
 ---
 
+The _Kafka Producer API_ allows an application to publish a stream of records to one or more Kafka topics. 
+
+Using Monix Kafka you could either produce a single event or to define a producer that will push an unbounded incoming stream of events, they complement very well to accomplish different possible use cases.
+
+  
+## Producer Configurations 
+
+https://docs.confluent.io/current/installation/configuration/producer-configs.html
+
  ```scala
  import monix.kafka._
  import monix.execution.Scheduler
