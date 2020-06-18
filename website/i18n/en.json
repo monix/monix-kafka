@@ -5,6 +5,9 @@
     "previous": "Previous",
     "tagline": "A Monix integration with Kafka.",
     "docs": {
+      "configuration": {
+        "title": "Configuration"
+      },
       "consumer": {
         "title": "Consumer"
       },

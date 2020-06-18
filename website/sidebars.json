@@ -1,5 +1,5 @@
 {
   "docs": {
-    "Documentation": ["getting-started", "producer", "consumer"]
+    "Documentation": ["getting-started", "configuration", "producer", "consumer"]
   }
 }
