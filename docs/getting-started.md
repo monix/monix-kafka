@@ -3,7 +3,7 @@ id: getting-started
 title: Getting Started
 ---
 
-This project supports different versions of Apache Kafka, 
+This project supports different versions of _Apache Kafka_, 
 see in below sections how to get started with each of them:
 
 ## Kafka 1.0.x or above

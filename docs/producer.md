@@ -3,57 +3,87 @@ id: producer
 title: Producer
 ---
 
-The _Kafka Producer API_ allows an application to publish a stream of records to one or more Kafka topics. 
+The _Monix Kafka_ producer module uses the underlying _Kafka Producer API_ that would allow the application to asynchronously publish to one or more Kafka topics. 
+You could either produce a single event or to define a producer that will push an unbounded stream of events, they complement very well to accomplish different possible use cases.
 
-Using Monix Kafka you could either produce a single event or to define a producer that will push an unbounded incoming stream of events, they complement very well to accomplish different possible use cases.
+Below table describes the available different ways of publishing events to Kafka as mentioned before, although further details and implementation can be found in the next sections:
 
-  
+  | __Signature__ | __Expects__  | __Input__ | __Described by__ |
+  | :---: | :---: | :---: | :---: |
+  | _KafkaProducer.send_ | Single record | `ProducerRecord[K, V]`, (`K`, `V`) or just `V`  | `Task` |
+  | _KafkaProdcuerSink.apply_ | Multiple records | `Observable[Seq[ProducerRecord[K, V]]]` | `Consumer[Seq[ProducerRecord[K, V]], Unit]` |
+
 ## Producer Configurations 
 
-https://docs.confluent.io/current/installation/configuration/producer-configs.html
+This section only mentions the producer related configurable parameters, but you might need to set other kafka configurations that can affect producer behaviour too such like buffer memory and size, security protocols and others.
+As you might notice, there are not as much configurable parameters for the _Kafka Producer_ than there is for _Consumer_, but still are quite important in regards to get the best possible performance.
 
+```hocon
+kafka {
+  # N. of times for the client to resend any record whose send fails with a potentially transient error.
+  retries = 0
+  # N. of requests that KafkaProducerSink can push in parallel
+  monix.producer.sink.parallelism = 100
+}
+```
+
+For more details about all the configurable parameters, please directly review the [official confluent documentation](https://docs.confluent.io/current/installation/configuration/producer-configs.html) 
+for _Kafka Producer Configuration_.
+You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exactly what are the properties the producer would expect.
+
+## Single record producer
+
+ The best way of asynchronously producing single records to _Kafka_ is using the `monix.kafka.KafkaProducer`, it exposes the `.send` signature which accepts different inputs, being a `ProducerRecord[K, V]`, (`K`, `V`) or just the `V`
+  and it returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` that can later be run and transformed into a `Future`.
+ 
+ On the one hand, if task `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and therefore the message wasn't successfully acknowledged by the Kafka broker.
+  
+ On the other hand, in case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`. 
+  
+ Finally, all successfully delivered messages will complete with `Some[RecordMetadata]`.
+ 
+ 
  ```scala
  import monix.kafka._
- import monix.execution.Scheduler
- 
+  
  implicit val scheduler: Scheduler = monix.execution.Scheduler.global
- 
- // Init
- val producerCfg = KafkaProducerConfig.default.copy(
+ // init producer configuration
+ val producerConf = KafkaProducerConfig.default.copy(
    bootstrapServers = List("127.0.0.1:9092")
  )
  
- val producer = KafkaProducer[String,String](producerCfg, scheduler)
+ // builds monix kafka producer
+ val producer = KafkaProducer[String,String](producerConf, scheduler)
  
- // For sending one message
- val recordMetadataF = producer.send("my-topic", "my-message").runToFuture
+ // sends a single message
+ val recordMetadataF: Future[Option[RecordMetadata]] = producer.send("my-topic", "my-message").runToFuture
  
- // For closing the producer connection
+ // closes the connection
  val closeF = producer.close().runToFuture
  ```
  
- Calling `producer.send` returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` which can then be run and transformed into a `Future`.
+ ## Sink producer 
  
- If the `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and that the message wasn't successfully acknowledged by the Kafka broker. In case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`.  All successfully delivered messages will complete with `Some[RecordMetadata]`.
+ On the other hand, if you want to produce an unbounded number of records you would better use `monix.kafka.KafkaProducerSink`, which would push an `Observable[ProducerRecord[K, V]]` to the specified _Apache Kafka_ topics.
  
- For pushing an entire `Observable` to Apache Kafka:
+ As it was shown in the previous section, `monix.producer.sink.parallelism` exposes a monix's producer sink parameter that specifies the parallelism on producing requests. 
  
  ```scala
  import monix.kafka._
- import monix.execution.Scheduler
  import monix.reactive.Observable
  import org.apache.kafka.clients.producer.ProducerRecord
  
  implicit val scheduler: Scheduler = monix.execution.Scheduler.global
  
- // Initializing the producer
- val producerCfg = KafkaProducerConfig.default.copy(
-   bootstrapServers = List("127.0.0.1:9092")
+ // init producer configuration
+ val producerConf = KafkaProducerConfig.default.copy(
+   bootstrapServers = List("127.0.0.1:9092"),
+   monixSinkParallelism = 3
  )
  
- val producer = KafkaProducerSink[String,String](producerCfg, scheduler)
+ val producer = KafkaProducerSink[String,String](producerConf, scheduler)
  
- // Lets pretend we have this observable of records
+ // lets pretend we have this observable of records
  val observable: Observable[ProducerRecord[String,String]] = ???
  
  observable

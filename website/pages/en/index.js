@@ -83,7 +83,7 @@ const index = `
 
 
 This project provides a [Monix](https://monix.io) stream based interface for [Apache Kafka](https://kafka.apache.org/documentation.html#producerapi),
-which means it offers full advantage on performance that a the Monix reactive application mixed with the main Kafka based capabilities such like publish and subscribe to streams in a fault-tolerant durable way.
+which offers the full advantage on mixing the performance and asynchronously that Monix provides with the Kafka based capabilities such like publish and subscribe to streams in a fault-tolerant durable way.
 
 ### Getting Started
 The latest stable version, compatible with _Monix 3.x_ and it does support _Kafka 1.0.x_, _0.11.x_, _0.10.x_, _0.9.x_:
