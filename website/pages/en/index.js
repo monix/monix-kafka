@@ -83,16 +83,19 @@ const index = `
 
 
 This project provides a [Monix](https://monix.io) stream based interface for [Apache Kafka](https://kafka.apache.org/documentation.html#producerapi),
-which offers the full advantage on mixing the performance and asynchronously that Monix provides with the Kafka based capabilities such like publish and subscribe to streams in a fault-tolerant durable way.
+which offers the full advantage on mixing the performance and asynchronously that _Monix_ provides with the _Kafka_ based capabilities such like publish and subscribe to streams in a fault-tolerant durable way.
 
 ### Getting Started
-The latest stable version, compatible with _Monix 3.x_ and it does support _Kafka 1.0.x_, _0.11.x_, _0.10.x_, _0.9.x_:
+The latest stable version is compatible with __Monix__ _3.x_ with support __Kafka__ _2.x_, _1.x_, _0.11.x_, _0.10.x_, _0.9.x_. And published for __Scala__ _2.11_ and _2.12_.
+
+Add the following dependency on _sbt_ to get started with any Kafka version higher than _1.0.0_.
 
 \`\`\`scala
-libraryDependencies += "${organization}" %% "${coreModuleName}" % "${latestVersion}"
+libraryDependencies += "io.monix" %% "monix-kafka-1x" % "1.0.0-RC6"
 \`\`\`
 
-Published for Scala ${scalaPublishVersions}.
+Or if you still use an older version check out how to [_get started with it_](http://localhost:3014/monix-kafka/docs/getting-started).
+
 `.trim();
 
     const {

@@ -3,16 +3,16 @@ id: consumer
 title: Consumer
 ---
 
-_Monix Kafka_ abstracts the _Kafka Consumer API_ in form of `Observable` type, which would represent an unbounded stream of events consumed from the specified kafka topics.
+The _Monix Kafka_ consumer implementation relies in the underlying _Kafka Consumer API_, which would abstract an unbounded stream of events consumed from the specified kafka topics in form of `Observable`.
 
-Below table shows the two different ways of consuming from Kafka topics are available (Version 0.11.x and above):
+Below table shows the two available ways of consuming from _Kafka_ topics. (Version 0.11.x and above):
 
 |  __Signature__  | __Expected elements__ | __Stream element type__ |
   | :---: | :---: | :---: |
   | _KafkaConsumerObservable.apply_ | No _(auto commit can be enabled)_ | `ConsumerRecord[K, V]` |
   | _KafkaConsumerObservable.manualCommit_ | Manual commit | `CommittableMessage[K, V]` |
   
-These two will be further explained in code on next sections, but first let's review the _Consumer configuration_.
+These will be further explained in code on next sections, but first let's review the _Consumer configuration_.
   
 ### Consumer configuration
 
@@ -57,13 +57,13 @@ Note that `monix.observable.commit.type` and `monix.observable.commit.order` are
 
 ### Plain consumer
 
-The `plainSource` emits `ConsumerRecord` elements, a record represents the received key/value pair that also contains information about the topic, partition, offset and timestamp). 
-But more importantly, it __does not support offsets commitment__ to Kafka, then it can be used when the offset is stored externally or with auto-commit.
+The `plainSource` emits `ConsumerRecord` elements, a record represents the received _key/value_ pair that also contains information about the topic, partition, offset and timestamp. 
+But more importantly, it __does not support offsets commitment__ to Kafka, you can then store offsets externally or with the _auto-commit_ flag.
 
-Note that auto-commit is disabled by default, you can fine tune the auto commitment by setting the monix observable specific configuration `ObservableCommitOrder`,  
+Note that _auto-commit_ is disabled by default, you can fine tune the auto commitment by setting the monix's observable specific configuration `ObservableCommitOrder`,  
 which will allow you to decide whether to commit the records before receiving an acknowledgement from downstream, after that, or to just don't acknowledge (as a default one). 
 
-If _At Most Once_ semantics is seek, auto commit must be enabled and observable commit order done before ack:
+If _At Most Once_ semantics is seek, _auto-commit_ must be enabled and _observable commit order_ done before ack:
  
 ```scala
 import monix.kafka._

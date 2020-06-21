@@ -3,7 +3,7 @@ id: producer
 title: Producer
 ---
 
-The _Monix Kafka_ producer module uses the underlying _Kafka Producer API_ that would allow the application to asynchronously publish to one or more Kafka topics. 
+The _Monix Kafka_ producer module relies in the underlying _Kafka Producer API_ that would allow the application to asynchronously publish to one or more Kafka topics. 
 You could either produce a single event or to define a producer that will push an unbounded stream of events, they complement very well to accomplish different possible use cases.
 
 Below table describes the available different ways of publishing events to Kafka as mentioned before, although further details and implementation can be found in the next sections:
@@ -33,14 +33,14 @@ You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exact
 
 ## Single record producer
 
- The best way of asynchronously producing single records to _Kafka_ is using the `monix.kafka.KafkaProducer`, it exposes the `.send` signature which accepts different inputs, being a `ProducerRecord[K, V]`, (`K`, `V`) or just the `V`
-  and it returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` that can later be run and transformed into a `Future`.
+ The best way of asynchronously producing single records to _Kafka_ is using the `monix.kafka.KafkaProducer` which exposes the `.send` signature. 
+ It accepts different inputs, being a `ProducerRecord[K, V]`, (`K`, `V`) or just the `V`, and returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` can later be run and transformed into a `Future`, that:
  
- On the one hand, if task `Task` completes with `None` it means that `producer.send` method was called after the producer was closed and therefore the message wasn't successfully acknowledged by the Kafka broker.
+ - If it completes with `None` it means that `producer.send` method was called after the producer was closed and therefore the message wasn't successfully acknowledged by the Kafka broker.
+ 
+ - In case of failure reported by the underlying _Kafka client_, the producer will bubble up the exception and fail the `Task`. 
   
- On the other hand, in case of the failure of the underlying Kafka client the producer will bubble up the exception and fail the `Task`. 
-  
- Finally, all successfully delivered messages will complete with `Some[RecordMetadata]`.
+ - Finally, all successfully delivered messages will complete with `Some[RecordMetadata]`.
  
  
  ```scala
@@ -64,7 +64,7 @@ You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exact
  
  ## Sink producer 
  
- On the other hand, if you want to produce an unbounded number of records you would better use `monix.kafka.KafkaProducerSink`, which would push an `Observable[ProducerRecord[K, V]]` to the specified _Apache Kafka_ topics.
+ On the other hand, if an unbounded number of records needs to be produced, better to use `monix.kafka.KafkaProducerSink`, which provides the logic for pushing an `Observable[ProducerRecord[K, V]]` to the specified _Apache Kafka_ topics.
  
  As it was shown in the previous section, `monix.producer.sink.parallelism` exposes a monix's producer sink parameter that specifies the parallelism on producing requests. 
  
