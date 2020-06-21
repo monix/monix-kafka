@@ -287,17 +287,6 @@ git.formattedShaVersion := {
   }
 }
 
-lazy val examples = project.in(file("examples"))
-  .settings(sharedSettings)
-  .settings(commonDependencies)
-  .settings(
-    name := "examples",
-    organization := "io.monix",
-    scalaVersion := "2.12.10"
-  )
-  .aggregate(kafka1x)
-  .dependsOn(kafka1x)
-
 lazy val docs = project
   .in(file("monix-kafka-docs"))
   .settings(
