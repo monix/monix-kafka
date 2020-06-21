@@ -3,7 +3,7 @@ id: consumer
 title: Consumer
 ---
 
-The _Monix Kafka_ consumer implementation relies in the underlying _Kafka Consumer API_, which would abstract an unbounded stream of events consumed from the specified kafka topics in form of `Observable`.
+The _Monix Kafka_ consumer implementation relies on the underlying _Kafka Consumer API_, which would abstract the an unbounded stream of events consumed from the specified kafka topics in form of `Observable`.
 
 Below table shows the two available ways of consuming from _Kafka_ topics. (Version 0.11.x and above):
 
@@ -16,10 +16,11 @@ These will be further explained in code on next sections, but first let's review
   
 ### Consumer configuration
 
-As it was mentioned on the [previous]() sections, configuration can be specified either from [default.conf](https://github.com/monix/monix-kafka/blob/master/kafka-1.0.x/src/main/resources/monix/kafka/default.conf#L49) or 
-overwriting default values from the same code. Below list of properties represents the parameters
-of the _HOCON_ file that are __only__ consumer related properties which could give you a first glance of what to look at when configuring the consumer, but of course there 
-are more configurable parameters related to Kafka:
+As mentioned on previous sections, configuration can be specified either from a `HOCON` file [.conf](https://github.com/monix/monix-kafka/blob/master/kafka-1.0.x/src/main/resources/monix/kafka/default.conf#L49) or 
+from the very same code.
+ 
+ Below list of properties represents __only__ those parameters that are kafka consumer related properties which could give you a first glance of what to look at when configuring the consumer, but of course there 
+are more configurable parameters related to _Kafka_ in general.
 
 ```hocon
 kafka {

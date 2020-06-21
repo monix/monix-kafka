@@ -3,15 +3,17 @@ id: producer
 title: Producer
 ---
 
-The _Monix Kafka_ producer module relies in the underlying _Kafka Producer API_ that would allow the application to asynchronously publish to one or more Kafka topics. 
-You could either produce a single event or to define a producer that will push an unbounded stream of events, they complement very well to accomplish different possible use cases.
+The _Monix Kafka_ producer module relies in the underlying _Kafka Producer API_ that would allow the application to asynchronously publish on one or more Kafka topics. 
 
-Below table describes the available different ways of publishing events to Kafka as mentioned before, although further details and implementation can be found in the next sections:
+Below table describes the two available ways of publishing events to Kafka, which both complements very well to accomplish different possible use cases, by either producing a single event or instead using the producer sink that will push an unbounded stream of events.
+
 
   | __Signature__ | __Expects__  | __Input__ | __Described by__ |
   | :---: | :---: | :---: | :---: |
   | _KafkaProducer.send_ | Single record | `ProducerRecord[K, V]`, (`K`, `V`) or just `V`  | `Task` |
   | _KafkaProdcuerSink.apply_ | Multiple records | `Observable[Seq[ProducerRecord[K, V]]]` | `Consumer[Seq[ProducerRecord[K, V]], Unit]` |
+
+More details and examples can be found in the next sections:
 
 ## Producer Configurations 
 
@@ -29,11 +31,11 @@ kafka {
 
 For more details about all the configurable parameters, please directly review the [official confluent documentation](https://docs.confluent.io/current/installation/configuration/producer-configs.html) 
 for _Kafka Producer Configuration_.
-You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exactly what are the properties the producer would expect.
+You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exactly what are the properties that the producer expects.
 
 ## Single record producer
 
- The best way of asynchronously producing single records to _Kafka_ is using the `monix.kafka.KafkaProducer` which exposes the `.send` signature. 
+ The best way of asynchronously producing a single record to _Kafka_ is by using the `.send` method from `monix.kafka.KafkaProducer`. 
  It accepts different inputs, being a `ProducerRecord[K, V]`, (`K`, `V`) or just the `V`, and returns a [Task](https://monix.io/docs/3x/eval/task.html) of `Option[RecordMetadata]` can later be run and transformed into a `Future`, that:
  
  - If it completes with `None` it means that `producer.send` method was called after the producer was closed and therefore the message wasn't successfully acknowledged by the Kafka broker.
@@ -41,7 +43,6 @@ You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exact
  - In case of failure reported by the underlying _Kafka client_, the producer will bubble up the exception and fail the `Task`. 
   
  - Finally, all successfully delivered messages will complete with `Some[RecordMetadata]`.
- 
  
  ```scala
  import monix.kafka._
@@ -64,9 +65,11 @@ You could also refer to `monix.kafka.KafkaProducerConfig` in order to know exact
  
  ## Sink producer 
  
- On the other hand, if an unbounded number of records needs to be produced, better to use `monix.kafka.KafkaProducerSink`, which provides the logic for pushing an `Observable[ProducerRecord[K, V]]` to the specified _Apache Kafka_ topics.
+ On the other hand, if an unbounded number of records needs to be produced, it is better to use `monix.kafka.KafkaProducerSink`, which provides the logic for pushing an `Observable[ProducerRecord[K, V]]` to the specified _Kafka_ topics.
  
- As it was shown in the previous section, `monix.producer.sink.parallelism` exposes a monix's producer sink parameter that specifies the parallelism on producing requests. 
+  As it was mentioned in the producer configuration section, `monix.producer.sink.parallelism` allows to specify the parallelism on producing requests from `KafkaProducerSink`. 
+ 
+ See below an example on how to use the kafka producer sink:
  
  ```scala
  import monix.kafka._
