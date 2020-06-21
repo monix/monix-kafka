@@ -262,8 +262,6 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
     )
   )
 
-
-
 //------------- For Release
 
 enablePlugins(GitVersioning)
