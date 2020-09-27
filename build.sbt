@@ -1,4 +1,6 @@
-val monixVersion = "3.3.0"
+import pl.project13.scala.sbt.JmhPlugin
+
+val monixVersion = "3.1.0"
 
 val allProjects = List(
   "kafka1x",
@@ -213,7 +215,7 @@ lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(
     name := "monix-kafka-1x",
     libraryDependencies ++= {
-      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j"))
+      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.1.0" % "test" exclude ("log4j", "log4j"))
       else Seq.empty[ModuleID]
     },
     libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "1.0.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
@@ -255,6 +257,23 @@ lazy val kafka9 = project.in(file("kafka-0.9.x"))
       "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
     )
   )
+
+lazy val benchmarks = project.in(file("benchmarks"))
+  .settings(sharedSettings)
+  .settings(commonDependencies)
+  .settings(
+    name := "benchmarks",
+    organization := "io.monix",
+    scalaVersion := "2.12.10",
+    libraryDependencies ++= Seq(
+      //"com.typesafe.akka" %% "akka-stream-kafka" % "1.1.0",
+      //"com.typesafe.akka" %% "akka-stream" % "2.5.25"
+    )
+  )
+  .enablePlugins(JmhPlugin)
+  .aggregate(kafka1x)
+  .dependsOn(kafka1x)
+
 
 //------------- For Release
 
