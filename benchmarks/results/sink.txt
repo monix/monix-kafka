@@ -1,0 +1,141 @@
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 3 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ProducerSinkBenchmark.parallel_1P_1RF
+
+# Run progress: 21.43% complete, ETA 00:00:08
+# Fork: 1 of 1
+# Warmup Iteration   1: 9.375 ops/s
+Iteration   1: 13.510 ops/s
+Iteration   2: 18.241 ops/s
+Iteration   3: 19.142 ops/s
+Iteration   4: 19.561 ops/s
+Iteration   5: 19.037 ops/s
+Iteration   6: 16.952 ops/s
+Iteration   7: 19.231 ops/s
+Iteration   8: 17.509 ops/s
+Iteration   9: 17.984 ops/s
+Iteration  10: 19.508 ops/s
+
+
+Result "monix.kafka.benchmarks.ProducerSinkBenchmark.parallel_1P_1RF":
+  18.068 ±(99.9%) 2.766 ops/s [Average]
+  (min, avg, max) = (13.510, 18.068, 19.561), stdev = 1.829
+  CI (99.9%): [15.302, 20.833] (assumes normal distribution)
+
+
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 3 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ProducerSinkBenchmark.parallel_2P_1RF
+
+# Run progress: 41.07% complete, ETA 00:02:46
+# Fork: 1 of 1
+# Warmup Iteration   1: 13.733 ops/s
+Iteration   1: 19.880 ops/s
+Iteration   2: 20.386 ops/s
+Iteration   3: 18.965 ops/s
+Iteration   4: 19.587 ops/s
+Iteration   5: 16.391 ops/s
+Iteration   6: 13.518 ops/s
+Iteration   7: 16.592 ops/s
+Iteration   8: 17.053 ops/s
+Iteration   9: 17.305 ops/s
+Iteration  10: 13.637 ops/s
+
+
+Result "monix.kafka.benchmarks.ProducerSinkBenchmark.parallel_2P_1RF":
+  17.331 ±(99.9%) 3.679 ops/s [Average]
+  (min, avg, max) = (13.518, 17.331, 20.386), stdev = 2.433
+  CI (99.9%): [13.653, 21.010] (assumes normal distribution)
+
+
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 3 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ProducerSinkBenchmark.sync_2P_1RF
+
+# Run progress: 60.71% complete, ETA 00:02:28
+# Fork: 1 of 1
+# Warmup Iteration   1: 10.699 ops/s
+Iteration   1: 15.467 ops/s
+Iteration   2: 15.411 ops/s
+Iteration   3: 16.970 ops/s
+Iteration   4: 17.399 ops/s
+Iteration   5: 16.215 ops/s
+Iteration   6: 18.005 ops/s
+Iteration   7: 19.683 ops/s
+Iteration   8: 17.790 ops/s
+Iteration   9: 21.806 ops/s
+Iteration  10: 14.330 ops/s
+
+
+Result "monix.kafka.benchmarks.ProducerSinkBenchmark.sync_2P_1RF":
+  17.308 ±(99.9%) 3.334 ops/s [Average]
+  (min, avg, max) = (14.330, 17.308, 21.806), stdev = 2.205
+  CI (99.9%): [13.974, 20.641] (assumes normal distribution)
+
+
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 3 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ProducerSinkBenchmark.sync_sync_1P_1RF
+
+# Run progress: 80.36% complete, ETA 00:01:24
+# Fork: 1 of 1
+# Warmup Iteration   1: 11.903 ops/s
+Iteration   1: 17.489 ops/s
+Iteration   2: 16.606 ops/s
+Iteration   3: 13.364 ops/s
+Iteration   4: 14.373 ops/s
+Iteration   5: 11.613 ops/s
+Iteration   6: 15.312 ops/s
+Iteration   7: 18.608 ops/s
+Iteration   8: 17.567 ops/s
+Iteration   9: 10.345 ops/s
+Iteration  10: 15.375 ops/s
+
+
+Result "monix.kafka.benchmarks.ProducerSinkBenchmark.sync_sync_1P_1RF":
+  15.065 ±(99.9%) 4.056 ops/s [Average]
+  (min, avg, max) = (10.345, 15.065, 18.608), stdev = 2.683
+  CI (99.9%): [11.009, 19.122] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:07:40
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+Benchmark                                Mode  Cnt   Score   Error  Units
+ProducerSinkBenchmark.parallel_1P_1RF   thrpt   10  18.068 ± 2.766  ops/s
+ProducerSinkBenchmark.parallel_2P_1RF   thrpt   10  17.331 ± 3.679  ops/s
+ProducerSinkBenchmark.sync_2P_1RF       thrpt   10  17.308 ± 3.334  ops/s
+ProducerSinkBenchmark.sync_sync_1P_1RF  thrpt   10  15.065 ± 4.056  ops/s

@@ -1,0 +1,10 @@
+kafka-console-consumer --bootstrap-server broker:9092 --topic topic2 --from-beginning
+kafka-console-producer --broker-list broker:9092  --topic topic_1P_1RF
+
+docker exec -it broker kafka-console-consumer --bootstrap-server broker:9092 --topic topic2 --from-beginning
+docker exec -it broker /bin/bash
+
+docker stop $(docker ps -a -q)
+
+#from root directory
+sbt 'benchmarks/jmh:run -o results.txt monix.kafka.benchmarks.KafkaProducerBenchmark'
