@@ -195,8 +195,8 @@ lazy val commonDependencies = Seq(
     "org.slf4j" % "log4j-over-slf4j" % "1.7.30",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
-    "org.scalatest" %% "scalatest" % "3.0.9" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.14.3" % "test"
+    "org.scalatest" %% "scalatest" % "3.0.8" % "test",
+    "org.scalacheck" %% "scalacheck" % "1.15.0" % "test"
   )
 )
 
