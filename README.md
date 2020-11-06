@@ -282,7 +282,6 @@ more information about how you can get involed.
 The current maintainers (people who can merge pull requests) are:
 
 - Alexandru Nedelcu ([alexandru](https://github.com/alexandru))
-- Alex Gryzlov ([clayrat](https://github.com/clayrat))
 - Piotr Gawryś ([Avasil](https://github.com/Avasil))
 - Leandro Bolivar ([leandrob13](https://github.com/leandrob13))
 
