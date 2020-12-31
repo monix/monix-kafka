@@ -23,7 +23,7 @@ import monix.execution.{Ack, Callback}
 import monix.kafka.config.ObservableCommitType
 import monix.reactive.Observer
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.{blocking, Future}
@@ -34,7 +34,7 @@ import scala.util.{Failure, Success}
   */
 final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
   override protected val config: KafkaConsumerConfig,
-  override protected val consumer: Task[KafkaConsumer[K, V]])
+  override protected val consumer: Task[Consumer[K, V]])
     extends KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] {
 
   /* Based on the [[KafkaConsumerConfig.observableCommitType]] it
@@ -43,7 +43,7 @@ final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
    *
    * MUST BE synchronized by `consumer`.
    */
-  private def consumerCommit(consumer: KafkaConsumer[K, V]): Unit =
+  private def consumerCommit(consumer: Consumer[K, V]): Unit =
     config.observableCommitType match {
       case ObservableCommitType.Sync =>
         blocking(consumer.commitSync())
@@ -58,7 +58,7 @@ final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
   // Boolean value indicating that we should trigger a commit after downstream ack
   private val shouldCommitAfter = !config.enableAutoCommit && config.observableCommitOrder.isAfter
 
-  override protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[ConsumerRecord[K, V]]): Task[Ack] =
+  override protected def ackTask(consumer: Consumer[K, V], out: Subscriber[ConsumerRecord[K, V]]): Task[Ack] =
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val asyncCb = Callback.forked(cb)

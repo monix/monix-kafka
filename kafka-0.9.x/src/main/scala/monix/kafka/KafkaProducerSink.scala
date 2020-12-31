@@ -62,7 +62,7 @@ final class KafkaProducerSink[K, V] private (
               if (parallelism == 1)
                 Task.traverse(list)(p.value().send(_))
               else {
-                Task.wanderN(parallelism)(list)(r => p.value().send(r))
+                Task.parTraverseN(parallelism)(list)(r => p.value().send(r))
               }
 
             val recovered = sendTask.redeemWith(

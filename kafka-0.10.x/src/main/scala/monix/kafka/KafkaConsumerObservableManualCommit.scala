@@ -22,7 +22,7 @@ import monix.execution.cancelables.BooleanCancelable
 import monix.execution.{Ack, Callback}
 import monix.reactive.Observer
 import monix.reactive.observers.Subscriber
-import org.apache.kafka.clients.consumer.{KafkaConsumer, OffsetAndMetadata, OffsetCommitCallback}
+import org.apache.kafka.clients.consumer.{Consumer, OffsetAndMetadata, OffsetCommitCallback}
 import org.apache.kafka.common.TopicPartition
 
 import scala.collection.JavaConverters._
@@ -36,13 +36,13 @@ import scala.util.{Failure, Success}
   */
 final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
   override protected val config: KafkaConsumerConfig,
-  override protected val consumer: Task[KafkaConsumer[K, V]])
+  override protected val consumer: Task[Consumer[K, V]])
     extends KafkaConsumerObservable[K, V, CommittableMessage[K, V]] {
 
   // Caching value to save CPU cycles
   private val pollTimeoutMillis = config.fetchMaxWaitTime.toMillis
 
-  case class CommitWithConsumer(consumer: KafkaConsumer[K, V]) extends Commit {
+  case class CommitWithConsumer(consumer: Consumer[K, V]) extends Commit {
 
     override def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit] =
       Task(blocking(consumer.synchronized(consumer.commitSync(batch.map {
@@ -57,7 +57,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       }
   }
 
-  override protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =
+  override protected def ackTask(consumer: Consumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val asyncCb = Callback.forked(cb)

@@ -17,7 +17,6 @@
 
 package monix.kafka
 
-import cats.syntax.apply._
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.kafka.config.AutoOffsetReset

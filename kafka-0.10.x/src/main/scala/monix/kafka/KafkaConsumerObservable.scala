@@ -23,7 +23,7 @@ import monix.kafka.config.ObservableCommitOrder
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.internals.NoOpConsumerRebalanceListener
-import org.apache.kafka.clients.consumer.{ConsumerRecord, KafkaConsumer}
+import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.blocking
@@ -38,13 +38,13 @@ import scala.util.matching.Regex
   */
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
-  protected def consumer: Task[KafkaConsumer[K, V]]
+  protected def consumer: Task[Consumer[K, V]]
 
   /**
     * Creates a task that polls the source, then feeds the downstream
     * subscriber, returning the resulting acknowledgement
     * */
-  protected def ackTask(consumer: KafkaConsumer[K, V], out: Subscriber[Out]): Task[Ack]
+  protected def ackTask(consumer: Consumer[K, V], out: Subscriber[Out]): Task[Ack]
 
   override final def unsafeSubscribeFn(out: Subscriber[Out]): Cancelable = {
     import out.scheduler
@@ -79,7 +79,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
    *
    * Creates an asynchronous boundary on every poll.
    */
-  private def runLoop(consumer: KafkaConsumer[K, V], out: Subscriber[Out]): Task[Unit] = {
+  private def runLoop(consumer: Consumer[K, V], out: Subscriber[Out]): Task[Unit] = {
     ackTask(consumer, out).flatMap {
       case Stop => Task.unit
       case Continue => runLoop(consumer, out)
@@ -89,7 +89,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   /* Returns a `Task` that triggers the closing of the
    * Kafka Consumer connection.
    */
-  private def cancelTask(consumer: KafkaConsumer[K, V]): Task[Unit] = {
+  private def cancelTask(consumer: Consumer[K, V]): Task[Unit] = {
     // Forced asynchronous boundary
     val cancelTask = Task.evalAsync {
       consumer.synchronized(blocking(consumer.close()))
@@ -117,7 +117,7 @@ object KafkaConsumerObservable {
     */
   def apply[K, V](
     cfg: KafkaConsumerConfig,
-    consumer: Task[KafkaConsumer[K, V]]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] =
+    consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] =
     new KafkaConsumerObservableAutoCommit[K, V](cfg, consumer)
 
   /** Builds a [[KafkaConsumerObservable]] instance.
@@ -178,7 +178,7 @@ object KafkaConsumerObservable {
     * */
   def manualCommit[K, V](
     cfg: KafkaConsumerConfig,
-    consumer: Task[KafkaConsumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
+    consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val manualCommitConfig = cfg.copy(observableCommitOrder = ObservableCommitOrder.NoAck, enableAutoCommit = false)
     new KafkaConsumerObservableManualCommit[K, V](manualCommitConfig, consumer)
@@ -247,7 +247,7 @@ object KafkaConsumerObservable {
   /** Returns a `Task` for creating a consumer instance given list of topics. */
   def createConsumer[K, V](config: KafkaConsumerConfig, topics: List[String])(
     implicit K: Deserializer[K],
-    V: Deserializer[V]): Task[KafkaConsumer[K, V]] = {
+    V: Deserializer[V]): Task[Consumer[K, V]] = {
 
     import collection.JavaConverters._
     Task.evalAsync {
@@ -263,7 +263,7 @@ object KafkaConsumerObservable {
   /** Returns a `Task` for creating a consumer instance given topics regex. */
   def createConsumer[K, V](config: KafkaConsumerConfig, topicsRegex: Regex)(
     implicit K: Deserializer[K],
-    V: Deserializer[V]): Task[KafkaConsumer[K, V]] = {
+    V: Deserializer[V]): Task[Consumer[K, V]] = {
     Task.evalAsync {
       val configMap = config.toJavaMap
       blocking {

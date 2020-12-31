@@ -25,8 +25,8 @@ import org.apache.kafka.clients.producer.{
   ProducerRecord,
   RecordMetadata,
   Callback => KafkaCallback,
-  KafkaProducer => ApacheKafkaProducer
-}
+  Producer => ApacheProducer,
+  KafkaProducer => ApacheKafkaProducer}
 
 import scala.util.control.NonFatal
 
@@ -45,7 +45,7 @@ import scala.util.control.NonFatal
   * All successfully delivered messages will complete with `Some[RecordMetadata]`.
   */
 trait KafkaProducer[K, V] extends Serializable {
-  def underlying: Task[ApacheKafkaProducer[K, V]]
+  def underlying: Task[ApacheProducer[K, V]]
   def send(topic: String, value: V): Task[Option[RecordMetadata]]
   def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]]
   def send(record: ProducerRecord[K, V]): Task[Option[RecordMetadata]]
@@ -78,7 +78,7 @@ object KafkaProducer {
       new ApacheKafkaProducer[K, V](configJavaMap, keySerializer, valueSerializer)
     }
 
-    def underlying: Task[ApacheKafkaProducer[K, V]] =
+    def underlying: Task[ApacheProducer[K, V]] =
       Task.eval(producerRef)
 
     def send(topic: String, value: V): Task[Option[RecordMetadata]] =
