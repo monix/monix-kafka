@@ -58,19 +58,8 @@ object KafkaProducer {
   /** Builds a [[KafkaProducer]] instance. */
   def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
     implicit K: Serializer[K],
-    V: Serializer[V]): KafkaProducer[K, V] =
-    new Implementation[K, V](config, sc)
-
-  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler)(
-    implicit K: Serializer[K],
-    V: Serializer[V])
-      extends KafkaProducer[K, V] with StrictLogging {
-
-    private val isCanceled = Atomic(false)
-
-    // Gets initialized on the first `send`
-    private lazy val producerRef = {
-      logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
+    V: Serializer[V]): KafkaProducer[K, V] = {
+    lazy val producerRef: ApacheProducer[K, V] = {
       val keySerializer = K.create()
       val valueSerializer = V.create()
       val configJavaMap = config.toJavaMap
@@ -78,6 +67,22 @@ object KafkaProducer {
       valueSerializer.configure(configJavaMap, false)
       new ApacheKafkaProducer[K, V](configJavaMap, keySerializer, valueSerializer)
     }
+    new Implementation[K, V](config, sc, producerRef)
+  }
+
+  /** Builds a [[KafkaProducer]] instance with provided Apache Producer. */
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: ApacheProducer[K, V])(
+    implicit K: Serializer[K],
+    V: Serializer[V]): KafkaProducer[K, V] = {
+    new Implementation[K, V](config, sc, producerRef)
+  }
+
+  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: ApacheProducer[K, V])(
+    implicit K: Serializer[K],
+    V: Serializer[V])
+      extends KafkaProducer[K, V] with StrictLogging {
+
+    private val isCanceled = Atomic(false)
 
     def underlying: Task[ApacheProducer[K, V]] =
       Task.eval(producerRef)
