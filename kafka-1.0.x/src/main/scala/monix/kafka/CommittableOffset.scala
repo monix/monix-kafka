@@ -37,22 +37,19 @@ final class CommittableOffset private[kafka] (
   val offset: Long,
   private[kafka] val commitCallback: Commit) {
 
-  /**
-    * Synchronously commits [[offset]] for the [[topicPartition]] to Kafka. It is recommended
+  /** Synchronously commits [[offset]] for the [[topicPartition]] to Kafka. It is recommended
     * to use batched commit with [[CommittableOffsetBatch]] class.
-    * */
+    */
   def commitSync(): Task[Unit] = commitCallback.commitBatchSync(Map(topicPartition -> offset))
 
-  /**
-    * Asynchronously commits [[offset]] to Kafka. It is recommended
+  /** Asynchronously commits [[offset]] to Kafka. It is recommended
     * to use batched commit with [[CommittableOffsetBatch]] class.
-    * */
+    */
   def commitAsync(): Task[Unit] = commitCallback.commitBatchAsync(Map(topicPartition -> offset))
 
-  /**
-    * Asynchronously commits [[offset]] to Kafka. It is recommended
+  /** Asynchronously commits [[offset]] to Kafka. It is recommended
     * to use batched commit with [[CommittableOffsetBatch]] class.
-    * */
+    */
   def commitAsync(callback: OffsetCommitCallback): Task[Unit] =
     commitCallback.commitBatchAsync(Map(topicPartition -> offset), callback)
 }

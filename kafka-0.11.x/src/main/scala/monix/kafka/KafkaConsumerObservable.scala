@@ -40,10 +40,9 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
   protected def consumer: Task[Consumer[K, V]]
 
-  /**
-    * Creates a task that polls the source, then feeds the downstream
+  /** Creates a task that polls the source, then feeds the downstream
     * subscriber, returning the resulting acknowledgement
-    * */
+    */
   protected def ackTask(consumer: Consumer[K, V], out: Subscriber[Out]): Task[Ack]
 
   override final def unsafeSubscribeFn(out: Subscriber[Out]): Cancelable = {
@@ -128,8 +127,8 @@ object KafkaConsumerObservable {
     *
     * @param topics is the list of Kafka topics to subscribe to.
     */
-  def apply[K, V](cfg: KafkaConsumerConfig, topics: List[String])(
-    implicit K: Deserializer[K],
+  def apply[K, V](cfg: KafkaConsumerConfig, topics: List[String])(implicit
+    K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topics)
@@ -144,16 +143,15 @@ object KafkaConsumerObservable {
     *
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
-  def apply[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(
-    implicit K: Deserializer[K],
+  def apply[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(implicit
+    K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topicsRegex)
     apply(cfg, consumer)
   }
 
-  /**
-    * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
+  /** Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
     * and forcibly disables auto commits in configuration.
     * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
     *
@@ -175,7 +173,7 @@ object KafkaConsumerObservable {
     * @param consumer is a factory for the
     *        `org.apache.kafka.clients.consumer.KafkaConsumer`
     *        instance to use for consuming from Kafka
-    * */
+    */
   def manualCommit[K, V](
     cfg: KafkaConsumerConfig,
     consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
@@ -184,8 +182,7 @@ object KafkaConsumerObservable {
     new KafkaConsumerObservableManualCommit[K, V](manualCommitConfig, consumer)
   }
 
-  /**
-    * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
+  /** Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
     * and forcibly disables auto commits in configuration.
     * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
     *
@@ -205,17 +202,16 @@ object KafkaConsumerObservable {
     *        observable commit order will turned to [[monix.kafka.config.ObservableCommitOrder.NoAck NoAck]] forcibly!
     *
     * @param topics is the list of Kafka topics to subscribe to.
-    * */
-  def manualCommit[K, V](cfg: KafkaConsumerConfig, topics: List[String])(
-    implicit K: Deserializer[K],
+    */
+  def manualCommit[K, V](cfg: KafkaConsumerConfig, topics: List[String])(implicit
+    K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topics)
     manualCommit(cfg, consumer)
   }
 
-  /**
-    * Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
+  /** Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
     * and forcibly disables auto commits in configuration.
     * Such instances emit [[CommittableMessage]] instead of Kafka's ConsumerRecord.
     *
@@ -235,9 +231,9 @@ object KafkaConsumerObservable {
     *        observable commit order will turned to [[monix.kafka.config.ObservableCommitOrder.NoAck NoAck]] forcibly!
     *
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
-    * */
-  def manualCommit[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(
-    implicit K: Deserializer[K],
+    */
+  def manualCommit[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(implicit
+    K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topicsRegex)
@@ -245,8 +241,8 @@ object KafkaConsumerObservable {
   }
 
   /** Returns a `Task` for creating a consumer instance given list of topics. */
-  def createConsumer[K, V](config: KafkaConsumerConfig, topics: List[String])(
-    implicit K: Deserializer[K],
+  def createConsumer[K, V](config: KafkaConsumerConfig, topics: List[String])(implicit
+    K: Deserializer[K],
     V: Deserializer[V]): Task[Consumer[K, V]] = {
 
     import collection.JavaConverters._
@@ -261,8 +257,8 @@ object KafkaConsumerObservable {
   }
 
   /** Returns a `Task` for creating a consumer instance given topics regex. */
-  def createConsumer[K, V](config: KafkaConsumerConfig, topicsRegex: Regex)(
-    implicit K: Deserializer[K],
+  def createConsumer[K, V](config: KafkaConsumerConfig, topicsRegex: Regex)(implicit
+    K: Deserializer[K],
     V: Deserializer[V]): Task[Consumer[K, V]] = {
     Task.evalAsync {
       val configMap = config.toJavaMap

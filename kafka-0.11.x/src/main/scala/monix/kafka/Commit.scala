@@ -20,9 +20,8 @@ import monix.eval.Task
 import org.apache.kafka.common.TopicPartition
 import org.apache.kafka.clients.consumer.OffsetCommitCallback
 
-/**
-  * Callback for batched commit realized as closure in [[KafkaConsumerObservable]] context.
-  * */
+/** Callback for batched commit realized as closure in [[KafkaConsumerObservable]] context.
+  */
 trait Commit {
   def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit]
   def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit]

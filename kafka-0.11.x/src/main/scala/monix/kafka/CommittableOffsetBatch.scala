@@ -37,25 +37,21 @@ import org.apache.kafka.common.TopicPartition
   */
 final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartition, Long], commitCallback: Commit) {
 
-  /**
-    * Synchronously commits [[offsets]] to Kafka
-    * */
+  /** Synchronously commits [[offsets]] to Kafka
+    */
   def commitSync(): Task[Unit] = commitCallback.commitBatchSync(offsets)
 
-  /**
-    * Asynchronously commits [[offsets]] to Kafka
-    * */
+  /** Asynchronously commits [[offsets]] to Kafka
+    */
   def commitAsync(): Task[Unit] = commitCallback.commitBatchAsync(offsets)
 
-  /**
-    * Asynchronously commits [[offsets]] to Kafka
-    * */
+  /** Asynchronously commits [[offsets]] to Kafka
+    */
   def commitAsync(callback: OffsetCommitCallback): Task[Unit] = commitCallback.commitBatchAsync(offsets)
 
-  /**
-    * Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
+  /** Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
     * for same topic and partition.
-    * */
+    */
   def updated(committableOffset: CommittableOffset): CommittableOffsetBatch =
     new CommittableOffsetBatch(
       offsets.updated(committableOffset.topicPartition, committableOffset.offset),
@@ -65,19 +61,17 @@ final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartiti
 
 object CommittableOffsetBatch {
 
-  /**
-    * Creates empty [[CommittableOffsetBatch]]. Can be used as neutral element in fold:
+  /** Creates empty [[CommittableOffsetBatch]]. Can be used as neutral element in fold:
     * {{{
     *   offsets.foldLeft(CommittableOffsetBatch.empty)(_ updated _)
     * }}}
-    * */
+    */
   val empty: CommittableOffsetBatch = new CommittableOffsetBatch(Map.empty, Commit.empty)
 
-  /**
-    * Builds [[CommittableOffsetBatch]] from offsets sequence. Be careful with
+  /** Builds [[CommittableOffsetBatch]] from offsets sequence. Be careful with
     * sequence order. If there is more than once offset for a topic and partition in the
     * sequence then the last one will remain.
-    * */
+    */
   def apply(offsets: Seq[CommittableOffset]): CommittableOffsetBatch =
     if (offsets.nonEmpty) {
       val aggregatedOffsets = offsets.foldLeft(Map.empty[TopicPartition, Long]) { (acc, o) =>
@@ -88,15 +82,13 @@ object CommittableOffsetBatch {
       empty
     }
 
-  /**
-    * Builds [[CommittableOffsetBatch]] list from offsets sequence by merging the offsets
+  /** Builds [[CommittableOffsetBatch]] list from offsets sequence by merging the offsets
     * that have the same commit callback. This will help when the committable offsets are
     * from different consumers.
     * {{{
     *   CommittableOffsetBatch.mergeByCommitCallback(offsets)
     * }}}
-    *
-    * */
+    */
   def mergeByCommitCallback(committableOffsets: Seq[CommittableOffset]): List[CommittableOffsetBatch] = {
     if (committableOffsets.nonEmpty) {
       committableOffsets

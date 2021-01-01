@@ -157,7 +157,7 @@ import scala.concurrent.duration._
   *
   * @param clientRack is the `client.rack` setting.
   *        A rack identifier for this client.
-  *        This can be any string value which indicates where this client is physically located. 
+  *        This can be any string value which indicates where this client is physically located.
   *        It corresponds with the broker config 'broker.rack'
   *
   * @param fetchMaxWaitTime is the `fetch.max.wait.ms` setting,

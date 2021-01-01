@@ -18,7 +18,6 @@ package monix.kafka
 
 import org.apache.kafka.clients.consumer.ConsumerRecord
 
-/**
-  * Represents data consumed from Kafka and [[CommittableOffset]] built from it
-  * */
+/** Represents data consumed from Kafka and [[CommittableOffset]] built from it
+  */
 final case class CommittableMessage[K, V](record: ConsumerRecord[K, V], committableOffset: CommittableOffset)

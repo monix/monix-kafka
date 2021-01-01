@@ -109,13 +109,13 @@ object KafkaProducerSink extends StrictLogging {
     }
 
   /** Builder for [[KafkaProducerSink]]. */
-  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
-    implicit K: Serializer[K],
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(implicit
+    K: Serializer[K],
     V: Serializer[V]): KafkaProducerSink[K, V] = apply(config, sc, onSendErrorDefault)
 
   /** Builder for [[KafkaProducerSink]]. */
-  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, onSendError: Throwable => Task[Ack])(
-    implicit K: Serializer[K],
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, onSendError: Throwable => Task[Ack])(implicit
+    K: Serializer[K],
     V: Serializer[V]): KafkaProducerSink[K, V] = {
 
     val producer = Coeval(KafkaProducer[K, V](config, sc))
