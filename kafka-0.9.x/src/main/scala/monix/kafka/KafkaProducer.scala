@@ -17,7 +17,7 @@
 package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
-import monix.eval.Task
+import monix.eval.{Coeval, Task}
 import monix.execution.atomic.Atomic
 import monix.execution.cancelables.{SingleAssignCancelable, StackedCancelable}
 import monix.execution.{Callback, Cancelable, Scheduler}
@@ -59,7 +59,7 @@ object KafkaProducer {
   def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
     implicit K: Serializer[K],
     V: Serializer[V]): KafkaProducer[K, V] = {
-    lazy val producerRef: ApacheProducer[K, V] = {
+    val producerRef: Coeval[ApacheProducer[K, V]] = Coeval.evalOnce {
       val keySerializer = K.create()
       val valueSerializer = V.create()
       val configJavaMap = config.toJavaMap
@@ -71,13 +71,13 @@ object KafkaProducer {
   }
 
   /** Builds a [[KafkaProducer]] instance with provided Apache Producer. */
-  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: ApacheProducer[K, V])(
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: Coeval[ApacheProducer[K, V]])(
     implicit K: Serializer[K],
     V: Serializer[V]): KafkaProducer[K, V] = {
     new Implementation[K, V](config, sc, producerRef)
   }
 
-  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: ApacheProducer[K, V])(
+  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: Coeval[ApacheProducer[K, V]])(
     implicit K: Serializer[K],
     V: Serializer[V])
       extends KafkaProducer[K, V] with StrictLogging {
@@ -85,7 +85,7 @@ object KafkaProducer {
     private val isCanceled = Atomic(false)
 
     def underlying: Task[ApacheProducer[K, V]] =
-      Task.eval(producerRef)
+      producerRef.to[Task]
 
     def send(topic: String, value: V): Task[Option[RecordMetadata]] =
       send(new ProducerRecord[K, V](topic, value))
@@ -105,11 +105,8 @@ object KafkaProducer {
             val isActive = Atomic(true)
             val cancelable = SingleAssignCancelable()
             try {
-              // Force evaluation
-              val producer = producerRef
-
               // Using asynchronous API
-              val future = producer.send(
+              val future = producerRef.value().send(
                 record,
                 new KafkaCallback {
                   def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
@@ -157,7 +154,7 @@ object KafkaProducer {
               asyncCb.onSuccess(())
             } else {
               try {
-                producerRef.close()
+                producerRef.value().close()
                 asyncCb.onSuccess(())
               } catch {
                 case NonFatal(ex) =>
