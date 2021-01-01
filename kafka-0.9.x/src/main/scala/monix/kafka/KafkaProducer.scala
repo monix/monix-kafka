@@ -17,7 +17,7 @@
 package monix.kafka
 
 import com.typesafe.scalalogging.StrictLogging
-import monix.eval.Task
+import monix.eval.{Coeval, Task}
 import monix.execution.atomic.Atomic
 import monix.execution.cancelables.{SingleAssignCancelable, StackedCancelable}
 import monix.execution.{Callback, Cancelable, Scheduler}
@@ -25,6 +25,7 @@ import org.apache.kafka.clients.producer.{
   ProducerRecord,
   RecordMetadata,
   Callback => KafkaCallback,
+  Producer => ApacheProducer,
   KafkaProducer => ApacheKafkaProducer
 }
 
@@ -45,7 +46,7 @@ import scala.util.control.NonFatal
   * All successfully delivered messages will complete with `Some[RecordMetadata]`.
   */
 trait KafkaProducer[K, V] extends Serializable {
-  def underlying: Task[ApacheKafkaProducer[K, V]]
+  def underlying: Task[ApacheProducer[K, V]]
   def send(topic: String, value: V): Task[Option[RecordMetadata]]
   def send(topic: String, key: K, value: V): Task[Option[RecordMetadata]]
   def send(record: ProducerRecord[K, V]): Task[Option[RecordMetadata]]
@@ -57,19 +58,8 @@ object KafkaProducer {
   /** Builds a [[KafkaProducer]] instance. */
   def apply[K, V](config: KafkaProducerConfig, sc: Scheduler)(
     implicit K: Serializer[K],
-    V: Serializer[V]): KafkaProducer[K, V] =
-    new Implementation[K, V](config, sc)
-
-  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler)(
-    implicit K: Serializer[K],
-    V: Serializer[V])
-      extends KafkaProducer[K, V] with StrictLogging {
-
-    private val isCanceled = Atomic(false)
-
-    // Gets initialized on the first `send`
-    private lazy val producerRef = {
-      logger.info(s"Kafka producer connecting to servers: ${config.bootstrapServers.mkString(",")}")
+    V: Serializer[V]): KafkaProducer[K, V] = {
+    val producerRef: Coeval[ApacheProducer[K, V]] = Coeval.evalOnce {
       val keySerializer = K.create()
       val valueSerializer = V.create()
       val configJavaMap = config.toJavaMap
@@ -77,9 +67,25 @@ object KafkaProducer {
       valueSerializer.configure(configJavaMap, false)
       new ApacheKafkaProducer[K, V](configJavaMap, keySerializer, valueSerializer)
     }
+    new Implementation[K, V](config, sc, producerRef)
+  }
 
-    def underlying: Task[ApacheKafkaProducer[K, V]] =
-      Task.eval(producerRef)
+  /** Builds a [[KafkaProducer]] instance with provided Apache Producer. */
+  def apply[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: Coeval[ApacheProducer[K, V]])(
+    implicit K: Serializer[K],
+    V: Serializer[V]): KafkaProducer[K, V] = {
+    new Implementation[K, V](config, sc, producerRef)
+  }
+
+  private final class Implementation[K, V](config: KafkaProducerConfig, sc: Scheduler, producerRef: Coeval[ApacheProducer[K, V]])(
+    implicit K: Serializer[K],
+    V: Serializer[V])
+      extends KafkaProducer[K, V] with StrictLogging {
+
+    private val isCanceled = Atomic(false)
+
+    def underlying: Task[ApacheProducer[K, V]] =
+      producerRef.to[Task]
 
     def send(topic: String, value: V): Task[Option[RecordMetadata]] =
       send(new ProducerRecord[K, V](topic, value))
@@ -99,11 +105,8 @@ object KafkaProducer {
             val isActive = Atomic(true)
             val cancelable = SingleAssignCancelable()
             try {
-              // Force evaluation
-              val producer = producerRef
-
               // Using asynchronous API
-              val future = producer.send(
+              val future = producerRef.value().send(
                 record,
                 new KafkaCallback {
                   def onCompletion(meta: RecordMetadata, exception: Exception): Unit =
@@ -151,7 +154,7 @@ object KafkaProducer {
               asyncCb.onSuccess(())
             } else {
               try {
-                producerRef.close()
+                producerRef.value().close()
                 asyncCb.onSuccess(())
               } catch {
                 case NonFatal(ex) =>
