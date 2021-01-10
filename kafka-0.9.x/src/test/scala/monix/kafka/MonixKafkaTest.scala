@@ -134,7 +134,7 @@ class MonixKafkaTest extends FunSuite {
     val result = for {
       //Force creation of producer
       s1 <- producer.send(topicName, "test-message-1")
-      res <- Task.parZip2(producer.close(), Task.gather(List.fill(10)(sendTask)).attempt)
+      res <- Task.parZip2(producer.close(), Task.parSequence(List.fill(10)(sendTask)).attempt)
       (_, s2) = res
       s3 <- sendTask
     } yield (s1, s2, s3)
