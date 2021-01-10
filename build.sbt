@@ -84,7 +84,7 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   scalacOptions ++= Seq(
     // Turns all warnings into errors ;-)
     // TODO: enable after fixing deprecations for Scala 2.13
-//    "-Xfatal-warnings",
+    "-Xfatal-warnings",
     // Enables linter options
     "-Xlint:adapted-args", // warn if an argument list is modified to match the receiver
     "-Xlint:nullary-unit", // warn when nullary methods return Unit
