@@ -24,7 +24,7 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
 import scala.util.matching.Regex
 
@@ -244,7 +244,6 @@ object KafkaConsumerObservable {
     K: Deserializer[K],
     V: Deserializer[V]): Task[Consumer[K, V]] = {
 
-    import collection.JavaConverters._
     Task.evalAsync {
       val configMap = config.toJavaMap
       blocking {

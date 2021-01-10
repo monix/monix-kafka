@@ -19,10 +19,10 @@ package monix.kafka
 import java.io.File
 import java.util.Properties
 
-import collection.JavaConverters._
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.kafka.config._
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 
 /** Configuration for Kafka Consumer.
@@ -287,7 +287,7 @@ final case class KafkaConsumerConfig(
   )
 
   def toJavaMap: java.util.Map[String, Object] =
-    toMap.filter(_._2 != null).mapValues(_.asInstanceOf[AnyRef]).toMap.asJava
+    toMap.filter(_._2 != null).map{case (a, b) =>(a, b.asInstanceOf[AnyRef])}.asJava
 
   def toProperties: Properties = {
     val props = new Properties()

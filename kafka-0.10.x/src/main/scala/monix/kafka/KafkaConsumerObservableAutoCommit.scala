@@ -25,7 +25,7 @@ import monix.reactive.Observer
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.concurrent.{blocking, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}

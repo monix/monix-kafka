@@ -93,8 +93,8 @@ object CommittableOffsetBatch {
     if (committableOffsets.nonEmpty) {
       committableOffsets
         .groupBy(_.commitCallback)
-        .mapValues(CommittableOffsetBatch(_))
         .values
+        .map(CommittableOffsetBatch(_))
         .toList
     } else {
       List.empty
