@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 by The Monix Project Developers.
+ * Copyright (c) 2014-2021 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -93,8 +93,8 @@ object CommittableOffsetBatch {
     if (committableOffsets.nonEmpty) {
       committableOffsets
         .groupBy(_.commitCallback)
-        .mapValues(CommittableOffsetBatch(_))
         .values
+        .map(CommittableOffsetBatch(_))
         .toList
     } else {
       List.empty

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 by The Monix Project Developers.
+ * Copyright (c) 2014-2021 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, OffsetAndMetadata, OffsetCommitCallback}
 import org.apache.kafka.common.TopicPartition
 
-import scala.collection.JavaConverters._
 import scala.concurrent.{blocking, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
+import scala.jdk.CollectionConverters._
 
 /** KafkaConsumerObservable with ability to manual commit offsets
   * and forcibly disables auto commits in configuration.

@@ -84,7 +84,7 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   scalacOptions ++= Seq(
     // Turns all warnings into errors ;-)
     // TODO: enable after fixing deprecations for Scala 2.13
-//    "-Xfatal-warnings",
+    "-Xfatal-warnings",
     // Enables linter options
     "-Xlint:adapted-args", // warn if an argument list is modified to match the receiver
     "-Xlint:nullary-unit", // warn when nullary methods return Unit
@@ -129,7 +129,7 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   homepage := Some(url("https://github.com/monix/monix-kafka")),
   headerLicense := Some(HeaderLicense.Custom(
-    """|Copyright (c) 2014-2019 by The Monix Project Developers.
+    """|Copyright (c) 2014-2021 by The Monix Project Developers.
        |
        |Licensed under the Apache License, Version 2.0 (the "License");
        |you may not use this file except in compliance with the License.
@@ -193,6 +193,7 @@ lazy val commonDependencies = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "com.typesafe" % "config" % "1.4.1",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.30",
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",

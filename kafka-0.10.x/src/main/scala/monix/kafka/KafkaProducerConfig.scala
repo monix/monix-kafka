@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 by The Monix Project Developers.
+ * Copyright (c) 2014-2021 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package monix.kafka
 
 import java.io.File
 import java.util.Properties
-import collection.JavaConverters._
 
 import com.typesafe.config.{Config, ConfigFactory}
 import monix.kafka.config._
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.duration._
 
 /** The Kafka Producer config.
@@ -272,7 +272,7 @@ case class KafkaProducerConfig(
   )
 
   def toJavaMap: java.util.Map[String, Object] =
-    toMap.filter(_._2 != null).mapValues(_.asInstanceOf[AnyRef]).toMap.asJava
+    toMap.filter(_._2 != null).map{case (a, b) =>(a, b.asInstanceOf[AnyRef])}.asJava
 
   def toProperties: Properties = {
     val props = new Properties()

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2019 by The Monix Project Developers.
+ * Copyright (c) 2014-2021 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 
+import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
 
 /** Exposes an `Observable` that consumes a Kafka stream by
@@ -197,7 +198,6 @@ object KafkaConsumerObservable {
     K: Deserializer[K],
     V: Deserializer[V]): Task[Consumer[K, V]] = {
 
-    import collection.JavaConverters._
     Task.evalAsync {
       val configMap = config.toJavaMap
       blocking {
