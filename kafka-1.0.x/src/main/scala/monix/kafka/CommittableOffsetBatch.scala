@@ -17,7 +17,6 @@
 package monix.kafka
 
 import monix.eval.Task
-import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.common.TopicPartition
 
 /** Batch of Kafka offsets which can be committed together.
@@ -41,15 +40,13 @@ final class CommittableOffsetBatch private[kafka] (val offsets: Map[TopicPartiti
     */
   def commitSync(): Task[Unit] = commitCallback.commitBatchSync(offsets)
 
-  /** Asynchronously commits [[offsets]] to Kafka
-    */
+  /**
+    * Asynchronously commits [[offsets]] to Kafka
+    * */
   def commitAsync(): Task[Unit] = commitCallback.commitBatchAsync(offsets)
 
-  /** Asynchronously commits [[offsets]] to Kafka
-    */
-  def commitAsync(callback: OffsetCommitCallback): Task[Unit] = commitCallback.commitBatchAsync(offsets)
-
-  /** Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
+  /**
+    * Adds new [[CommittableOffset]] to batch. Added offset replaces previous one specified
     * for same topic and partition.
     */
   def updated(committableOffset: CommittableOffset): CommittableOffsetBatch =

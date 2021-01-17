@@ -16,7 +16,7 @@
 
 package monix.kafka
 
-import monix.eval.Task
+import monix.eval.{Fiber, Task}
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable}
 import monix.kafka.config.ObservableCommitOrder
@@ -41,7 +41,11 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
   protected def consumer: Task[Consumer[K, V]]
 
-  /** Creates a task that polls the source, then feeds the downstream
+  @volatile
+  protected var isAcked = true
+
+  /**
+    * Creates a task that polls the source, then feeds the downstream
     * subscriber, returning the resulting acknowledgement
     */
   protected def ackTask(consumer: Consumer[K, V], out: Subscriber[Out]): Task[Ack]
@@ -67,8 +71,10 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
         if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
         else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
         // A task to execute on both cancellation and normal termination
-        val onCancel = cancelTask(c)
-        runLoop(c, out).guarantee(onCancel)
+        pollConsumer(c).loopForever.start.flatMap { pollFiber =>
+          val onCancel = cancelTask(c, pollFiber)
+          runLoop(c, out).guarantee(onCancel)
+        }
       }
       feedTask.runAsync(cb)
     }
@@ -89,10 +95,12 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   /* Returns a `Task` that triggers the closing of the
    * Kafka Consumer connection.
    */
-  private def cancelTask(consumer: Consumer[K, V]): Task[Unit] = {
+  private def cancelTask(consumer: KafkaConsumer[K, V], pollFiber: Fiber[Nothing]): Task[Unit] = {
     // Forced asynchronous boundary
-    val cancelTask = Task.evalAsync {
-      consumer.synchronized(blocking(consumer.close()))
+    val cancelTask = pollFiber.cancel.flatMap { _ =>
+      Task.evalAsync {
+        consumer.synchronized(blocking(consumer.close()))
+      }
     }
 
     // By applying memoization, we are turning this
@@ -100,6 +108,27 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     // guaranteed that consumer.close() happens
     // at most once
     cancelTask.memoize
+  }
+
+  /* Returns task that constantly polls the `KafkaConsumer` in case subscriber
+   * is still processing last fed batch.
+   * This allows producer process commit calls and also keeps consumer alive even
+   * with long batch processing.
+   */
+  private def pollConsumer(consumer: KafkaConsumer[K, V]): Task[Unit] = {
+    Task
+      .sleep(config.pollInterval)
+      .flatMap { _ =>
+        if (!isAcked) {
+          Task.evalAsync {
+            consumer.synchronized {
+              blocking(consumer.poll(0))
+            }
+          }
+        } else {
+          Task.unit
+        }
+      }
   }
 }
 
