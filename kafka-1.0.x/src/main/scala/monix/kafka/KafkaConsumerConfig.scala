@@ -257,7 +257,7 @@ final case class KafkaConsumerConfig(
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
-  observableSeekToEndOnStart: Boolean,
+  observableSeekOnStart: ObservableSeekOnStart,
   pollInterval: FiniteDuration,
   properties: Map[String, String]) {
 
@@ -447,7 +447,7 @@ object KafkaConsumerConfig {
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
-      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart"),
+      observableSeekOnStart = ObservableSeekOnStart(config.getString("monix.observable.seek.onStart")),
       pollInterval = config.getInt("monix.observable.poll.interval.ms").millis,
       properties = Map.empty
     )

@@ -50,19 +50,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       Task(blocking(consumer.synchronized(consumer.commitSync(batch.map { case (k, v) =>
         k -> new OffsetAndMetadata(v)
       }.asJava))))
-<<<<<<< refs/remotes/monix/master
 
-    override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
-      Task {
-        blocking(
-          consumer.synchronized(
-            consumer.commitAsync(
-              batch.map { case (k, v) =>
-                k -> new OffsetAndMetadata(v)
-              }.asJava,
-              callback)))
-      }
-=======
     override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Unit] = {
       Task
         .async0[Unit] { (s, cb) =>

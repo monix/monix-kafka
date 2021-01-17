@@ -93,7 +93,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   /* Returns a `Task` that triggers the closing of the
    * Kafka Consumer connection.
    */
-  private def cancelTask(consumer: KafkaConsumer[K, V], pollFiber: Fiber[Nothing]): Task[Unit] = {
+  private def cancelTask(consumer: Consumer[K, V], pollFiber: Fiber[Nothing]): Task[Unit] = {
     // Forced asynchronous boundary
     val cancelTask = pollFiber.cancel.flatMap { _ =>
       Task.evalAsync {
@@ -113,7 +113,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
    * This allows producer process commit calls and also keeps consumer alive even
    * with long batch processing.
    */
-  private def pollConsumer(consumer: KafkaConsumer[K, V]): Task[Unit] = {
+  private def pollConsumer(consumer: Consumer[K, V]): Task[Unit] = {
     Task
       .sleep(config.pollInterval)
       .flatMap { _ =>
