@@ -221,7 +221,7 @@ class MonixKafkaTest extends FunSuite {
 
     val consumerConfig = consumerCfg.copy(
       sessionTimeout = 200.millis,
-      pollInterval = 100.millis
+      observablePollHeartbeatRate = 100.millis
     )
 
     val producer = KafkaProducerSink[String, String](producerCfg, io)

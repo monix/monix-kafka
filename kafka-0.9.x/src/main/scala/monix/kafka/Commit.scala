@@ -18,7 +18,6 @@ package monix.kafka
 
 import monix.eval.Task
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.clients.consumer.OffsetCommitCallback
 
 /** Callback for batched commit realized as closure in [[KafkaConsumerObservable]] context.
   */
@@ -31,12 +30,7 @@ private[kafka] object Commit {
 
   val empty: Commit = new Commit {
     override def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit] = Task.unit
-    <<<<<<< refs / remotes / monix / master
 
-    override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
-      Task.unit
-    =======
     override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Unit] = Task.unit
-    >>>>>>> Apply changes to older versions
   }
 }
