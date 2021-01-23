@@ -67,10 +67,10 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
                     override def onComplete(
                       offsets: util.Map[TopicPartition, OffsetAndMetadata],
                       exception: Exception): Unit = {
-                      if (exception != null) {
-                        if (!asyncCb.tryOnError(exception))
-                          s.reportFailure(exception)
-                      } else {
+                      if (exception != null && !asyncCb.tryOnError(exception)) {
+                        s.reportFailure(exception)
+                      }
+                      else {
                         asyncCb.tryOnSuccess(())
                       }
                     }
@@ -85,7 +85,6 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
           }
         }
     }
-    >>>>>>> Apply changes to older versions
   }
 
   override protected def ackTask(consumer: Consumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =

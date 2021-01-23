@@ -17,7 +17,6 @@
 package monix.kafka
 
 import monix.eval.Task
-import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.common.TopicPartition
 
 /** Represents offset for specified topic and partition that can be

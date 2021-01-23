@@ -17,7 +17,7 @@
 package monix.kafka
 
 import cats.effect.Resource
-import monix.eval.{Fiber, Task}
+import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable}
 import monix.kafka.config.ObservableCommitOrder
