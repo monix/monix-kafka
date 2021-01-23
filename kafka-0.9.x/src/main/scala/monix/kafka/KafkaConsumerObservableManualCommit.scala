@@ -51,7 +51,6 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
         k -> new OffsetAndMetadata(v)
       }.asJava))))
 
-
     override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Unit] = {
       Task
         .async0[Unit] { (s, cb) =>
@@ -59,8 +58,8 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
           s.executeAsync { () =>
             consumer.synchronized {
               try {
-                val offsets = batch.map {
-                  case (k, v) => k -> new OffsetAndMetadata(v)
+                val offsets = batch.map { case (k, v) =>
+                  k -> new OffsetAndMetadata(v)
                 }.asJava
                 consumer.commitAsync(
                   offsets,
@@ -103,9 +102,9 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
             val assignment = consumer.assignment().asScala.toArray
             if (cancelable.isCanceled) Stop
             else {
-              consumer.resume(assignment: _ *)
+              consumer.resume(assignment: _*)
               val next = blocking(consumer.poll(pollTimeoutMillis))
-              consumer.pause(assignment: _ *)
+              consumer.pause(assignment: _*)
               // Feeding the observer happens on the Subscriber's scheduler
               // if any asynchronous boundaries happen
               val result = next.asScala.map { record =>

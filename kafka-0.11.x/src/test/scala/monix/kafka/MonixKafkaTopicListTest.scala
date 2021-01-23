@@ -162,7 +162,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val ((result, offsets), _) =
         Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
 
-      val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
+      val properOffsets = Map(new TopicPartition(topicName, 0) -> count)
       assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
     }
   }
@@ -191,7 +191,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
       val consumerConfig = consumerCfg.copy(
         maxPollInterval = 200.millis,
-        pollInterval = 100.millis
+        observablePollHeartbeatRate = 100.millis
       )
 
       val producer = KafkaProducerSink[String, String](producerCfg, io)
@@ -207,10 +207,11 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
         .take(count)
         .map(_.value())
         .bufferTumbling(count / 4)
-        .mapEval(s => Task.sleep(2.second) >> Task.delay {
-          println(s)
-          s
-        })
+        .mapEval(s =>
+          Task.sleep(2.second) >> Task.delay {
+            println(s)
+            s
+          })
         .flatMap(Observable.fromIterable)
         .toListL
 

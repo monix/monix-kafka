@@ -251,8 +251,8 @@ final case class KafkaConsumerConfig(
   retryBackoffTime: FiniteDuration,
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
-  observableSeekToEndOnStart: Boolean,
-  pollInterval: FiniteDuration,
+  observableSeekOnStart: ObservableSeekOnStart,
+  observablePollHeartbeatRate: FiniteDuration,
   properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
@@ -297,7 +297,7 @@ final case class KafkaConsumerConfig(
   )
 
   def toJavaMap: java.util.Map[String, Object] =
-    toMap.filter(_._2 != null).map{case (a, b) =>(a, b.asInstanceOf[AnyRef])}.asJava
+    toMap.filter(_._2 != null).map { case (a, b) => (a, b.asInstanceOf[AnyRef]) }.asJava
 
   def toProperties: Properties = {
     val props = new Properties()
@@ -439,8 +439,8 @@ object KafkaConsumerConfig {
       retryBackoffTime = config.getInt("retry.backoff.ms").millis,
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
-      observableSeekToEndOnStart = config.getBoolean("monix.observable.seekEnd.onStart"),
-      pollInterval = config.getInt("monix.observable.poll.interval.ms").millis,
+      observableSeekOnStart = ObservableSeekOnStart(config.getString("monix.observable.seek.onStart")),
+      observablePollHeartbeatRate = config.getInt("monix.observable.poll.heartbeat.rate.ms").millis,
       properties = Map.empty
     )
   }

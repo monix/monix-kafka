@@ -58,8 +58,8 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
           s.executeAsync { () =>
             consumer.synchronized {
               try {
-                val offsets = batch.map {
-                  case (k, v) => k -> new OffsetAndMetadata(v)
+                val offsets = batch.map { case (k, v) =>
+                  k -> new OffsetAndMetadata(v)
                 }.asJava
                 consumer.commitAsync(
                   offsets,
@@ -85,7 +85,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
           }
         }
     }
->>>>>>> Apply changes to older versions
+    >>>>>>> Apply changes to older versions
   }
 
   override protected def ackTask(consumer: Consumer[K, V], out: Subscriber[CommittableMessage[K, V]]): Task[Ack] =

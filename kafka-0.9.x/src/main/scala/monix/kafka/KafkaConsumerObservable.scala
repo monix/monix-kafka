@@ -16,6 +16,7 @@
 
 package monix.kafka
 
+import cats.effect.Resource
 import monix.eval.{Fiber, Task}
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable}
@@ -38,15 +39,11 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
   protected def consumer: Task[Consumer[K, V]]
 
-<<<<<<< refs/remotes/monix/master
-  /** Creates a task that polls the source, then feeds the downstream
-=======
+  /** Creates a task that polls the source, then feeds the downstream */
   @volatile
   protected var isAcked = true
 
-  /**
-    * Creates a task that polls the source, then feeds the downstream
->>>>>>> Apply changes to older versions
+  /** Creates a task that polls the source, then feeds the downstream
     * subscriber, returning the resulting acknowledgement
     */
   protected def ackTask(consumer: Consumer[K, V], out: Subscriber[Out]): Task[Ack]
@@ -67,25 +64,35 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   private def feedTask(out: Subscriber[Out]): Task[Unit] = {
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
-      val feedTask = consumer.flatMap { c =>
-        // Skipping all available messages on all partitions
-        if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd()
-        else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning()
-        // A task to execute on both cancellation and normal termination
-        pollConsumer(c).loopForever.start.flatMap { pollFiber =>
-          val onCancel = cancelTask(c, pollFiber)
-          runLoop(c, out).guarantee(onCancel)
-        }
-      }
-      feedTask.runAsync(cb)
+      val startConsuming =
+        Resource
+          .make(consumer) { c =>
+            // Forced asynchronous boundary
+            Task.evalAsync(consumer.synchronized(blocking(c.close()))).memoizeOnSuccess
+          }
+          .use { c =>
+            // Skipping all available messages on all partitions
+            if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd()
+            else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning()
+            // A task to execute on both cancellation and normal termination
+            heartbeat(c)
+              // If polling fails the error is reported to the subscriber and
+              // wait 1sec as a rule of thumb leaving enough time for the consumer
+              // to recover and reassign partitions
+              .onErrorHandleWith(ex => Task(out.onError(ex)))
+              .loopForever
+              .startAndForget
+              .flatMap(_ => runLoop(c, out))
+          }
+      startConsuming.runAsync(cb)
     }
   }
 
-  /* Returns a task that continuously polls the `KafkaConsumer` for
-   * new messages and feeds the given subscriber.
-   *
-   * Creates an asynchronous boundary on every poll.
-   */
+  /** Returns a task that continuously polls the `KafkaConsumer` for
+    * new messages and feeds the given subscriber.
+    *
+    * Creates an asynchronous boundary on every poll.
+    */
   private def runLoop(consumer: Consumer[K, V], out: Subscriber[Out]): Task[Unit] = {
     ackTask(consumer, out).flatMap {
       case Stop => Task.unit
@@ -93,41 +100,22 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     }
   }
 
-  /* Returns a `Task` that triggers the closing of the
-   * Kafka Consumer connection.
-   */
-<<<<<<< refs/remotes/monix/master
-  private def cancelTask(consumer: Consumer[K, V]): Task[Unit] = {
-=======
-  private def cancelTask(consumer: KafkaConsumer[K, V], pollFiber: Fiber[Nothing]): Task[Unit] = {
->>>>>>> Apply changes to older versions
-    // Forced asynchronous boundary
-    val cancelTask = pollFiber.cancel.flatMap { _ =>
-      Task.evalAsync {
-        consumer.synchronized(blocking(consumer.close()))
-      }
-    }
-
-    // By applying memoization, we are turning this
-    // into an idempotent action, such that we are
-    // guaranteed that consumer.close() happens
-    // at most once
-    cancelTask.memoize
-  }
-
-  /* Returns task that constantly polls the `KafkaConsumer` in case subscriber
-   * is still processing last fed batch.
-   * This allows producer process commit calls and also keeps consumer alive even
-   * with long batch processing.
-   */
-  private def pollConsumer(consumer: KafkaConsumer[K, V]): Task[Unit] = {
+  /** Returns task that constantly polls the `KafkaConsumer` in case subscriber
+    * is still processing last fed batch.
+    * This allows producer process commit calls and also keeps consumer alive even
+    * with long batch processing.
+    *
+    * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
+    */
+  private def heartbeat(consumer: Consumer[K, V]): Task[Unit] = {
     Task
-      .sleep(config.pollInterval)
+      .sleep(config.observablePollHeartbeatRate)
       .flatMap { _ =>
         if (!isAcked) {
           Task.evalAsync {
-            consumer.synchronized {
-              blocking(consumer.poll(0))
+            var records = blocking(consumer.poll(0))
+            if (!records.isEmpty) {
+              throw new IllegalStateException(s"Received ${records.count()} unexpected messages")
             }
           }
         } else {
@@ -135,6 +123,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
         }
       }
   }
+
 }
 
 object KafkaConsumerObservable {

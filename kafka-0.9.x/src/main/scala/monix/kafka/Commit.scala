@@ -31,12 +31,12 @@ private[kafka] object Commit {
 
   val empty: Commit = new Commit {
     override def commitBatchSync(batch: Map[TopicPartition, Long]): Task[Unit] = Task.unit
-<<<<<<< refs/remotes/monix/master
+    <<<<<<< refs / remotes / monix / master
 
     override def commitBatchAsync(batch: Map[TopicPartition, Long], callback: OffsetCommitCallback): Task[Unit] =
       Task.unit
-=======
+    =======
     override def commitBatchAsync(batch: Map[TopicPartition, Long]): Task[Unit] = Task.unit
->>>>>>> Apply changes to older versions
+    >>>>>>> Apply changes to older versions
   }
 }

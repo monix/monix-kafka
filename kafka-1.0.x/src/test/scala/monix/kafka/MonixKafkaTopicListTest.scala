@@ -17,7 +17,6 @@
 
 package monix.kafka
 
-import cats.syntax.apply._
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.kafka.config.AutoOffsetReset
@@ -194,7 +193,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
       val consumerConfig = consumerCfg.copy(
         maxPollInterval = 200.millis,
-        pollInterval = 100.millis
+        heartbeatInterval = 10.millis
       )
 
       val producer = KafkaProducerSink[String, String](producerCfg, io)
