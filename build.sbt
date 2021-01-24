@@ -266,8 +266,8 @@ lazy val benchmarks = project.in(file("benchmarks"))
     organization := "io.monix",
     scalaVersion := "2.12.10",
     libraryDependencies ++= Seq(
-      //"com.typesafe.akka" %% "akka-stream-kafka" % "1.1.0",
-      //"com.typesafe.akka" %% "akka-stream" % "2.5.25"
+      "dev.zio" %% "zio-streams" % "1.0.2",
+      "dev.zio" %% "zio-kafka"   % "0.13.0"
     )
   )
   .enablePlugins(JmhPlugin)

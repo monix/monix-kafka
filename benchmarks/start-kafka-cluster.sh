@@ -18,9 +18,7 @@ docker ps
 
 sleep 15
 
-create_topic topic_producer_1P_1RF 1 1
-create_topic topic_producer_2P_1RF 2 1
-create_topic topic_sink_1P_1RF 1 1
-create_topic topic_sink_2P_1RF 2 1
-create_topic topic_consumer_1P_1RF 1 1
-create_topic topic_consumer_2P_1RF 2 1
+create_topic monix_topic 2 1
+create_topic akka_topic 2 1
+create_topic fs2_topic 2 1
+create_topic zio_topic 2 1

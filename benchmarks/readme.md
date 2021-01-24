@@ -2,34 +2,28 @@
 
 This document explains the approach followed to benchmark monix-kafka.
 
-Although it would be nice to summit monix-kafka onto soak, stress or load tests, we have hardware limitations that makes no possible to run those.
+ Ideally, a Kafka performance benchmark should happen under some long stress test in a real Kafka cluster,
+although, our hardware limitations we have to stick to running simpler basic tests that proves application performance on 
+ a docker container.
 
-Therefore we will stick to run performance testing on the different producer and consumer implementations that monix-kafka is exposing.
 
-Being `KafkaProducer`, `KafkaProducerSink` and `KafkaConsumerObservable` (AutoCommit and Committable) and finally doing both producer and consumer.
 
-Kafka is a distributed publisher/subscriber paradigm that have lots of configurables whose can directly impact on the performance of the 
- application running kafka (such as the number of partitions, replication factor, poll interval, records, buffer sizes and more...). 
- 
- For these performance tests we won't focus that much on these specific kafka configurations since these will run inside 
- a local virtual environment, which would not really reflect the real latency spent on the communication within the kafka cluster (network latency, lost packages, failures...), thus, we 
-  do focus more on specific monix configuration (parallelism, async vs sync and commit order). 
+So these test will be executed using the same configurations ()
+
+The benchmark will focus on the most basic `consumer` and `procucer` scenarios. 
+
+Although Kafka is very configurable by nature, our benchmark will use the kafka default properties for [consumer](https://docs.confluent.io/platform/current/installation/configuration/consumer-configs.html)
+and [producer](https://docs.confluent.io/platform/current/installation/configuration/producer-configs.html).
+
+On the other hand, assume that all the used topics will have 2 partitions, and 1 replication factor.
   
-Single `KafkaProducer` and `KafkaProducerSink` benchmark (they are different benchmarks but configuration is shared): 
 
- | _Parallelism / Partitions, Replication Factor_  | __1P__, __1RF__ | __1P__, __2RF__ | __2P__, __2RF__ | 
-  | :---: | :---: | :---: | :---: |
-  | __1__| ...| ... | ... |
-  | __2__| ... | ...| ... |
-  | __5__ | ... | ... | ... |
-  | __10__ | ... | ... | ... |
-  
-Single `KafkaConsumer` (Auto commit and Manual commit) (consider including commit order)
+## Producer benchmarks
 
- | _Type / Partitions, Replication Factor_  | __1P__, __1RF__ | __1P__, __2RF__ | __2P__, __2RF__ | 
-  | :---: | :---: | :---: | :---: |
-  | __async__| ...| ... | ... |
-  | __sync__| ... | ...| ... |
+This section includes benchmarks for single and sink producers. 
+Although some libraries like `alpakka-kafka` do not expose methods for producing single record, but only for sink.
 
-Pair `KafkaProducerSink` and `KafkaConsumer`: This test will consist in an observable being consumed by a kafka producer sink that produces 
-to an specific topic and then it gets consumed by a kafka consumer one. 
+
+## Consumer benchmark
+The consumer benchmark covers the manual and auto commit consumer implementations of the different libraries. 
+The manual commit will also cover producing committing back the consumed offsets.
