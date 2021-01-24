@@ -25,7 +25,8 @@ import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, OffsetAndMetadata, OffsetCommitCallback}
 import org.apache.kafka.common.TopicPartition
 
-import scala.concurrent.{blocking, Future}
+import java.util
+import scala.concurrent.{Future, blocking}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters._
@@ -55,9 +56,10 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
           val asyncCb = Callback.forked(cb)(s)
           s.executeAsync { () =>
             val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v) }.asJava
-            val offsetCommitCallback: OffsetCommitCallback = { (_, ex) =>
-              if (ex != null && !cb.tryOnError(ex)) { s.reportFailure(ex) }
-              else { cb.tryOnSuccess(()) }
+            val offsetCommitCallback = new OffsetCommitCallback {
+              def onComplete(offsets: util.Map[TopicPartition, OffsetAndMetadata], ex: Exception): Unit =
+                if (ex != null && !cb.tryOnError(ex)) { s.reportFailure(ex) }
+                else { cb.tryOnSuccess(()) }
             }
             try {
               consumer.synchronized(consumer.commitAsync(offsets, offsetCommitCallback))
