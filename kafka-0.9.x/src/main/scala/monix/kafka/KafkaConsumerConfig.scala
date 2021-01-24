@@ -194,8 +194,8 @@ import scala.concurrent.duration._
   *        Specifies when the commit should happen, like before we receive the
   *        acknowledgement from downstream, or afterwards.
   *
-  * @param pollInterval is the `monix.observable.poll.interval.ms` setting.
-  *         Specifies time between KafkaConsumer#poll call attempts.
+  * @param observablePollHeartbeatRate is the `monix.observable.poll.heartbeat.rate.ms` setting.
+  *         Specifies heartbeat time between KafkaConsumer#poll attempts.
   *
   * @param properties map of other properties that will be passed to
   *        the underlying kafka client. Any properties not explicitly handled
