@@ -56,31 +56,15 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
         .async0[Unit] { (s, cb) =>
           val asyncCb = Callback.forked(cb)(s)
           s.executeAsync { () =>
-            consumer.synchronized {
-              try {
-                val offsets = batch.map { case (k, v) =>
-                  k -> new OffsetAndMetadata(v)
-                }.asJava
-                consumer.commitAsync(
-                  offsets,
-                  new OffsetCommitCallback {
-                    override def onComplete(
-                      offsets: util.Map[TopicPartition, OffsetAndMetadata],
-                      exception: Exception): Unit = {
-                      if (exception != null && !asyncCb.tryOnError(exception)) {
-                        s.reportFailure(exception)
-                      }
-                      else {
-                        asyncCb.tryOnSuccess(())
-                      }
-                    }
-                  }
-                )
-              } catch {
-                case NonFatal(ex) =>
-                  if (!asyncCb.tryOnError(ex))
-                    s.reportFailure(ex)
-              }
+            val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v)}.asJava
+            val offsetCommitCallback: OffsetCommitCallback = { (_, ex) =>
+              if (ex != null && !cb.tryOnError(ex)) { s.reportFailure(ex) }
+              else { cb.tryOnSuccess(()) }
+            }
+            try {
+              consumer.synchronized(consumer.commitAsync(offsets, offsetCommitCallback))
+            } catch { case NonFatal(ex) =>
+              if (!asyncCb.tryOnError(ex)) { s.reportFailure(ex) }
             }
           }
         }
@@ -97,16 +81,14 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
 
       // Forced asynchronous boundary (on the I/O scheduler)
       s.executeAsync { () =>
-        val ackFuture =
-          try consumer.synchronized {
-            val assignment = consumer.assignment()
-            if (cancelable.isCanceled) Stop
-            else {
+        val ackFuture: Future[Ack] =
+          if (cancelable.isCanceled) Stop
+          else {
+            try consumer.synchronized {
+              val assignment = consumer.assignment()
               consumer.resume(assignment)
               val next = blocking(consumer.poll(pollTimeoutMillis))
               consumer.pause(assignment)
-              // Feeding the observer happens on the Subscriber's scheduler
-              // if any asynchronous boundaries happen
               val result = next.asScala.map { record =>
                 CommittableMessage(
                   record,
@@ -115,12 +97,14 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
                     record.offset() + 1,
                     commit))
               }
+              // Feeding the observer happens on the Subscriber's scheduler
+              // if any asynchronous boundaries happen
               isAcked = false
               Observer.feed(out, result)(out.scheduler)
+            } catch {
+              case NonFatal(ex) =>
+                Future.failed(ex)
             }
-          } catch {
-            case NonFatal(ex) =>
-              Future.failed(ex)
           }
 
         ackFuture.syncOnComplete {

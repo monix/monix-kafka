@@ -18,7 +18,6 @@ package monix.kafka
 
 import monix.eval.Task
 import org.apache.kafka.common.TopicPartition
-import org.apache.kafka.clients.consumer.OffsetCommitCallback
 
 /** Callback for batched commit realized as closure in [[KafkaConsumerObservable]] context.
   */

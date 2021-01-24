@@ -77,7 +77,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
             if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
             else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
             // A task to execute on both cancellation and normal termination
-            heartbeat(c)
+            pollHeartbeat(c)
               // If polling fails the error is reported to the subscriber and
               // wait 1sec as a rule of thumb leaving enough time for the consumer
               // to recover and reassign partitions
@@ -109,22 +109,18 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     *
     * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
     */
-  private def heartbeat(consumer: Consumer[K, V]): Task[Unit] = {
-    Task
-      .sleep(config.observablePollHeartbeatRate)
-      .flatMap { _ =>
+  private def pollHeartbeat(consumer: Consumer[K, V]): Task[Unit] = {
+    Task.sleep(config.observablePollHeartbeatRate) *>
+      Task.evalAsync(
         if (!isAcked) {
-          Task.evalAsync {
-            var records = blocking(consumer.poll(0))
-            if (!records.isEmpty) {
-              throw new IllegalStateException(s"Received ${records.count()} unexpected messages")
-            }
+          var records = blocking(consumer.poll(0))
+          if (!records.isEmpty) {
+            throw new IllegalStateException(s"Received ${records.count()} unexpected messages")
           }
-        } else {
-          Task.unit
-        }
-      }
+        } else ()
+      )
   }
+
 }
 
 object KafkaConsumerObservable {
