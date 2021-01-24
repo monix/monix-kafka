@@ -227,9 +227,8 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val topicName = "monix-kafka-manual-commit-tests"
       val delay = 200.millis
       val pollHeartbeat = 2.millis
-      val fastPollHeartbeatConfig = consumerCfg.copy(
-        maxPollInterval = 200.millis,
-        observablePollHeartbeatRate = pollHeartbeat)
+      val fastPollHeartbeatConfig =
+        consumerCfg.copy(maxPollInterval = 200.millis, observablePollHeartbeatRate = pollHeartbeat)
 
       val producer = KafkaProducer[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
@@ -256,7 +255,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       assert((1 to count).sum === committableMessages.map(_.record.value().toInt).sum)
       assert(lastRecord.value().toInt === count)
       assert(count === lastCommittableOffset.offset)
-      assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition )
+      assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition)
     }
   }
 

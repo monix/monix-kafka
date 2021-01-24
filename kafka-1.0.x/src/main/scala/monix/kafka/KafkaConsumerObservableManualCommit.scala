@@ -25,7 +25,7 @@ import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, OffsetAndMetadata, OffsetCommitCallback}
 import org.apache.kafka.common.TopicPartition
 
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters._
@@ -54,15 +54,16 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
         .async0[Unit] { (s, cb) =>
           val asyncCb = Callback.forked(cb)(s)
           s.executeAsync { () =>
-            val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v)}.asJava
+            val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v) }.asJava
             val offsetCommitCallback: OffsetCommitCallback = { (_, ex) =>
               if (ex != null && !cb.tryOnError(ex)) { s.reportFailure(ex) }
               else { cb.tryOnSuccess(()) }
             }
             try {
               consumer.synchronized(consumer.commitAsync(offsets, offsetCommitCallback))
-            } catch { case NonFatal(ex) =>
-              if (!asyncCb.tryOnError(ex)) { s.reportFailure(ex) }
+            } catch {
+              case NonFatal(ex) =>
+                if (!asyncCb.tryOnError(ex)) { s.reportFailure(ex) }
             }
           }
         }
@@ -99,11 +100,11 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
               // if any asynchronous boundaries happen
               isAcked = false
               Observer.feed(out, result)(out.scheduler)
-          } catch {
+            } catch {
               case NonFatal(ex) =>
                 Future.failed(ex)
-        }
-      }
+            }
+          }
 
         ackFuture.syncOnComplete {
           case Success(ack) =>

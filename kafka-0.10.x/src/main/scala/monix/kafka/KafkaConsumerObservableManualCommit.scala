@@ -54,15 +54,16 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
         .async0[Unit] { (s, cb) =>
           val asyncCb = Callback.forked(cb)(s)
           s.executeAsync { () =>
-            val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v)}.asJava
+            val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v) }.asJava
             val offsetCommitCallback: OffsetCommitCallback = { (_, ex) =>
               if (ex != null && !cb.tryOnError(ex)) { s.reportFailure(ex) }
               else { cb.tryOnSuccess(()) }
             }
             try {
               consumer.synchronized(consumer.commitAsync(offsets, offsetCommitCallback))
-            } catch { case NonFatal(ex) =>
-              if (!asyncCb.tryOnError(ex)) { s.reportFailure(ex) }
+            } catch {
+              case NonFatal(ex) =>
+                if (!asyncCb.tryOnError(ex)) { s.reportFailure(ex) }
             }
           }
         }
