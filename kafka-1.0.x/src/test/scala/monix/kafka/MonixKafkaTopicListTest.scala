@@ -27,6 +27,7 @@ import org.scalatest.FunSuite
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters._
 
 class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
   val topicName = "monix-kafka-tests"
@@ -42,7 +43,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     clientId = "monix-kafka-1-0-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest
   )
-/*
+
   test("publish one message when subscribed to topics list") {
 
     withRunningKafka {
@@ -185,7 +186,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       assert(first.isDefined && second.isRight && third.isEmpty)
     }
   }
-  */
+
   test("slow batches processing doesn't cause rebalancing") {
     withRunningKafka {
       val count = 10000
@@ -217,39 +218,43 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("slow manual async commit doesn't cause rebalancing") {
+  test("slow upstream with manual async commit commit doesn't cause rebalancing") {
     withRunningKafka {
 
-      val count = 4
+      val count = 200
       val topicName = "monix-kafka-manual-commit-tests"
+      val delay = 200.millis
+      val pollHeartbeat = 2.millis
       val fastPollHeartbeatConfig = consumerCfg.copy(
         maxPollInterval = 200.millis,
-        observablePollHeartbeatRate = 10.millis
-      )
+        observablePollHeartbeatRate = pollHeartbeat)
 
       val producer = KafkaProducer[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
 
       val pushT = Observable
-        .range(0, count)
+        .fromIterable(1 to count)
         .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
         .mapEval(producer.send)
         .lastL
 
       val listT = consumer
         .executeOn(io)
-        .mapEval { committableMessage =>
-          CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync().as(committableMessage)
+        .doOnNextF { committableMessage =>
+          Task.sleep(delay) *>
+           Task.shift >> CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync().executeAsync
         }
+        .take(count)
         .toListL
 
       val (committableMessages, _) =
-        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 100.seconds)
       val CommittableMessage(lastRecord, lastCommittableOffset) = committableMessages.last
-      assert((0 until count).sum === committableMessages.map(_.record.value().toInt).sum)
+      assert(pollHeartbeat * 10 < delay)
+      assert((1 to count).sum === committableMessages.map(_.record.value().toInt).sum)
       assert(lastRecord.value().toInt === count)
-      assert(10000 === lastCommittableOffset.offset)
-      assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition ) //still in partition 0
+      assert(count === lastCommittableOffset.offset)
+      assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition )
     }
   }
 }

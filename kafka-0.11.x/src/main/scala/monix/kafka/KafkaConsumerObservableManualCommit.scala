@@ -16,8 +16,6 @@
 
 package monix.kafka
 
-import java.util
-
 import monix.eval.Task
 import monix.execution.Ack.Stop
 import monix.execution.cancelables.BooleanCancelable

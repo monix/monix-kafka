@@ -112,13 +112,15 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     Task.sleep(config.observablePollHeartbeatRate) *>
       Task.evalAsync(
         if (!isAcked) {
-          var records = blocking(consumer.poll(0))
-          if (!records.isEmpty) {
-            throw new IllegalStateException(s"Received ${records.count()} unexpected messages")
+          consumer.synchronized {
+            val records = blocking(consumer.poll(0))
+            if (!records.isEmpty) {
+              throw new IllegalStateException(s"Received ${records.count()} unexpected messages.")
+            }
           }
         } else ()
       )
-    }
+  }
 }
 
 object KafkaConsumerObservable {
