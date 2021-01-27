@@ -42,7 +42,6 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     groupId = "kafka-tests",
     clientId = "monix-kafka-1-0-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest
-  )
 
   test("publish one message when subscribed to topics list") {
 

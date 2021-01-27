@@ -195,7 +195,7 @@ lazy val commonDependencies = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "com.typesafe" % "config" % "1.4.1",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.30",
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2",
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.1",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
@@ -262,18 +262,21 @@ lazy val benchmarks = project.in(file("benchmarks"))
   .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(
+    scalacOptions += "-Ypartial-unification",
     name := "benchmarks",
     organization := "io.monix",
     scalaVersion := "2.12.10",
     libraryDependencies ++= Seq(
       "dev.zio" %% "zio-streams" % "1.0.2",
-      "dev.zio" %% "zio-kafka"   % "0.13.0"
+      "dev.zio" %% "zio-kafka"   % "0.13.0",
+      "com.github.fd4s" %% "fs2-kafka" % "1.3.1"
     )
   )
   .enablePlugins(JmhPlugin)
   .aggregate(kafka1x)
   .dependsOn(kafka1x)
 
+scalacOptions += "-Ypartial-unification"
 
 //------------- For Release
 
