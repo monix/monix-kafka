@@ -11,7 +11,7 @@ matrix:
     env: COMMAND=ci
   # Scala 2.12
   - jdk: oraclejdk8
-    scala: 2.12.10
+    scala: 2.12.13
     env: COMMAND=ci
 
 env:
