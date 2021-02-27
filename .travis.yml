@@ -7,7 +7,7 @@ matrix:
   include:
   # Scala 2.11
   - jdk: oraclejdk8
-    scala: 2.11.12
+    scala: 2.13.5
     env: COMMAND=ci
   # Scala 2.12
   - jdk: oraclejdk8
