@@ -16,7 +16,6 @@
 
 package monix.kafka
 
-import cats.effect.{Bracket, Resource}
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable, Scheduler}
