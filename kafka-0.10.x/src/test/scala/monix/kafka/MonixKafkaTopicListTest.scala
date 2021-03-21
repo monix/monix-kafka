@@ -220,7 +220,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("slow upstream with small poll heartbeat and manual async commit keeps the consumer assignment") {
+  test("slow downstream with small poll heartbeat and manual async commit keeps the consumer assignment") {
     withRunningKafka {
 
       val count = 250
@@ -243,7 +243,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
         .executeOn(io)
         .doOnNextF { committableMessage =>
           Task.sleep(delay) *>
-            Task.shift >> CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync().executeAsync
+            CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync().executeAsync
         }
         .take(count)
         .toListL

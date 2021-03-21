@@ -218,7 +218,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("slow upstream with manual async commit commit doesn't cause rebalancing") {
+  test("slow downstream with manual async commit commit doesn't cause rebalancing") {
     withRunningKafka {
 
       val count = 200
@@ -241,7 +241,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
         .executeOn(io)
         .doOnNextF { committableMessage =>
           Task.sleep(delay) *>
-            Task.shift >> CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync().executeAsync
+            CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync()
         }
         .take(count)
         .toListL
