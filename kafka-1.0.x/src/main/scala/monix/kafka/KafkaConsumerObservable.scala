@@ -70,8 +70,8 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
           // Skipping all available messages on all partitions
           if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
           else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
-          Task.race(runLoop(c, out), pollHeartbeat(c).loopForever)
-            .void
+          Task.race(runLoop(c, out), pollHeartbeat(c)).void
+          //runLoop(c, out).void
         } { consumer =>
           // Forced asynchronous boundary
           Task.evalAsync(consumer.synchronized(blocking(consumer.close()))).memoizeOnSuccess
@@ -113,7 +113,9 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
             }
           }
         } else ()
-      ).onErrorHandle(ex => scheduler.reportFailure(ex))
+      ).onErrorHandle(ex => scheduler.reportFailure(ex)) >>
+      pollHeartbeat(consumer).delayExecution(config.observablePollHeartbeatRate)
+
   }
 
 }
