@@ -9,7 +9,6 @@ import monix.execution.Scheduler.Implicits.global
 import org.scalatest.FunSuite
 import org.scalatest.concurrent.ScalaFutures
 
-import scala.concurrent.Await
 import scala.concurrent.duration._
 
 class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
@@ -143,6 +142,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
     }
   }
 
+  //todo
   //java.lang.IllegalStateException: Received 50 unexpected messages.
   //at monix.kafka.KafkaConsumerObservable.$anonfun$pollHeartbeat$1(KafkaConsumerObservable.scala:112)
   test("slow committable downstream with high `maxPollInterval` and `pollHeartBeat` does not cause consumer rebalancing") {
@@ -173,15 +173,13 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
         .take(count)
         .toListL
 
-      val committableMessages =
-        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).map(_._1).runToFuture, 100.seconds)
+      val (committableMessages, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
       val CommittableMessage(lastRecord, lastCommittableOffset) = committableMessages.last
       assert(pollHeartbeat * 10 < downstreamLatency)
       assert((1 to count).sum === committableMessages.map(_.record.value().toInt).sum)
       assert(lastRecord.value().toInt === count)
       assert(count === lastCommittableOffset.offset)
       assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition)
-
     }
   }
 
@@ -191,8 +189,8 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
       val count = 10
       val topicName = "monix-kafka-manual-commit-tests"
       val downstreamLatency = 100.millis
-      val pollHeartbeat = 10.millis
-      val maxPollInterval = 5.seconds
+      val pollHeartbeat = 3000.millis
+      val maxPollInterval = 50000.millis
       val fastPollHeartbeatConfig =
         consumerCfg.copy(maxPollInterval = maxPollInterval, observablePollHeartbeatRate = pollHeartbeat)
 
@@ -215,8 +213,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
         .take(count)
         .toListL
 
-      val committableMessages =
-        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).map(_._1).runToFuture, 25.seconds)
+      val (committableMessages, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
       val CommittableMessage(lastRecord, lastCommittableOffset) = committableMessages.last
       assert(pollHeartbeat > downstreamLatency)
       assert(maxPollInterval > downstreamLatency)
@@ -224,7 +221,6 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
       assert(lastRecord.value().toInt === count)
       assert(count === lastCommittableOffset.offset)
       assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition)
-
     }
   }
   test("slow downstream with long poll heart beat and smaller pollInterval causes rebalancing") {
@@ -264,7 +260,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
         .take(totalMessages)
         .toListL
 
-      val committableMessages = Task.parZip2(listT.executeAsync, pushT.executeAsync).map(_._1).runSyncUnsafe()
+      val (committableMessages, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
       val CommittableMessage(lastRecord, lastCommittableOffset) = committableMessages.last
       assert(pollHeartbeat > downstreamLatency)
       assert(committableMessages.map(_.record.value().toInt).sum === (1 to fastMessages).sum)

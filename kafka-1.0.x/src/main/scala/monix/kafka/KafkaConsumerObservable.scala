@@ -70,7 +70,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
           // Skipping all available messages on all partitions
           if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
           else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
-          Task.race(runLoop(c, out), pollHeartbeat(c)).void
+          Task.race(runLoop(c, out), pollHeartbeat(c).loopForever).void
           //runLoop(c, out).void
         } { consumer =>
           // Forced asynchronous boundary
@@ -102,19 +102,20 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
     */
   private def pollHeartbeat(consumer: Consumer[K, V])(implicit scheduler: Scheduler): Task[Unit] = {
-    Task.sleep(config.observablePollHeartbeatRate) *>
-      Task.eval(
-        if (!isAcked) {
-          consumer.synchronized {
-            val records = blocking(consumer.poll(0))
-            if (!records.isEmpty) {
-              val errorMsg = s"Received ${records.count()} unexpected messages."
-              throw new IllegalStateException(errorMsg)
-            }
-          }
-        } else ()
-      ).onErrorHandle(ex => scheduler.reportFailure(ex)) >>
-      pollHeartbeat(consumer).delayExecution(config.observablePollHeartbeatRate)
+   Task.sleep(config.observablePollHeartbeatRate) *>
+     Task.defer(
+       Task.evalAsync {
+         if (!isAcked) {
+           consumer.synchronized {
+             val records = blocking(consumer.poll(0))
+             if (!records.isEmpty) {
+               val errorMsg = s"Received ${records.count()} unexpected messages."
+               throw new IllegalStateException(errorMsg)
+             }
+           }
+         } else ()
+       }.onErrorHandle(ex => scheduler.reportFailure(ex))
+     )
 
   }
 
