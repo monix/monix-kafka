@@ -55,7 +55,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
         .flatMap(Observable.fromIterable)
         .toListL
 
-      val (result, _) = Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      val (result, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
       assert(result.map(_.toInt).sum === (0 until count).sum)
     }
   }
@@ -63,7 +63,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
   test("slow committable downstream with small poll heartbeat does not cause rebalancing") {
     withRunningKafka {
 
-      val count = 100
+      val totalRecords = 100
       val topicName = "monix-kafka-manual-commit-tests"
       val downstreamLatency = 200.millis
       val pollHeartbeat = 1.millis
@@ -75,29 +75,29 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
 
       val pushT = Observable
-        .fromIterable(1 to count)
+        .fromIterable(1 to totalRecords)
         .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
         .mapEval(producer.send)
         .lastL
 
       val listT = consumer
         .executeOn(io)
-        .doOnNextF { committableMessage =>
-          val manualCommit = Task.defer(CommittableOffsetBatch(Seq(committableMessage.committableOffset)).commitAsync())
+        .mapEvalF { committableMessage =>
+          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync())
+            .as(committableMessage)
           Task.sleep(downstreamLatency) *> manualCommit
         }
-        .take(count)
+        .take(totalRecords)
         .toListL
 
-      val (committableMessages, _) =
-        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 100.seconds)
+      val (committableMessages, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
       val CommittableMessage(lastRecord, lastCommittableOffset) = committableMessages.last
       assert(pollHeartbeat * 10 < downstreamLatency)
       assert(pollHeartbeat < maxPollInterval)
       assert(maxPollInterval < downstreamLatency)
-      assert((1 to count).sum === committableMessages.map(_.record.value().toInt).sum)
-      assert(lastRecord.value().toInt === count)
-      assert(count === lastCommittableOffset.offset)
+      assert((1 to totalRecords).sum === committableMessages.map(_.record.value().toInt).sum)
+      assert(lastRecord.value().toInt === totalRecords)
+      assert(totalRecords === lastCommittableOffset.offset)
       assert(new TopicPartition(topicName, 0) === lastCommittableOffset.topicPartition)
     }
   }
@@ -105,7 +105,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
   //unhappy scenario
   test("slow committable downstream with small `maxPollInterval` and high `pollHeartBeat` causes consumer rebalancing") {
     withRunningKafka {
-      val count = 200
+      val totalRecords = 200
       val topicName = "monix-kafka-manual-commit-tests"
       val downstreamLatency = 2.seconds
       val pollHeartbeat = 15.seconds
@@ -117,18 +117,19 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
 
       val pushT = Observable
-        .fromIterable(1 to count)
+        .fromIterable(1 to totalRecords)
         .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
         .mapEval(producer.send)
         .lastL
 
       val listT = consumer
         .executeOn(io)
-        .doOnNextF { committableMessage =>
+        .mapEvalF { committableMessage =>
           val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync())
+            .as(committableMessage)
           Task.sleep(downstreamLatency) *> manualCommit
         }
-        .take(count)
+        .take(totalRecords)
         .toListL
 
       assert(pollHeartbeat > downstreamLatency)
@@ -206,8 +207,9 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
 
       val listT = consumer
         .executeOn(io)
-        .doOnNextF { committableMessage =>
+        .mapEvalF { committableMessage =>
           val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync().guarantee(Task.eval(println("Consumed message: " + committableMessage.record.value()))))
+            .as(committableMessage)
           Task.sleep(downstreamLatency) *> manualCommit
         }
         .take(count)
@@ -232,14 +234,15 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
       val slowMessages = 3
       val totalMessages = fastMessages + slowMessages
       val topicName = "monix-kafka-manual-commit-tests"
-      val downstreamLatency = 500.millis
+      val downstreamLatency = 4.seconds
       // the downstream latency of `slowMessages` is higher than the
       // `maxPollInterval` but smaller than `pollHeartBeat`,
       // kafka will trigger rebalancing and the consumer
       // will be kicked out of the consumer group.
-      val pollHeartbeat = 800.millis
+      val pollHeartbeat = 1.seconds
+      val maxPollInterval = 200.millis
       val fastPollHeartbeatConfig =
-        consumerCfg.copy(maxPollInterval = 200.millis, observablePollHeartbeatRate = pollHeartbeat)
+        consumerCfg.copy(maxPollInterval = maxPollInterval, observablePollHeartbeatRate = pollHeartbeat)
 
       val producer = KafkaProducer[Integer, Integer](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[Integer, Integer](fastPollHeartbeatConfig, List(topicName))
@@ -253,12 +256,12 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
 
       val listT = consumer
         .executeOn(io)
-        .doOnNextF { committableMessage =>
-          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync().guarantee(Task.eval(println("Consumed message: " + committableMessage.record.value()))))
+        .mapEvalF { committableMessage =>
+          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync().as(committableMessage))
           if(committableMessage.record.value() <= fastMessages) manualCommit
           else Task.sleep(downstreamLatency) *> manualCommit
         }
-        .take(7)
+        .take(totalMessages)
         .toListL
 
       val committableMessages = Task.parZip2(listT.executeAsync, pushT.executeAsync).map(_._1).runSyncUnsafe()
