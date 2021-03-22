@@ -68,25 +68,25 @@ class ConsumerSpec extends FlatSpec with MonixFixture with Matchers with BeforeA
 
     r shouldBe "zio-test"
   }*/
-  import cats.effect._
-  import cats.implicits._
-  import fs2.kafka._
-  import scala.concurrent.duration._
+ //import cats.effect._
+ //import cats.implicits._
+ //import fs2.kafka._
+ //import scala.concurrent.duration._
 
-  val stream =
-    KafkaConsumer.stream(fs2ConsumerSettings)
-      .evalTap(_.subscribeTo("topic"))
-      .flatMap(_.stream)
-      .mapAsync(25) { committable =>
-        IO.pure(committable.record -> committable.record.value)
-          .map { case (key, value) =>
-            val record = ProducerRecord("topic", key, value)
-            ProducerRecords.one(record, committable.offset)
-          }
-      }
-      .through(KafkaProducer.pipe(fs2ProducerSettings))
-      .map(_.passthrough)
-      .through(commitBatchWithin(500, 15.seconds))
-      .compile
+ //val stream =
+ //  KafkaConsumer.stream(fs2ConsumerSettings)
+ //    .evalTap(_.subscribeTo("topic"))
+ //    .flatMap(_.stream)
+ //    .mapAsync(25) { committable =>
+ //      IO.pure(committable.record -> committable.record.value)
+ //        .map { case (key, value) =>
+ //          val record = ProducerRecord("topic", key, value)
+ //          ProducerRecords.one(record, committable.offset)
+ //        }
+ //    }
+ //    .through(KafkaProducer.pipe(fs2ProducerSettings))
+ //    .map(_.passthrough)
+ //    .through(commitBatchWithin(500, 15.seconds))
+ //    .compile
 
 }

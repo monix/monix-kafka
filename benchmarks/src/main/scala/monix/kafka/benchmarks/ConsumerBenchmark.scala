@@ -26,7 +26,7 @@ class ConsumerBenchmark extends MonixFixture {
 
   // preparing test data
   val f = Observable
-    .from(1 to size)
+    .from(1 to size * 10)
     .map(i => new ProducerRecord[Integer, Integer](monixTopic, i))
     .bufferTumbling(size)
     .consumeWith(KafkaProducerSink(producerConf.copy(monixSinkParallelism = 10), io))
@@ -37,6 +37,7 @@ class ConsumerBenchmark extends MonixFixture {
   def monix_manual_commit(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
       .take(size)
       .headL
     Await.result(f, Duration.Inf)
@@ -46,6 +47,7 @@ class ConsumerBenchmark extends MonixFixture {
   def monix_auto_commit(): Unit = {
     val conf = consumerConf.value().copy(
       maxPollRecords = maxPollRecords,
+      observablePollHeartbeatRate = 1.milli,
       observableCommitType = ObservableCommitType.Async)
     KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
       .take(size)
