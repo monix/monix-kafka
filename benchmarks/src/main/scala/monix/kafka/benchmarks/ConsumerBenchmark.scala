@@ -1,15 +1,12 @@
 package monix.kafka.benchmarks
 
 import java.util.concurrent.TimeUnit
-//import monix.execution.Scheduler
 import monix.kafka.{KafkaConsumerObservable, KafkaProducerSink}
 import monix.kafka.config.ObservableCommitType
 import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.openjdk.jmh.annotations.{BenchmarkMode, Fork, Measurement, Mode, OutputTimeUnit, Scope, State, Threads, Warmup, _}
 
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
 import scala.concurrent.duration._
 
 @State(Scope.Thread)
@@ -25,22 +22,25 @@ class ConsumerBenchmark extends MonixFixture {
   var maxPollRecords: Int = 5
 
   // preparing test data
-  val f = Observable
+ Observable
     .from(1 to size * 10)
     .map(i => new ProducerRecord[Integer, Integer](monixTopic, i))
     .bufferTumbling(size)
     .consumeWith(KafkaProducerSink(producerConf.copy(monixSinkParallelism = 10), io))
-    .runToFuture(io)
-  Await.ready(f, 10.seconds)
+    .runSyncUnsafe()
+
 
   @Benchmark
   def monix_manual_commit(): Unit = {
-    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+    val conf = consumerConf.value().copy(
+      maxPollRecords = maxPollRecords,
+      observablePollHeartbeatRate = 1.milli,
+    )
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
       .mapEvalF(_.committableOffset.commitAsync())
-      .take(size)
+      .take(100)
       .headL
-    Await.result(f, Duration.Inf)
+      .runSyncUnsafe()
   }
 
   @Benchmark
@@ -50,9 +50,9 @@ class ConsumerBenchmark extends MonixFixture {
       observablePollHeartbeatRate = 1.milli,
       observableCommitType = ObservableCommitType.Async)
     KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
-      .take(size)
+      .take(100)
       .headL
-    Await.result(f, Duration.Inf)
+      .runSyncUnsafe()
   }
 
 }
