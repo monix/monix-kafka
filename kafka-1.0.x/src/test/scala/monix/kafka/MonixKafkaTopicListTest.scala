@@ -140,32 +140,32 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
   test("manual async commit consumer test when subscribed to topics list") {
     withRunningKafka {
 
-      val count = 10000
+      val totalRecords = 10000
       val topicName = "monix-kafka-manual-commit-tests"
 
-      val producer = KafkaProducerSink[String, String](producerCfg, io)
-      val consumer = KafkaConsumerObservable.manualCommit[String, String](consumerCfg, List(topicName))
+      val producer = KafkaProducerSink[Integer, Integer](producerCfg, io)
+      val consumer = KafkaConsumerObservable.manualCommit[Integer, Integer](consumerCfg, List(topicName))
 
       val pushT = Observable
-        .range(0, count)
-        .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+        .range(0, totalRecords)
+        .map(id => new ProducerRecord(topicName, Integer.valueOf(id.toInt), Integer.valueOf(id.toInt)))
         .bufferIntrospective(1024)
         .consumeWith(producer)
 
       val listT = consumer
         .executeOn(io)
-        .bufferTumbling(count)
-        .map { messages =>
-          messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset))
+        .bufferTumbling(totalRecords)
+        .mapEvalF { committableMessages =>
+          CommittableOffsetBatch(committableMessages.map(_.committableOffset)).commitAsync()
+            .as(committableMessages)
         }
-        .mapEval { case (values, batch) => Task.shift *> batch.commitAsync().map(_ => values -> batch.offsets) }
         .headL
 
-      val ((result, offsets), _) =
-        Await.result(Task.parZip2(listT.executeAsync, pushT.executeAsync).runToFuture, 60.seconds)
+      val (commitableMessages, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
 
       val properOffsets = Map(new TopicPartition(topicName, 0) -> 10000)
-      assert(result.map(_.toInt).sum === (0 until count).sum && offsets === properOffsets)
+      assert(commitableMessages.map(_.record.value().toInt).sum === (0 until totalRecords).sum)
+      assert(commitableMessages.map(_.committableOffset.offset).last === totalRecords)
     }
   }
 
