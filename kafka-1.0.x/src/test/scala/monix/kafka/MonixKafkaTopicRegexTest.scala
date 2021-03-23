@@ -56,7 +56,7 @@ class MonixKafkaTopicRegexTest extends FunSuite with KafkaTestKit {
         val send = producer.send(topicMatchingRegex, "my-message")
         Await.result(send.runToFuture, 30.seconds)
 
-        val records = consumer.poll(10.seconds.toMillis).asScala.map(_.value()).toList
+        val records = consumer.poll(java.time.Duration.ofMillis(10.seconds.toMillis)).asScala.map(_.value()).toList
         assert(records === List("my-message"))
       } finally {
         Await.result(producer.close().runToFuture, Duration.Inf)

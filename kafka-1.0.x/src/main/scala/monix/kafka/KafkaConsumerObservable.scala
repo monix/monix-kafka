@@ -24,6 +24,7 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 
+import java.time.Duration
 import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
 import scala.util.matching.Regex
@@ -38,7 +39,7 @@ import scala.util.matching.Regex
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
 
-  protected def consumerTask: Task[Consumer[K, V]]
+  protected[kafka] def consumerTask: Task[Consumer[K, V]]
 
   @volatile
   protected var isAcked = true
@@ -108,7 +109,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
        Task.evalAsync {
          if (!isAcked) {
            consumer.synchronized {
-             val records = blocking(consumer.poll(0))
+             val records = blocking(consumer.poll(Duration.ZERO))
              if (!records.isEmpty) {
                val errorMsg = s"Received ${records.count()} unexpected messages."
                throw new IllegalStateException(errorMsg)

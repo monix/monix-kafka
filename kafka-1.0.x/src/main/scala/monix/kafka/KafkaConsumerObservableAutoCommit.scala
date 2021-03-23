@@ -72,7 +72,7 @@ final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
             if (cancelable.isCanceled) Stop
             else {
               consumer.resume(assignment)
-              val next = blocking(consumer.poll(pollTimeoutMillis))
+              val next = blocking(consumer.poll(java.time.Duration.ofMillis(pollTimeoutMillis)))
               consumer.pause(assignment)
               if (shouldCommitBefore) consumerCommit(consumer)
               // Feeding the observer happens on the Subscriber's scheduler
