@@ -215,7 +215,7 @@ import scala.concurrent.duration._
   *        by this object can be set via the map, but in case of a duplicate
   *        a value set on the case class will overwrite value set via properties.
   */
-final case class KafkaConsumerConfig(
+case class KafkaConsumerConfig(
   bootstrapServers: List[String],
   fetchMinBytes: Int,
   fetchMaxBytes: Int,
@@ -258,7 +258,6 @@ final case class KafkaConsumerConfig(
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
   observableSeekOnStart: ObservableSeekOnStart,
-  observablePollHeartbeatRate: FiniteDuration,
   properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
@@ -302,6 +301,13 @@ final case class KafkaConsumerConfig(
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
+
+  private[kafka] var pollHeartbeatRate: FiniteDuration = 5.millis
+
+  private[kafka] def withPollHeartBeatRate(interval: FiniteDuration): KafkaConsumerConfig = {
+    pollHeartbeatRate = interval
+    this
+  }
 
   def toJavaMap: java.util.Map[String, Object] =
     toMap.filter(_._2 != null).map { case (a, b) => (a, b.asInstanceOf[AnyRef]) }.asJava
@@ -448,7 +454,6 @@ object KafkaConsumerConfig {
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
       observableSeekOnStart = ObservableSeekOnStart(config.getString("monix.observable.seek.onStart")),
-      observablePollHeartbeatRate = config.getInt("monix.observable.poll.heartbeat.rate.ms").millis,
       properties = Map.empty
     )
   }

@@ -102,8 +102,9 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
     */
   private def pollHeartbeat(consumer: Consumer[K, V])(implicit scheduler: Scheduler): Task[Unit] = {
-   Task.sleep(config.observablePollHeartbeatRate) *>
-     Task.defer(
+   Task.sleep(config.pollHeartbeatRate) *>
+    //todo remove
+    Task.defer(
        Task.evalAsync {
          if (!isAcked) {
            consumer.synchronized {
@@ -194,6 +195,7 @@ object KafkaConsumerObservable {
                           consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val manualCommitConfig = cfg.copy(observableCommitOrder = ObservableCommitOrder.NoAck, enableAutoCommit = false)
+      .withPollHeartBeatRate(cfg.pollHeartbeatRate)
     new KafkaConsumerObservableManualCommit[K, V](manualCommitConfig, consumer)
   }
 
