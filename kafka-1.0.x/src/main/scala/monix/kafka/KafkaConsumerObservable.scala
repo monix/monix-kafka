@@ -16,6 +16,7 @@
 
 package monix.kafka
 
+import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable, Scheduler}
@@ -36,10 +37,10 @@ import scala.util.matching.Regex
   * [[KafkaConsumerConfig]] needed and see `monix/kafka/default.conf`,
   * (in the resource files) that is exposing all default values.
   */
-trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
+trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogging {
   protected def config: KafkaConsumerConfig
 
-  protected[kafka] def consumerTask: Task[Consumer[K, V]]
+  protected def consumerTask: Task[Consumer[K, V]]
 
   @volatile
   protected var isAcked = true
@@ -109,13 +110,17 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
        Task.evalAsync {
          if (!isAcked) {
            consumer.synchronized {
+             // needed in order to ensure that the consummer assignment
+             // is paused, meaning that no messages will get lost
+             val assignment = consumer.assignment()
+             consumer.pause(assignment)
              val records = blocking(consumer.poll(Duration.ZERO))
              if (!records.isEmpty) {
                val errorMsg = s"Received ${records.count()} unexpected messages."
                throw new IllegalStateException(errorMsg)
              }
            }
-         } else ()
+         }
        }.onErrorHandle(ex => scheduler.reportFailure(ex))
      )
 

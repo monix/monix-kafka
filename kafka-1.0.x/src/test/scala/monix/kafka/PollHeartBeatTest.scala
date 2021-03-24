@@ -9,13 +9,15 @@ import monix.execution.Scheduler.Implicits.global
 import org.scalactic.source
 import org.scalatest.FunSuite
 import org.scalatest.concurrent.ScalaFutures
-import org.scalacheck.Prop.forAll
+//import org.scalacheck.Prop.forAll
 
 import scala.concurrent.duration._
 
 class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
 
   val topicName = "monix-kafka-tests"
+
+  override implicit val patienceConfig: PatienceConfig = PatienceConfig(30.seconds, 100.milliseconds)
 
   val producerCfg: KafkaProducerConfig = KafkaProducerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
@@ -35,7 +37,8 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
 
       val consumerConfig = consumerCfg.copy(
         maxPollInterval = 200.millis,
-        heartbeatInterval = 10.millis
+        heartbeatInterval = 10.millis,
+        maxPollRecords = 1
       )
 
       val producer = KafkaProducerSink[String, String](producerCfg, io)
@@ -55,21 +58,21 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
         .flatMap(Observable.fromIterable)
         .toListL
 
-      val (result, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
+      val (result, _) = Task.parZip2(listT.executeAsync, pushT.delayExecution(1.second).executeAsync).runSyncUnsafe()
       assert(result.map(_.toInt).sum === (0 until count).sum)
     }
   }
 
   test("slow committable downstream with small poll heartbeat does not cause rebalancing") {
     withRunningKafka {
-      forAll()
-      val totalRecords = 100
+      val totalRecords = 1000
       val topicName = "monix-kafka-manual-commit-tests"
-      val downstreamLatency = 200.millis
+      val downstreamLatency = 40.millis
       val pollHeartbeat = 1.millis
-      val maxPollInterval = 100.millis
+      val maxPollInterval = 10.millis
+      val maxPollRecords = 1
       val fastPollHeartbeatConfig =
-        consumerCfg.copy(maxPollInterval = 200.millis).withPollHeartBeatRate(pollHeartbeat)
+        consumerCfg.copy(maxPollInterval = 200.millis, maxPollRecords = maxPollRecords).withPollHeartBeatRate(pollHeartbeat)
 
       val producer = KafkaProducer[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
@@ -83,14 +86,14 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
       val listT = consumer
         .executeOn(io)
         .mapEvalF { committableMessage =>
-          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync())
+          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync().guarantee(Task.eval(println("Consumed message: " + committableMessage.record.value()))))
             .as(committableMessage)
           Task.sleep(downstreamLatency) *> manualCommit
         }
         .take(totalRecords)
         .toListL
 
-      val (committableMessages, _) = Task.parZip2(listT.executeAsync, pushT.executeAsync).runSyncUnsafe()
+      val (committableMessages, _) = Task.parZip2(listT.executeAsync, pushT.delayExecution(100.millis).executeAsync).runSyncUnsafe()
       val CommittableMessage(lastRecord, lastCommittableOffset) = committableMessages.last
       assert(pollHeartbeat * 10 < downstreamLatency)
       assert(pollHeartbeat < maxPollInterval)
@@ -111,7 +114,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
       val pollHeartbeat = 15.seconds
       val maxPollInterval = 100.millis
       val fastPollHeartbeatConfig =
-        consumerCfg.copy(maxPollInterval = maxPollInterval).withPollHeartBeatRate(pollHeartbeat)
+        consumerCfg.copy(maxPollInterval = maxPollInterval, maxPollRecords = 1).withPollHeartBeatRate(pollHeartbeat)
 
       val producer = KafkaProducer[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
@@ -160,7 +163,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
       // but smaller than `pollHeartBeat`, kafka will trigger rebalance
       // and the consumer will be kicked out of the consumer group.
       val fastPollHeartbeatConfig =
-        consumerCfg.copy(maxPollInterval = maxPollInterval).withPollHeartBeatRate(pollHeartbeat)
+        consumerCfg.copy(maxPollInterval = maxPollInterval, maxPollRecords = 1).withPollHeartBeatRate(pollHeartbeat)
 
       val producer = KafkaProducer[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))
