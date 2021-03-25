@@ -29,10 +29,20 @@ class ConsumerSpec extends FlatSpec with MonixFixture with Matchers with BeforeA
     t.runSyncUnsafe().isDefined shouldBe true
   }
 
-  it should "allow " in {
+  it should "consume with autocommit" in {
     val conf = consumerConf.value()
 
     val f2 = KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic)).take(1000).toListL.runToFuture(io)
+
+    val elements = Await.result(f2, 10.seconds)
+    elements.size shouldBe 1000
+  }
+
+  it should "consume with manual commit" in {
+    val conf = consumerConf.value()
+
+    val f2 = KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .take(1000).toListL.runToFuture(io)
 
     val elements = Await.result(f2, 10.seconds)
     elements.size shouldBe 1000

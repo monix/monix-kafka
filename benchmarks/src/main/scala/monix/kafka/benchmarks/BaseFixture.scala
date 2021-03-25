@@ -15,5 +15,4 @@ trait BaseFixture {
   val fs2Topic = "fs2_topic"
   val zioTopic = "zio_topic"
 
-
 }
