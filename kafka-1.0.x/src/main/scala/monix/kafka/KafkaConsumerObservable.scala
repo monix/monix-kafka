@@ -105,8 +105,6 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
     */
   private def pollHeartbeat(consumer: Consumer[K, V])(implicit scheduler: Scheduler): Task[Unit] = {
    Task.sleep(config.pollHeartbeatRate) *>
-    //todo remove
-    Task.defer(
        Task.evalAsync {
          if (!isAcked) {
            consumer.synchronized {
@@ -121,7 +119,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
              }
            }
          }
-       }.onErrorHandle(ex => scheduler.reportFailure(ex))
+       }.onErrorHandle(ex => scheduler.reportFailure(ex)
      )
 
   }
