@@ -299,6 +299,13 @@ final case class KafkaConsumerConfig(
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
 
+  private[kafka] var pollHeartbeatRate: FiniteDuration = 100.millis
+
+  private[kafka] def withPollHeartBeatRate(interval: FiniteDuration): KafkaConsumerConfig = {
+    pollHeartbeatRate = interval
+    this
+  }
+
   def toJavaMap: java.util.Map[String, Object] =
     toMap.filter(_._2 != null).map{case (a, b) =>(a, b.asInstanceOf[AnyRef])}.asJava
 

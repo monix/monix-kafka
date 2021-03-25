@@ -1,0 +1,46 @@
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ConsumerBenchmark.monix_auto_commit
+
+# Run progress: 0.00% complete, ETA 00:03:40
+# Fork: 1 of 1
+# Warmup Iteration   1: 8.247 ops/s
+Iteration   1: 10.887 ops/s
+Iteration   2: 11.890 ops/s
+Iteration   3: 9.795 ops/s
+Iteration   4: 11.231 ops/s
+Iteration   5: 12.354 ops/s
+Iteration   6: 13.061 ops/s
+Iteration   7: 13.098 ops/s
+Iteration   8: 13.229 ops/s
+Iteration   9: 12.850 ops/s
+Iteration  10: 9.933 ops/s
+
+
+Result "monix.kafka.benchmarks.ConsumerBenchmark.monix_auto_commit":
+  11.833 ±(99.9%) 1.977 ops/s [Average]
+  (min, avg, max) = (9.795, 11.833, 13.229), stdev = 1.308
+  CI (99.9%): [9.856, 13.809] (assumes normal distribution)
+
+
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ConsumerBenchmark.monix_manual_commit
+
+# Run progress: 50.00% complete, ETA 00:02:02
+# Fork: 1 of 1
+# Warmup Iteration   1: 
