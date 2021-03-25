@@ -26,5 +26,4 @@ trait BaseFixture {
   val (topic_sink_1P_1RF, topic_sink_2P_1RF) = getTopicNames(sinkTestId)
   val (topic_consumer_1P_1RF, topic_consumer_2P_1RF) = getTopicNames(consumerTestId)
 
-
 }

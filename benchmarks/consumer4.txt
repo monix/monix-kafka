@@ -1,0 +1,14 @@
+# JMH version: 1.21
+# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
+# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
+# VM options: <none>
+# Warmup: 1 iterations, 10 s each
+# Measurement: 1 iterations, 10 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: monix.kafka.benchmarks.ConsumerBenchmark.monix_manual_commit
+
+# Run progress: 0.00% complete, ETA 00:00:20
+# Fork: 1 of 1
+# Warmup Iteration   1: 

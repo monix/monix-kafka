@@ -1,25 +1,11 @@
 package monix.kafka.benchmarks
 
 import java.util.concurrent.TimeUnit
-
-import monix.eval.Task
-import monix.kafka.KafkaConsumerObservable
-import monix.kafka.config.ObservableCommitType
-import org.openjdk.jmh.annotations.{
-  BenchmarkMode,
-  Fork,
-  Measurement,
-  Mode,
-  OutputTimeUnit,
-  Scope,
-  State,
-  Threads,
-  Warmup,
-  _
-}
-
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
+import monix.kafka.{KafkaConsumerObservable, KafkaProducerSink}
+//import monix.kafka.config.ObservableCommitType
+import monix.reactive.Observable
+import org.apache.kafka.clients.producer.ProducerRecord
+import org.openjdk.jmh.annotations.{BenchmarkMode, Fork, Measurement, Mode, OutputTimeUnit, Scope, State, Threads, Warmup, _}
 
 @State(Scope.Thread)
 @BenchmarkMode(Array(Mode.Throughput))
@@ -39,14 +25,18 @@ class ConsumerBenchmark extends MonixFixture {
   val f3 = Task.gather(List(t1, t2)).runToFuture(io)
   val _ = Await.ready(f3, Duration.Inf)
 
-  //syntax (P, P, RF) === (Parallelism factor, Partitions, Replication Factor)
   @Benchmark
-  def manual_commit_1P_1RF(): Unit = {
-    val f = consumeManualCommit(topic_consumer_1P_1RF, size, maxPool).runToFuture(io)
-    Await.result(f, Duration.Inf)
-    f.cancel()
+  def monix_manual_commit(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(100)
+      .headL
+      .runSyncUnsafe()
   }
 
+  /*
   @Benchmark
   def monix_manual_commit_heartbeat1(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
@@ -94,17 +84,18 @@ class ConsumerBenchmark extends MonixFixture {
       .headL
       .runSyncUnsafe()
   }
+  */
 
-  @Benchmark
-  def monix_auto_commit(): Unit = {
-    val conf = consumerConf.value().copy(
-      maxPollRecords = maxPollRecords,
-      observableCommitType = ObservableCommitType.Async)
-    KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
-      .take(100)
-      .headL
-      .runSyncUnsafe()
-  }
+ //@Benchmark
+ //def monix_auto_commit(): Unit = {
+ //  val conf = consumerConf.value().copy(
+ //    maxPollRecords = maxPollRecords,
+ //    observableCommitType = ObservableCommitType.Async)
+ //  KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
+ //    .take(100)
+ //    .headL
+ //    .runSyncUnsafe()
+ //}
 
   @Benchmark
   def auto_commit_sync_1P_1RF(): Unit = {
