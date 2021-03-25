@@ -126,7 +126,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
         .executeOn(io)
         .bufferTumbling(count)
         .map { messages => messages.map(_.record.value()) -> CommittableOffsetBatch(messages.map(_.committableOffset)) }
-        .mapEval { case (values, batch) => Task.shift *> batch.commitSync().map(_ => values -> batch.offsets) }
+        .mapEval { case (values, batch) => Task.shift >> batch.commitSync().map(_ => values -> batch.offsets) }
         .headL
 
       val ((result, offsets), _) =
@@ -145,7 +145,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val result = for {
         //Force creation of producer
         s1 <- producer.send(topicName, "test-message-1")
-        res <- Task.parZip2(producer.close(), Task.parSequence(List.fill(10)(sendTask)).attempt)
+        res <- Task.parZip2(producer.close(), Task.sequence(List.fill(10)(sendTask)).attempt)
         (_, s2) = res
         s3 <- sendTask
       } yield (s1, s2, s3)

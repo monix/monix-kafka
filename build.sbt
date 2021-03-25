@@ -1,6 +1,6 @@
 import pl.project13.scala.sbt.JmhPlugin
 
-val monixVersion = "3.1.0"
+val monixVersion = "3.3.0"
 
 val allProjects = List(
   "kafka1x",
@@ -195,7 +195,7 @@ lazy val commonDependencies = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
     "com.typesafe" % "config" % "1.4.1",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.30",
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2" % "provided;optional",
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",

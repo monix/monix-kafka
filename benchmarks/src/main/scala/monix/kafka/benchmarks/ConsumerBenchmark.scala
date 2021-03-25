@@ -1,5 +1,7 @@
 package monix.kafka.benchmarks
 
+import monix.kafka.config.ObservableCommitType
+
 import java.util.concurrent.TimeUnit
 import monix.kafka.{KafkaConsumerObservable, KafkaProducerSink}
 //import monix.kafka.config.ObservableCommitType
@@ -17,13 +19,15 @@ import org.openjdk.jmh.annotations.{BenchmarkMode, Fork, Measurement, Mode, Outp
 class ConsumerBenchmark extends MonixFixture {
 
   var size: Int = 1000
-  var maxPool: Int = 5
+  var maxPollRecords: Int = 5
 
   // preparing test data
-  val t1 = produceGroupedSink(topic_consumer_1P_1RF, size * 2, 10, 1)
-  val t2 = produceGroupedSink(topic_consumer_2P_1RF, size * 2, 10, 1)
-  val f3 = Task.gather(List(t1, t2)).runToFuture(io)
-  val _ = Await.ready(f3, Duration.Inf)
+  Observable
+    .from(1 to size * 10)
+    .map(i => new ProducerRecord[Integer, Integer](monixTopic, i))
+    .bufferTumbling(size)
+    .consumeWith(KafkaProducerSink(producerConf.copy(monixSinkParallelism = 10), io))
+    .runSyncUnsafe()
 
   @Benchmark
   def monix_manual_commit(): Unit = {
@@ -31,6 +35,18 @@ class ConsumerBenchmark extends MonixFixture {
 
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
       .mapEvalF(_.committableOffset.commitAsync())
+      .take(100)
+      .headL
+      .runSyncUnsafe()
+  }
+
+
+  @Benchmark
+  def monix_auto_commit(): Unit = {
+    val conf = consumerConf.value().copy(
+      maxPollRecords = maxPollRecords,
+      observableCommitType = ObservableCommitType.Async)
+    KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
       .take(100)
       .headL
       .runSyncUnsafe()
@@ -86,36 +102,5 @@ class ConsumerBenchmark extends MonixFixture {
   }
   */
 
- //@Benchmark
- //def monix_auto_commit(): Unit = {
- //  val conf = consumerConf.value().copy(
- //    maxPollRecords = maxPollRecords,
- //    observableCommitType = ObservableCommitType.Async)
- //  KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
- //    .take(100)
- //    .headL
- //    .runSyncUnsafe()
- //}
-
-  @Benchmark
-  def auto_commit_sync_1P_1RF(): Unit = {
-    val f = consumeAutoCommit(topic_consumer_1P_1RF, size, maxPool, ObservableCommitType.Sync).runToFuture(io)
-    Await.result(f, Duration.Inf)
-    f.cancel()
-  }
-
-  @Benchmark
-  def auto_commit_async_2P_1RF(): Unit = {
-    val f = consumeAutoCommit(topic_consumer_2P_1RF, size, maxPool, ObservableCommitType.Async).runToFuture(io)
-    Await.result(f, Duration.Inf)
-    f.cancel()
-  }
-
-  @Benchmark
-  def auto_commit_sync_2P_1RF(): Unit = {
-    val f = consumeAutoCommit(topic_consumer_2P_1RF, size, maxPool, ObservableCommitType.Sync).runToFuture(io)
-    Await.result(f, Duration.Inf)
-    f.cancel()
-  }
 
 }

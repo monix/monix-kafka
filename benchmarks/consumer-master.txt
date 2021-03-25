@@ -3,44 +3,34 @@
 # VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
 # VM options: <none>
 # Warmup: 1 iterations, 10 s each
-# Measurement: 1 iterations, 10 s each
-# Timeout: 10 min per iteration
-# Threads: 1 thread, will synchronize iterations
-# Benchmark mode: Throughput, ops/time
-# Benchmark: monix.kafka.benchmarks.ConsumerBenchmark.monix_auto_commit
-
-# Run progress: 0.00% complete, ETA 00:00:40
-# Fork: 1 of 1
-# Warmup Iteration   1: 8.977 ops/s
-Iteration   1: 11.876 ops/s
-
-
-Result "monix.kafka.benchmarks.ConsumerBenchmark.monix_auto_commit":
-  11.876 ops/s
-
-
-# JMH version: 1.21
-# VM version: JDK 1.8.0_221, Java HotSpot(TM) 64-Bit Server VM, 25.221-b11
-# VM invoker: /Library/Java/JavaVirtualMachines/jdk1.8.0_221.jdk/Contents/Home/jre/bin/java
-# VM options: <none>
-# Warmup: 1 iterations, 10 s each
-# Measurement: 1 iterations, 10 s each
+# Measurement: 10 iterations, 10 s each
 # Timeout: 10 min per iteration
 # Threads: 1 thread, will synchronize iterations
 # Benchmark mode: Throughput, ops/time
 # Benchmark: monix.kafka.benchmarks.ConsumerBenchmark.monix_manual_commit
 
-# Run progress: 50.00% complete, ETA 00:00:28
+# Run progress: 0.00% complete, ETA 00:01:50
 # Fork: 1 of 1
-# Warmup Iteration   1: 8.995 ops/s
-Iteration   1: 11.964 ops/s
+# Warmup Iteration   1: 9.483 ops/s
+Iteration   1: 12.133 ops/s
+Iteration   2: 10.040 ops/s
+Iteration   3: 7.764 ops/s
+Iteration   4: 11.043 ops/s
+Iteration   5: 11.178 ops/s
+Iteration   6: 11.964 ops/s
+Iteration   7: 13.490 ops/s
+Iteration   8: 13.681 ops/s
+Iteration   9: 13.426 ops/s
+Iteration  10: 13.665 ops/s
 
 
 Result "monix.kafka.benchmarks.ConsumerBenchmark.monix_manual_commit":
-  11.964 ops/s
+  11.838 ±(99.9%) 2.894 ops/s [Average]
+  (min, avg, max) = (7.764, 11.838, 13.681), stdev = 1.914
+  CI (99.9%): [8.944, 14.733] (assumes normal distribution)
 
 
-# Run complete. Total time: 00:00:55
+# Run complete. Total time: 00:01:57
 
 REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
 why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
@@ -49,5 +39,4 @@ the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from th
 Do not assume the numbers tell you what you want them to tell.
 
 Benchmark                               Mode  Cnt   Score   Error  Units
-ConsumerBenchmark.monix_auto_commit    thrpt       11.876          ops/s
-ConsumerBenchmark.monix_manual_commit  thrpt       11.964          ops/s
+ConsumerBenchmark.monix_manual_commit  thrpt   10  11.838 ± 2.894  ops/s
