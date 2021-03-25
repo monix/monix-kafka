@@ -302,7 +302,7 @@ case class KafkaConsumerConfig(
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
 
-  private[kafka] var pollHeartbeatRate: FiniteDuration = 5.millis
+  private[kafka] var pollHeartbeatRate: FiniteDuration = 100.millis
 
   private[kafka] def withPollHeartBeatRate(interval: FiniteDuration): KafkaConsumerConfig = {
     pollHeartbeatRate = interval

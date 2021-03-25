@@ -31,11 +31,46 @@ class ConsumerBenchmark extends MonixFixture {
 
 
   @Benchmark
-  def monix_manual_commit(): Unit = {
-    val conf = consumerConf.value().copy(
-      maxPollRecords = maxPollRecords,
-      observablePollHeartbeatRate = 1.milli,
-    )
+  def monix_manual_commit_heartbeat1(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(1.millis)
+
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(100)
+      .headL
+      .runSyncUnsafe()
+  }
+
+  @Benchmark
+  def monix_manual_commit_heartbeat100(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(100.millis)
+
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(100)
+      .headL
+      .runSyncUnsafe()
+  }
+
+  @Benchmark
+  def monix_manual_commit_heartbeat1000(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(1000.millis)
+
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(100)
+      .headL
+      .runSyncUnsafe()
+  }
+
+  @Benchmark
+  def monix_manual_commit_heartbeat3000(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(3000.millis)
+
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
       .mapEvalF(_.committableOffset.commitAsync())
       .take(100)
@@ -47,7 +82,6 @@ class ConsumerBenchmark extends MonixFixture {
   def monix_auto_commit(): Unit = {
     val conf = consumerConf.value().copy(
       maxPollRecords = maxPollRecords,
-      observablePollHeartbeatRate = 1.milli,
       observableCommitType = ObservableCommitType.Async)
     KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
       .take(100)
