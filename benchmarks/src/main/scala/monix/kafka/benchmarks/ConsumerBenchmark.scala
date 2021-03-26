@@ -19,104 +19,82 @@ import scala.concurrent.duration._
 @Threads(3)
 class ConsumerBenchmark extends MonixFixture {
 
-  var size: Int = 1000
-  var maxPollRecords: Int = 5
+  var totalRecords: Int = 1500
+  val consumedRecords = 1000
+  var maxPollRecords: Int = 1
 
   // preparing test data
- Observable
-    .from(0 to size)
-    .map(i => new ProducerRecord[Integer, Integer](monixTopic, i))
-    .bufferTumbling(size)
-    .consumeWith(KafkaProducerSink(producerConf.copy(monixSinkParallelism = 10), io))
-    .runSyncUnsafe()
-
- //@Benchmark
- //def monix_manual_commit(): Unit = {
- //  val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
- //    .withPollHeartBeatRate(100.millis)
-
- //  KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
- //    .mapEvalF(_.committableOffset.commitAsync())
- //    .take(100)
- //    .headL
- //    .runSyncUnsafe()
- //}
-
+  @Setup
+  def setup(): Unit = {
+    Observable
+      .from(0 to totalRecords)
+      .map(i => new ProducerRecord[Integer, Integer](monixTopic, i))
+      .bufferTumbling(totalRecords)
+      .consumeWith(KafkaProducerSink(producerConf.copy(monixSinkParallelism = 10), io))
+      .runSyncUnsafe()
+  }
 
   @Benchmark
-  def monix_auto_commit(): Unit = {
+  def monix_auto_commit10ms(): Unit = {
     val conf = consumerConf.value().copy(
       maxPollRecords = maxPollRecords,
       observableCommitType = ObservableCommitType.Async)
       .withPollHeartBeatRate(10.millis)
 
     KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
-      .take(100)
+      .take(consumedRecords)
       .headL
       .runSyncUnsafe()
   }
 
 
   @Benchmark
-  def monix_manual_commit_heartbeat1(): Unit = {
+  def monix_manual_commit_heartbeat1ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(1.millis)
 
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
       .mapEvalF(_.committableOffset.commitAsync())
-      .take(100)
+      .take(consumedRecords)
       .headL
       .runSyncUnsafe()
   }
 
- //@Benchmark
- //def monix_manual_commit_heartbeat10(): Unit = {
- //  val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
- //    .withPollHeartBeatRate(10.millis)
+  @Benchmark
+  def monix_manual_commit_heartbeat10ms(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(10.millis)
 
- //  KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
- //    .mapEvalF(_.committableOffset.commitAsync())
- //    .take(100)
- //    .headL
- //    .runSyncUnsafe()
- //}
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(consumedRecords)
+      .headL
+      .runSyncUnsafe()
+  }
 
   @Benchmark
-  def monix_manual_commit_heartbeat100(): Unit = {
+  def monix_manual_commit_heartbeat100ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(100.millis)
 
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
       .mapEvalF(_.committableOffset.commitAsync())
-      .take(100)
+      .take(consumedRecords)
       .headL
       .runSyncUnsafe()
   }
 
   @Benchmark
-  def monix_manual_commit_heartbeat1000(): Unit = {
+  def monix_manual_commit_heartbeat1000ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(1000.millis)
 
     KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
       .mapEvalF(_.committableOffset.commitAsync())
-      .take(100)
+      .take(consumedRecords)
       .headL
       .runSyncUnsafe()
   }
-
- //@Benchmark
- //def monix_manual_commit_heartbeat3000(): Unit = {
- //  val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
- //    .withPollHeartBeatRate(3000.millis)
-
- //  KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
- //    .mapEvalF(_.committableOffset.commitAsync())
- //    .take(100)
- //    .headL
- //    .runSyncUnsafe()
- //}
-
 
 
 }

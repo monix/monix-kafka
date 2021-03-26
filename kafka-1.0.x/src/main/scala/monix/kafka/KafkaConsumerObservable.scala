@@ -29,6 +29,7 @@ import java.time.Duration
 import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
 import scala.util.matching.Regex
+import scala.concurrent.duration._
 
 /** Exposes an `Observable` that consumes a Kafka stream by
   * means of a Kafka Consumer client.
@@ -99,28 +100,31 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
     * This allows producer process commit calls and also keeps consumer alive even
     * with long batch processing.
     *
-    *  If polling fails the error is reported to the subscriber through the scheduler.
+    * If polling fails the error is reported to the subscriber through the scheduler.
     *
     * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
     */
   private def pollHeartbeat(consumer: Consumer[K, V])(implicit scheduler: Scheduler): Task[Unit] = {
-   Task.sleep(config.pollHeartbeatRate) *>
-       Task.evalAsync {
-         if (!isAcked) {
-           consumer.synchronized {
-             // needed in order to ensure that the consummer assignment
-             // is paused, meaning that no messages will get lost
-             val assignment = consumer.assignment()
-             consumer.pause(assignment)
-             val records = blocking(consumer.poll(Duration.ZERO))
-             if (!records.isEmpty) {
-               val errorMsg = s"Received ${records.count()} unexpected messages."
-               throw new IllegalStateException(errorMsg)
-             }
-           }
-         }
-       }.onErrorHandle(ex => scheduler.reportFailure(ex)
-     )
+    Task.sleep(config.pollHeartbeatRate) >>
+      Task.eval {
+        if (!isAcked) {
+          consumer.synchronized {
+            // needed in order to ensure that the consummer assignment
+            // is paused, meaning that no messages will get lost
+            val assignment = consumer.assignment()
+            consumer.pause(assignment)
+            val records = blocking(consumer.poll(Duration.ZERO))
+            if (!records.isEmpty) {
+              val errorMsg = s"Received ${records.count()} unexpected messages."
+              throw new IllegalStateException(errorMsg)
+            }
+          }
+        }
+      }
+        .onErrorHandleWith { ex =>
+          Task.now(scheduler.reportFailure(ex)) >>
+            Task.sleep(1.seconds)
+        }
 
   }
 

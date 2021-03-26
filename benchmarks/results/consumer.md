@@ -1,26 +1,35 @@
 
 ## RC7
+
+### 1fork 1thread
 Benchmark                               Mode  Cnt   Score   Error  Units
 ConsumerBenchmark.monix_auto_commit    thrpt       11.876          ops/s
 ConsumerBenchmark.monix_manual_commit  thrpt       11.964          ops/s
 
+### 1 fork 3 thrads
+Benchmark                               Mode  Cnt   Score   Error  Units
+ConsumerBenchmark.monix_auto_commit    thrpt   10  15.305 ± 2.823  ops/s
+ConsumerBenchmark.monix_manual_commit  thrpt   10  17.860 ± 1.691  ops/s
+
 
 ## RC8 - (Introduces PollHeartbeatRate)
+### 1fork 1thread
+---
+Benchmark                                               Mode  Cnt   Score   Error  Units
+ConsumerBenchmark.monix_auto_commit10ms                thrpt   10  11.090 ± 1.883  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat1000ms  thrpt   10   0.993 ± 0.002  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat100ms   thrpt   10   4.792 ± 0.017  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat10ms    thrpt   10   8.249 ± 0.305  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat1ms     thrpt   10  10.038 ± 0.433  ops/s
+---
+### 1 fork 3 threads 
+Benchmark                                               Mode  Cnt   Score   Error  Units
+ConsumerBenchmark.monix_auto_commit10ms                thrpt   10  17.266 ± 2.231  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat1000ms  thrpt   10   2.971 ± 0.009  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat100ms   thrpt   10   9.477 ± 0.064  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat10ms    thrpt   10  14.710 ± 1.660  ops/s
+ConsumerBenchmark.monix_manual_commit_heartbeat1ms     thrpt   10  15.494 ± 4.163  ops/s
 
-1fork 1thread
----
-ConsumerBenchmark.monix_auto_commit                  thrpt   10  10.569 ± 2.096  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1     thrpt   10  10.320 ± 1.720  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat100   thrpt   10   4.518 ± 0.266  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1000  thrpt   10   0.994 ± 0.002  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat3000  thrpt   10   0.332 ± 0.001  ops/s
----
-1fork 3thrads 
-Benchmark                                             Mode  Cnt   Score   Error  Units
-ConsumerBenchmark.monix_auto_commit                  thrpt   10  16.270 ± 3.339  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1     thrpt   10  15.053 ± 0.959  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat100   thrpt   10   9.525 ± 1.131  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1000  thrpt   10   2.968 ± 0.010  ops/s
 
 
 
