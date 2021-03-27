@@ -18,8 +18,8 @@ package monix.kafka
 
 import java.io.File
 import java.util.Properties
-
 import com.typesafe.config.{Config, ConfigFactory}
+import monix.execution.internal.InternalApi
 import monix.kafka.config._
 
 import scala.jdk.CollectionConverters._
@@ -252,7 +252,6 @@ final case class KafkaConsumerConfig(
   observableCommitType: ObservableCommitType,
   observableCommitOrder: ObservableCommitOrder,
   observableSeekOnStart: ObservableSeekOnStart,
-  observablePollHeartbeatRate: FiniteDuration,
   properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
@@ -295,6 +294,14 @@ final case class KafkaConsumerConfig(
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
+
+  private[kafka] var pollHeartbeatRate: FiniteDuration = 10.millis
+
+  @InternalApi
+  private[kafka] def withPollHeartBeatRate(interval: FiniteDuration): KafkaConsumerConfig = {
+    pollHeartbeatRate = interval
+    this
+  }
 
   def toJavaMap: java.util.Map[String, Object] =
     toMap.filter(_._2 != null).map { case (a, b) => (a, b.asInstanceOf[AnyRef]) }.asJava
@@ -440,7 +447,6 @@ object KafkaConsumerConfig {
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
       observableSeekOnStart = ObservableSeekOnStart(config.getString("monix.observable.seek.onStart")),
-      observablePollHeartbeatRate = config.getInt("monix.observable.poll.heartbeat.rate.ms").millis,
       properties = Map.empty
     )
   }

@@ -107,7 +107,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
       Task.eval {
         if (!isAcked) {
           consumer.synchronized {
-            // needed in order to ensure that the consummer assignment
+            // needed in order to ensure that the consumer assignment
             // is paused, meaning that no messages will get lost.
             val assignment = consumer.assignment()
             consumer.pause(assignment)
@@ -123,7 +123,6 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
           Task.now(scheduler.reportFailure(ex)) >>
             Task.sleep(1.seconds)
         }
-
   }
 
 }

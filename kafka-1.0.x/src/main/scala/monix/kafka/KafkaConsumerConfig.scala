@@ -304,10 +304,6 @@ case class KafkaConsumerConfig(
 
   private[kafka] var pollHeartbeatRate: FiniteDuration = 10.millis
 
-  /**
-    *
-    * @return
-    */
   @InternalApi
   private[kafka] def withPollHeartBeatRate(interval: FiniteDuration): KafkaConsumerConfig = {
     pollHeartbeatRate = interval
