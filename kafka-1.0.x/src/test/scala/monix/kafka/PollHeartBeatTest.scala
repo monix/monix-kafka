@@ -9,7 +9,6 @@ import monix.execution.Scheduler.Implicits.global
 import org.scalactic.source
 import org.scalatest.FunSuite
 import org.scalatest.concurrent.ScalaFutures
-//import org.scalacheck.Prop.forAll
 
 import scala.concurrent.duration._
 

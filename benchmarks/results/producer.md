@@ -12,4 +12,3 @@ ProducerBenchmark.monix_sink_producer    thrpt    3  1.861 ± 5.475  ops/s
 Benchmark                                 Mode  Cnt  Score   Error  Units
 ProducerBenchmark.monix_single_producer  thrpt   10  0.981 ± 0.202  ops/s
 ProducerBenchmark.monix_sink_producer    thrpt   10  3.241 ± 0.191  ops/s
-
