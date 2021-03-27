@@ -86,7 +86,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
       val listT = consumer
         .executeOn(io)
         .mapEvalF { committableMessage =>
-          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync().guarantee(Task.eval(println("Consumed message: " + committableMessage.record.value()))))
+          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync())
             .as(committableMessage)
           Task.sleep(downstreamLatency) *> manualCommit
         }
@@ -177,7 +177,7 @@ class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
       val listT = consumer
         .executeOn(io)
         .doOnNextF { committableMessage =>
-          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync()).guarantee(Task.eval(println("Consumed message: " + committableMessage.record.value())))
+          val manualCommit = Task.defer(committableMessage.committableOffset.commitAsync())
           Task.sleep(downstreamLatency) *> manualCommit
         }
         .take(totalRecords)

@@ -3,13 +3,13 @@
 
 ### 1fork 1thread
 Benchmark                               Mode  Cnt   Score   Error  Units
-ConsumerBenchmark.monix_auto_commit    thrpt       11.876          ops/s
-ConsumerBenchmark.monix_manual_commit  thrpt       11.964          ops/s
+ConsumerBenchmark.monix_auto_commit    thrpt   10  11.912 ± 0.617  ops/s
+ConsumerBenchmark.monix_manual_commit  thrpt   10  11.519 ± 2.247  ops/s
 
-### 1 fork 3 thrads
+### 1 fork 3 threads
 Benchmark                               Mode  Cnt   Score   Error  Units
-ConsumerBenchmark.monix_auto_commit    thrpt   10  15.305 ± 2.823  ops/s
-ConsumerBenchmark.monix_manual_commit  thrpt   10  17.860 ± 1.691  ops/s
+ConsumerBenchmark.monix_auto_commit    thrpt   10  16.186 ± 0.920  ops/s
+ConsumerBenchmark.monix_manual_commit  thrpt   10  16.319 ± 1.465  ops/s
 
 
 ## RC8 - (Introduces PollHeartbeatRate)
@@ -29,6 +29,7 @@ ConsumerBenchmark.monix_manual_commit_heartbeat1000ms  thrpt   10   2.971 ± 0.0
 ConsumerBenchmark.monix_manual_commit_heartbeat100ms   thrpt   10   9.477 ± 0.064  ops/s
 ConsumerBenchmark.monix_manual_commit_heartbeat10ms    thrpt   10  14.710 ± 1.660  ops/s
 ConsumerBenchmark.monix_manual_commit_heartbeat1ms     thrpt   10  15.494 ± 4.163  ops/s
+
 
 
 

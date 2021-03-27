@@ -25,7 +25,6 @@ import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
 import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsumer}
 
-import java.time.Duration
 import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
 import scala.util.matching.Regex
@@ -74,7 +73,6 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
           if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
           else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
           Task.race(runLoop(c, out), pollHeartbeat(c).loopForever).void
-          //runLoop(c, out).void
         } { consumer =>
           // Forced asynchronous boundary
           Task.evalAsync(consumer.synchronized(blocking(consumer.close()))).memoizeOnSuccess
@@ -110,10 +108,10 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
         if (!isAcked) {
           consumer.synchronized {
             // needed in order to ensure that the consummer assignment
-            // is paused, meaning that no messages will get lost
+            // is paused, meaning that no messages will get lost.
             val assignment = consumer.assignment()
             consumer.pause(assignment)
-            val records = blocking(consumer.poll(Duration.ZERO))
+            val records = blocking(consumer.poll(0))
             if (!records.isEmpty) {
               val errorMsg = s"Received ${records.count()} unexpected messages."
               throw new IllegalStateException(errorMsg)

@@ -88,7 +88,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
             try consumer.synchronized {
               val assignment = consumer.assignment()
               consumer.resume(assignment)
-              val next = blocking(consumer.poll(java.time.Duration.ofMillis(pollTimeoutMillis)))
+              val next = blocking(consumer.poll(0))
               consumer.pause(assignment)
               val result = next.asScala.map { record =>
                 CommittableMessage(
