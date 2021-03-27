@@ -265,11 +265,6 @@ lazy val benchmarks = project.in(file("benchmarks"))
     name := "benchmarks",
     organization := "io.monix",
     scalaVersion := "2.12.10",
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio-streams" % "1.0.2",
-      "dev.zio" %% "zio-kafka"   % "0.13.0",
-      "com.github.fd4s" %% "fs2-kafka" % "1.3.1"
-    )
   )
   .enablePlugins(JmhPlugin)
   .aggregate(kafka1x)

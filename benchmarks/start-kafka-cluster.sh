@@ -19,6 +19,3 @@ docker ps
 sleep 15
 
 create_topic monix_topic 2 1
-create_topic akka_topic 2 1
-create_topic fs2_topic 2 1
-create_topic zio_topic 2 1
