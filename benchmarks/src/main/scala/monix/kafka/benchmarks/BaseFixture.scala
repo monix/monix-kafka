@@ -11,8 +11,5 @@ trait BaseFixture {
 
   // topic names
   val monixTopic = "monix_topic"
-  val akkaTopic = "akka_topic"
-  val fs2Topic = "fs2_topic"
-  val zioTopic = "zio_topic"
 
 }

@@ -199,7 +199,7 @@ lazy val commonDependencies = Seq(
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.15.3" % "test")
+    "org.scalacheck" %% "scalacheck" % "1.15.2" % "test")
 )
 
 lazy val monixKafka = project.in(file("."))
