@@ -195,7 +195,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
 
       val consumerConfig = consumerCfg.copy(
         maxPollInterval = 200.millis,
-        observablePollHeartbeatRate = 10.millis
+        pollHeartbeatRate = 10.millis
       )
 
       val producer = KafkaProducerSink[String, String](producerCfg, io)
@@ -228,7 +228,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val delay = 200.millis
       val pollHeartbeat = 2.millis
       val fastPollHeartbeatConfig =
-        consumerCfg.copy(maxPollInterval = 200.millis, observablePollHeartbeatRate = pollHeartbeat)
+        consumerCfg.copy(maxPollInterval = 200.millis, pollHeartbeatRate = pollHeartbeat)
 
       val producer = KafkaProducer[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable.manualCommit[String, String](fastPollHeartbeatConfig, List(topicName))

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="ERROR" name="config">
+<Properties>
+    <Property name="LOG_DIR">logs</Property>
+    <Property name="ARCHIVE">logs/archive</Property>
+    <Property name="PATTERN">%-5level %d [%t] %c:%M(%L): %m%n</Property>
+</Properties>
+<Appenders>
+    <Console name="STDOUT" target="SYSTEM_OUT">
+        <PatternLayout pattern="${PATTERN}"/>
+    </Console>
+
+    <RollingFile name="fileWriter"
+                 fileName="${LOG_DIR}/logs.log"
+                 filePattern="${ARCHIVE}/logs.log.%d{yyyy-MM-dd-hh-mm}.gz">
+        <PatternLayout pattern="${PATTERN}"/>
+        <TimeBasedTriggeringPolicy/>
+    </RollingFile>
+</Appenders>
+<Loggers>
+    <Root level=" ">
+        <AppenderRef ref="fileWriter"/>
+    </Root>
+</Loggers>
+<logger name="org.apache.kafka" level="WARN"/>
+<logger name="org.apache.zookeeper" level="WARN"/>
+<logger name="org.I0Itec.zkclient" level="WARN"/>
+<logger name="org.apache.kafka.common.utils.AppInfoParser" level="ERROR"/>
+<logger name="org.apache.kafka.clients.NetworkClient" level="ERROR"/>
+</Configuration>

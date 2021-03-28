@@ -16,10 +16,9 @@
 
 package monix.kafka
 
-import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
-import monix.execution.{Ack, Callback, Cancelable}
+import monix.execution.{Ack, Callback, Cancelable, Scheduler}
 import monix.kafka.config.ObservableCommitOrder
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
@@ -28,6 +27,7 @@ import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsume
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
+import scala.concurrent.duration.DurationInt
 import scala.util.matching.Regex
 
 /** Exposes an `Observable` that consumes a Kafka stream by
@@ -39,7 +39,7 @@ import scala.util.matching.Regex
   */
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
-  protected def consumer: Task[Consumer[K, V]]
+  protected def consumerTask: Task[Consumer[K, V]]
 
   @volatile
   protected var isAcked = true
@@ -66,25 +66,15 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val startConsuming =
-        Resource
-          .make(consumer) { c =>
-            // Forced asynchronous boundary
-            Task.evalAsync(consumer.synchronized(blocking(c.close()))).memoizeOnSuccess
-          }
-          .use { c =>
-            // Skipping all available messages on all partitions
-            if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
-            else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
-            // A task to execute on both cancellation and normal termination
-            pollHeartbeat(c)
-              // If polling fails the error is reported to the subscriber and
-              // wait 1sec as a rule of thumb leaving enough time for the consumer
-              // to recover and reassign partitions
-              .onErrorHandleWith(ex => Task(out.onError(ex)))
-              .loopForever
-              .startAndForget
-              .flatMap(_ => runLoop(c, out))
-          }
+        consumerTask.bracket { c =>
+          // Skipping all available messages on all partitions
+          if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
+          else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
+          Task.race(runLoop(c, out), pollHeartbeat(c).loopForever).void
+        } { consumer =>
+          // Forced asynchronous boundary
+          Task.evalAsync(consumer.synchronized(blocking(consumer.close()))).memoizeOnSuccess
+        }
       startConsuming.runAsync(cb)
     }
   }
@@ -106,20 +96,31 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     * This allows producer process commit calls and also keeps consumer alive even
     * with long batch processing.
     *
+    * If polling fails the error is reported to the subscriber through the scheduler.
+    *
     * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
     */
-  private def pollHeartbeat(consumer: Consumer[K, V]): Task[Unit] = {
-    Task.sleep(config.observablePollHeartbeatRate) *>
-      Task.evalAsync(
+  private def pollHeartbeat(consumer: Consumer[K, V])(implicit scheduler: Scheduler): Task[Unit] = {
+    Task.sleep(config.pollHeartbeatRate) >>
+      Task.eval {
         if (!isAcked) {
           consumer.synchronized {
+            // needed in order to ensure that the consumer assignment
+            // is paused, meaning that no messages will get lost.
+            val assignment = consumer.assignment()
+            consumer.pause(assignment)
             val records = blocking(consumer.poll(0))
             if (!records.isEmpty) {
-              throw new IllegalStateException(s"Received ${records.count()} unexpected messages.")
+              val errorMsg = s"Received ${records.count()} unexpected messages."
+              throw new IllegalStateException(errorMsg)
             }
           }
-        } else ()
-      )
+        }
+      }
+        .onErrorHandleWith { ex =>
+          Task.now(scheduler.reportFailure(ex)) >>
+            Task.sleep(1.second)
+        }
   }
 }
 

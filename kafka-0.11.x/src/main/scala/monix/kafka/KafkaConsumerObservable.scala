@@ -16,7 +16,6 @@
 
 package monix.kafka
 
-import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable, Scheduler}
@@ -41,7 +40,7 @@ import scala.util.matching.Regex
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
 
-  protected def consumer: Task[Consumer[K, V]]
+  protected def consumerTask: Task[Consumer[K, V]]
 
   @volatile
   protected var isAcked = true
@@ -69,25 +68,15 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val startConsuming =
-        Resource
-          .make(consumer) { c =>
-            // Forced asynchronous boundary
-            Task.evalAsync(consumer.synchronized(blocking(c.close()))).memoizeOnSuccess
-          }
-          .use { c =>
-            // Skipping all available messages on all partitions
-            if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
-            else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
-            // A task to execute on both cancellation and normal termination
-            pollHeartbeat(c)
-              // If polling fails the error is reported to the subscriber and
-              // wait 1sec as a rule of thumb leaving enough time for the consumer
-              // to recover and reassign partitions
-              .onErrorHandleWith(ex => Task(out.onError(ex)))
-              .loopForever
-              .startAndForget
-              .flatMap(_ => runLoop(c, out))
-          }
+        consumerTask.bracket { c =>
+          // Skipping all available messages on all partitions
+          if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
+          else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)
+          Task.race(runLoop(c, out), pollHeartbeat(c).loopForever).void
+        } { consumer =>
+          // Forced asynchronous boundary
+          Task.evalAsync(consumer.synchronized(blocking(consumer.close()))).memoizeOnSuccess
+        }
       startConsuming.runAsync(cb)
     }
   }

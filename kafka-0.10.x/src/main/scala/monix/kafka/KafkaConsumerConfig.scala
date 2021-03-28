@@ -198,7 +198,7 @@ import scala.concurrent.duration._
   *        Specifies when the commit should happen, like before we receive the
   *        acknowledgement from downstream, or afterwards.
   *
-  * @param observablePollHeartbeatRate is the `monix.observable.poll.heartbeat.rate.ms` setting.
+  * @param pollHeartbeatRate is the `monix.observable.poll.heartbeat.rate.ms` setting.
   *         Specifies heartbeat time between KafkaConsumer#poll attempts.
   *
   * @param properties map of other properties that will be passed to
@@ -207,48 +207,48 @@ import scala.concurrent.duration._
   *        a value set on the case class will overwrite value set via properties.
   */
 final case class KafkaConsumerConfig(
-  bootstrapServers: List[String],
-  fetchMinBytes: Int,
-  groupId: String,
-  heartbeatInterval: FiniteDuration,
-  maxPartitionFetchBytes: Int,
-  sessionTimeout: FiniteDuration,
-  sslKeyPassword: Option[String],
-  sslKeyStorePassword: Option[String],
-  sslKeyStoreLocation: Option[String],
-  sslTrustStoreLocation: Option[String],
-  sslTrustStorePassword: Option[String],
-  autoOffsetReset: AutoOffsetReset,
-  connectionsMaxIdleTime: FiniteDuration,
-  enableAutoCommit: Boolean,
-  excludeInternalTopics: Boolean,
-  maxPollRecords: Int,
-  maxPollInterval: FiniteDuration,
-  receiveBufferInBytes: Int,
-  requestTimeout: FiniteDuration,
-  saslKerberosServiceName: Option[String],
-  saslMechanism: String,
-  securityProtocol: SecurityProtocol,
-  sendBufferInBytes: Int,
-  sslEnabledProtocols: List[SSLProtocol],
-  sslKeystoreType: String,
-  sslProtocol: SSLProtocol,
-  sslProvider: Option[String],
-  sslTruststoreType: String,
-  checkCRCs: Boolean,
-  clientId: String,
-  fetchMaxWaitTime: FiniteDuration,
-  metadataMaxAge: FiniteDuration,
-  metricReporters: List[String],
-  metricsNumSamples: Int,
-  metricsSampleWindow: FiniteDuration,
-  reconnectBackoffTime: FiniteDuration,
-  retryBackoffTime: FiniteDuration,
-  observableCommitType: ObservableCommitType,
-  observableCommitOrder: ObservableCommitOrder,
-  observableSeekOnStart: ObservableSeekOnStart,
-  observablePollHeartbeatRate: FiniteDuration,
-  properties: Map[String, String]) {
+                                      bootstrapServers: List[String],
+                                      fetchMinBytes: Int,
+                                      groupId: String,
+                                      heartbeatInterval: FiniteDuration,
+                                      maxPartitionFetchBytes: Int,
+                                      sessionTimeout: FiniteDuration,
+                                      sslKeyPassword: Option[String],
+                                      sslKeyStorePassword: Option[String],
+                                      sslKeyStoreLocation: Option[String],
+                                      sslTrustStoreLocation: Option[String],
+                                      sslTrustStorePassword: Option[String],
+                                      autoOffsetReset: AutoOffsetReset,
+                                      connectionsMaxIdleTime: FiniteDuration,
+                                      enableAutoCommit: Boolean,
+                                      excludeInternalTopics: Boolean,
+                                      maxPollRecords: Int,
+                                      maxPollInterval: FiniteDuration,
+                                      receiveBufferInBytes: Int,
+                                      requestTimeout: FiniteDuration,
+                                      saslKerberosServiceName: Option[String],
+                                      saslMechanism: String,
+                                      securityProtocol: SecurityProtocol,
+                                      sendBufferInBytes: Int,
+                                      sslEnabledProtocols: List[SSLProtocol],
+                                      sslKeystoreType: String,
+                                      sslProtocol: SSLProtocol,
+                                      sslProvider: Option[String],
+                                      sslTruststoreType: String,
+                                      checkCRCs: Boolean,
+                                      clientId: String,
+                                      fetchMaxWaitTime: FiniteDuration,
+                                      metadataMaxAge: FiniteDuration,
+                                      metricReporters: List[String],
+                                      metricsNumSamples: Int,
+                                      metricsSampleWindow: FiniteDuration,
+                                      reconnectBackoffTime: FiniteDuration,
+                                      retryBackoffTime: FiniteDuration,
+                                      observableCommitType: ObservableCommitType,
+                                      observableCommitOrder: ObservableCommitOrder,
+                                      observableSeekOnStart: ObservableSeekOnStart,
+                                      pollHeartbeatRate: FiniteDuration,
+                                      properties: Map[String, String]) {
 
   def toMap: Map[String, String] = properties ++ Map(
     "bootstrap.servers" -> bootstrapServers.mkString(","),
@@ -433,7 +433,7 @@ object KafkaConsumerConfig {
       observableCommitType = ObservableCommitType(config.getString("monix.observable.commit.type")),
       observableCommitOrder = ObservableCommitOrder(config.getString("monix.observable.commit.order")),
       observableSeekOnStart = ObservableSeekOnStart(config.getString("monix.observable.seek.onStart")),
-      observablePollHeartbeatRate = config.getInt("monix.observable.poll.heartbeat.rate.ms").millis,
+      pollHeartbeatRate = config.getInt("monix.observable.poll.heartbeat.rate.ms").millis,
       properties = Map.empty
     )
   }
