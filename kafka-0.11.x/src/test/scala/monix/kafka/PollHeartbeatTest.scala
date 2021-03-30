@@ -23,8 +23,7 @@ import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.common.TopicPartition
-import org.scalactic.source
-import org.scalatest.{FunSuite, Ignore}
+import org.scalatest.FunSuite
 import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.duration._

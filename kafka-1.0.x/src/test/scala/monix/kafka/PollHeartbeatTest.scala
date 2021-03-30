@@ -12,7 +12,7 @@ import org.scalatest.concurrent.ScalaFutures
 
 import scala.concurrent.duration._
 
-class PollHeartBeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
+class PollHeartbeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
 
   val topicName = "monix-kafka-tests"
 

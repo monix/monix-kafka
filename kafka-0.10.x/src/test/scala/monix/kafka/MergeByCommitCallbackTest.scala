@@ -9,7 +9,6 @@ import org.scalatest.{FunSuite, Matchers}
 import scala.concurrent.duration._
 import scala.concurrent.Await
 import monix.execution.Scheduler.Implicits.global
-import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Gen
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks

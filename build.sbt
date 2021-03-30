@@ -228,6 +228,7 @@ lazy val kafka11 = project.in(file("kafka-0.11.x"))
     name := "monix-kafka-11",
     libraryDependencies ++= {
       if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.1.1" % "test" exclude ("log4j", "log4j"))
+        Seq("net.manub" %% "scalatest-embedded-kafka" % "1.1.0-kafka1.1-nosr" % Test)
       else Seq.empty[ModuleID]
     },
     libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "0.11.0.3" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
