@@ -44,7 +44,6 @@ class PollHeartbeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
     autoOffsetReset = AutoOffsetReset.Earliest
   )
 
-
   test("auto committable consumer with slow processing doesn't cause rebalancing") {
     withRunningKafka {
       val count = 10000

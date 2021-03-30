@@ -19,7 +19,6 @@ package monix.kafka
 import java.io.File
 import java.util.Properties
 import com.typesafe.config.{Config, ConfigFactory}
-import monix.execution.internal.InternalApi
 import monix.kafka.config._
 
 import scala.jdk.CollectionConverters._
@@ -194,9 +193,6 @@ import scala.concurrent.duration._
   *        Specifies when the commit should happen, like before we receive the
   *        acknowledgement from downstream, or afterwards.
   *
-  * @param observablePollHeartbeatRate is the `monix.observable.poll.heartbeat.rate.ms` setting.
-  *         Specifies heartbeat time between KafkaConsumer#poll attempts.
-  *
   * @param properties map of other properties that will be passed to
   *        the underlying kafka client. Any properties not explicitly handled
   *        by this object can be set via the map, but in case of a duplicate
@@ -280,14 +276,6 @@ final case class KafkaConsumerConfig(
     "reconnect.backoff.ms" -> reconnectBackoffTime.toMillis.toString,
     "retry.backoff.ms" -> retryBackoffTime.toMillis.toString
   )
-
-  private[kafka] var pollHeartbeatRate: FiniteDuration = 50.millis
-
-  @InternalApi
-  private[kafka] def withPollHeartBeatRate(interval: FiniteDuration): KafkaConsumerConfig = {
-    pollHeartbeatRate = interval
-    this
-  }
 
   def toJavaMap: java.util.Map[String, Object] =
     toMap.filter(_._2 != null).map { case (a, b) => (a, b.asInstanceOf[AnyRef]) }.asJava

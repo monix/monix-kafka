@@ -146,11 +146,6 @@ class PollHeartbeatTest extends FunSuite with KafkaTestKit with ScalaFutures  {
     }
   }
 
-  /* Important Note:
-   * This test will throw throw an `IllegalStateException: Received 50 unexpected messages`
-   * at monix.kafka.KafkaConsumerObservable.$anonfun$pollHeartbeat$1(KafkaConsumerObservable.scala:112)
-   * This does not manifests after updating the `kafka-clients` dependency to `2.x`
-   */
   test("super slow committable downstream causes consumer rebalance") {
     withRunningKafka {
       val totalRecords = 3
