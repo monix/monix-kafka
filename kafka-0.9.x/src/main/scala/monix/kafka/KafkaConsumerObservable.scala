@@ -19,7 +19,7 @@ package monix.kafka
 import cats.effect.Resource
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
-import monix.execution.{Ack, Callback, Cancelable}
+import monix.execution.{Ack, Callback, Cancelable, Scheduler}
 import monix.kafka.config.ObservableCommitOrder
 import monix.reactive.Observable
 import monix.reactive.observers.Subscriber
@@ -27,6 +27,7 @@ import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsume
 
 import scala.jdk.CollectionConverters._
 import scala.concurrent.blocking
+import scala.concurrent.duration._
 
 /** Exposes an `Observable` that consumes a Kafka stream by
   * means of a Kafka Consumer client.
@@ -107,18 +108,27 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     *
     * @see [[https://cwiki.apache.org/confluence/display/KAFKA/KIP-62%3A+Allow+consumer+to+send+heartbeats+from+a+background+thread]]
     */
-  private def pollHeartbeat(consumer: Consumer[K, V]): Task[Unit] = {
-    Task.sleep(config.observablePollHeartbeatRate) *>
-      Task.evalAsync(
+  private def pollHeartbeat(consumer: Consumer[K, V])(implicit scheduler: Scheduler): Task[Unit] = {
+    Task.sleep(config.pollHeartbeatRate) >>
+      Task.eval {
         if (!isAcked) {
           consumer.synchronized {
+            // needed in order to ensure that the consumer assignment
+            // is paused, meaning that no messages will get lost.
+            val assignment = consumer.assignment().asScala.toList
+            consumer.pause(assignment: _*)
             val records = blocking(consumer.poll(0))
             if (!records.isEmpty) {
-              throw new IllegalStateException(s"Received ${records.count()} unexpected messages.")
+              val errorMsg = s"Received ${records.count()} unexpected messages."
+              throw new IllegalStateException(errorMsg)
             }
           }
-        } else ()
-      )
+        }
+      }
+        .onErrorHandleWith { ex =>
+          Task.now(scheduler.reportFailure(ex)) >>
+            Task.sleep(1.seconds)
+        }
   }
 
 }

@@ -220,9 +220,7 @@ class MonixKafkaTest extends FunSuite {
     val count = 10000
 
     val consumerConfig = consumerCfg.copy(
-      sessionTimeout = 200.millis,
-      observablePollHeartbeatRate = 100.millis
-    )
+      sessionTimeout = 200.millis).withPollHeartBeatRate(100.millis)
 
     val producer = KafkaProducerSink[String, String](producerCfg, io)
     val consumer = KafkaConsumerObservable[String, String](consumerConfig, List(topicName)).executeOn(io)
