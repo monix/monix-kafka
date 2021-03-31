@@ -193,9 +193,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     withRunningKafka {
       val count = 10000
 
-      val consumerConfig = consumerCfg.copy(
-        maxPollInterval = 200.millis,
-      )
+      val consumerConfig = consumerCfg.copy(maxPollInterval = 200.millis)
 
       val producer = KafkaProducerSink[String, String](producerCfg, io)
       val consumer = KafkaConsumerObservable[String, String](consumerConfig, List(topicName)).executeOn(io)
