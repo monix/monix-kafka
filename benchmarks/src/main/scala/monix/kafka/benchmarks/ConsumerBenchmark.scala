@@ -35,7 +35,7 @@ class ConsumerBenchmark extends MonixFixture {
   }
 
   @Benchmark
-  def monix_auto_commit10ms(): Unit = {
+  def monixAutoCommitHeartbeat10ms(): Unit = {
     val conf = consumerConf.value().copy(
       maxPollRecords = maxPollRecords,
       observableCommitType = ObservableCommitType.Async)
@@ -49,7 +49,7 @@ class ConsumerBenchmark extends MonixFixture {
 
 
   @Benchmark
-  def monix_manual_commit_heartbeat1ms(): Unit = {
+  def monixManualCommitHeartbeat1ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(1.millis)
 
@@ -61,7 +61,7 @@ class ConsumerBenchmark extends MonixFixture {
   }
 
   @Benchmark
-  def monix_manual_commit_heartbeat10ms(): Unit = {
+  def monixManualCommitHeartbeat10ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(10.millis)
 
@@ -73,7 +73,31 @@ class ConsumerBenchmark extends MonixFixture {
   }
 
   @Benchmark
-  def monix_manual_commit_heartbeat100ms(): Unit = {
+  def monixManualCommitHeartbeat15ms(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(15.millis)
+
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(consumedRecords)
+      .headL
+      .runSyncUnsafe()
+  }
+
+  @Benchmark
+  def monixManualCommitHeartbeat50ms(): Unit = {
+    val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
+      .withPollHeartBeatRate(50.millis)
+
+    KafkaConsumerObservable.manualCommit[Integer, Integer](conf, List(monixTopic))
+      .mapEvalF(_.committableOffset.commitAsync())
+      .take(consumedRecords)
+      .headL
+      .runSyncUnsafe()
+  }
+
+  @Benchmark
+  def monixManualCommitHeartbeat100ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(100.millis)
 
@@ -85,7 +109,7 @@ class ConsumerBenchmark extends MonixFixture {
   }
 
   @Benchmark
-  def monix_manual_commit_heartbeat1000ms(): Unit = {
+  def monixManualCommitHeartbeat1000ms(): Unit = {
     val conf = consumerConf.value().copy(maxPollRecords = maxPollRecords)
       .withPollHeartBeatRate(1000.millis)
 

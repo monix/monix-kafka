@@ -16,16 +16,24 @@ ConsumerBenchmark.monix_manual_commit  thrpt   10  16.319 ± 1.465  ops/s
 ### 1fork 1thread
 ---
 Benchmark                                               Mode  Cnt   Score   Error  Units
-ConsumerBenchmark.monix_auto_commit10ms                thrpt   10  11.090 ± 1.883  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1000ms  thrpt   10   0.993 ± 0.002  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat100ms   thrpt   10   4.792 ± 0.017  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat10ms    thrpt   10   8.249 ± 0.305  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1ms     thrpt   10  10.038 ± 0.433  ops/s
+ConsumerBenchmark.monixAutoCommitHeartbeat10ms      thrpt    7   4.865 ± 1.044  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat1000ms  thrpt    7   2.978 ± 0.006  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat100ms   thrpt    7   9.961 ± 1.317  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat10ms    thrpt    7  13.346 ± 0.716  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat15ms    thrpt    7  13.454 ± 2.680  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat1ms     thrpt    7  14.281 ± 1.591  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat50ms    thrpt    7  11.900 ± 0.698  ops/s
 ---
 ### 1 fork 3 threads 
 Benchmark                                               Mode  Cnt   Score   Error  Units
-ConsumerBenchmark.monix_auto_commit10ms                thrpt   10  17.266 ± 2.231  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1000ms  thrpt   10   2.971 ± 0.009  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat100ms   thrpt   10   9.477 ± 0.064  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat10ms    thrpt   10  14.710 ± 1.660  ops/s
-ConsumerBenchmark.monix_manual_commit_heartbeat1ms     thrpt   10  15.494 ± 4.163  ops/s
+ConsumerBenchmark.monixAutoCommitHeartbeat10ms      thrpt    7   4.865 ± 1.044  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat1000ms  thrpt    7   2.978 ± 0.006  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat100ms   thrpt    7   9.961 ± 1.317  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat10ms    thrpt    7  13.346 ± 0.716  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat15ms    thrpt    7  13.454 ± 2.680  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat1ms     thrpt    7  14.281 ± 1.591  ops/s
+ConsumerBenchmark.monixManualCommitHeartbeat50ms    thrpt    7  11.900 ± 0.698  ops/s
+
+```sbt
+sbt 'benchmarks/jmh:run -i 5 -wi 1 -f1 -t1 monix.kafka.benchmarks.ConsumerBenchmark.*'
+```
