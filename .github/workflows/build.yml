@@ -35,9 +35,6 @@ jobs:
             ${{ runner.os }}-sbt-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}
           restore-keys: ${{ runner.os }}-sbt-
 
-      - name: Run Tests for Kafka 0.9.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
-        run: sbt -J-Xmx6144m  kafka9/test
-
       - name: Run Tests for Kafka 0.10.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
         run: sbt -J-Xmx6144m  kafka10/test
 
