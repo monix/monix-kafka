@@ -1,5 +1,6 @@
 package monix.kafka.benchmarks
 
+import monix.kafka.config.ObservableCommitOrder.BeforeAck
 import monix.kafka.config.ObservableCommitType
 
 import java.util.concurrent.TimeUnit
@@ -35,11 +36,12 @@ class ConsumerBenchmark extends MonixFixture {
   }
 
   @Benchmark
-  def monixAutoCommitHeartbeat10ms(): Unit = {
+  def monixAsyncAutoCommitHeartbeat15ms(): Unit = {
     val conf = consumerConf.value().copy(
       maxPollRecords = maxPollRecords,
-      observableCommitType = ObservableCommitType.Async)
-      .withPollHeartBeatRate(10.millis)
+      observableCommitType = ObservableCommitType.Async,
+      observableCommitOrder = BeforeAck)
+      .withPollHeartBeatRate(15.millis)
 
     KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
       .take(consumedRecords)
@@ -47,6 +49,19 @@ class ConsumerBenchmark extends MonixFixture {
       .runSyncUnsafe()
   }
 
+  @Benchmark
+  def monixSyncAutoCommitHeartbeat15ms(): Unit = {
+    val conf = consumerConf.value().copy(
+      maxPollRecords = maxPollRecords,
+      observableCommitType = ObservableCommitType.Sync,
+      observableCommitOrder = BeforeAck)
+      .withPollHeartBeatRate(15.millis)
+
+    KafkaConsumerObservable[Integer, Integer](conf, List(monixTopic))
+      .take(consumedRecords)
+      .headL
+      .runSyncUnsafe()
+  }
 
   @Benchmark
   def monixManualCommitHeartbeat1ms(): Unit = {
