@@ -39,7 +39,7 @@ import scala.util.matching.Regex
   */
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
-  protected def consumerTask: Task[Consumer[K, V]]
+  protected def consumerT: Task[Consumer[K, V]]
 
   @volatile
   protected var isAcked = true
@@ -66,7 +66,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
     Task.create { (scheduler, cb) =>
       implicit val s = scheduler
       val startConsuming =
-        consumerTask.bracket { c =>
+        consumerT.bracket { c =>
           // Skipping all available messages on all partitions
           if (config.observableSeekOnStart.isSeekEnd) c.seekToEnd(Nil.asJavaCollection)
           else if (config.observableSeekOnStart.isSeekBeginning) c.seekToBeginning(Nil.asJavaCollection)

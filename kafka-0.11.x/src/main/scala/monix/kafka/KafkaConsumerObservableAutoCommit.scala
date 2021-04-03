@@ -34,7 +34,7 @@ import scala.util.{Failure, Success}
   */
 final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
   override protected val config: KafkaConsumerConfig,
-  override protected val consumerTask: Task[Consumer[K, V]])
+  override protected val consumerT: Task[Consumer[K, V]])
     extends KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] {
 
   /* Based on the [[KafkaConsumerConfig.observableCommitType]] it

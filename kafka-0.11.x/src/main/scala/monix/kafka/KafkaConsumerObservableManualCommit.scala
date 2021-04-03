@@ -37,7 +37,7 @@ import scala.util.{Failure, Success}
   */
 final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
   override protected val config: KafkaConsumerConfig,
-  override protected val consumerTask: Task[Consumer[K, V]])
+  override protected val consumerT: Task[Consumer[K, V]])
     extends KafkaConsumerObservable[K, V, CommittableMessage[K, V]] {
 
   // Caching value to save CPU cycles
