@@ -197,12 +197,13 @@ class PollHeartbeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
 
       val f = Task.parZip2(listT.executeAsync, pushT.executeAsync).map(_._1).delayResult(50.seconds).runToFuture
 
-      // todo - we check that value never returns,
-      // which is correct in this scenario since if the `maxPollInterval`
-      // is higher than `pollHeartBeat` and `downstreamLatency`
-      // on the other hand, it would be ideal to receive the following error message from kafka
-      // "the group has already rebalanced and assigned the partitions to another member"
-      // as it happens from kafka-client 1.1.0, see tests from kafka1x.
+      /* checks that value never returns,
+       * which is correct in this scenario since if the `maxPollInterval`
+       * is higher than `pollHeartBeat` and `downstreamLatency`
+       * on the other hand, it would be ideal to receive the following error message from kafka
+       * "the group has already rebalanced and assigned the partitions to another member"
+       * as it happens from kafka-client 1.1.0, see tests from kafka1x.
+       */
       assert(f.value === None)
     }
   }
@@ -246,12 +247,13 @@ class PollHeartbeatTest extends FunSuite with KafkaTestKit with ScalaFutures {
 
       val f = Task.parZip2(listT.executeAsync, pushT.executeAsync).map(_._1).delayResult(50.seconds).runToFuture
 
-      // todo - we check that value never returns,
-      // which is correct in this scenario since if the `maxPollInterval`
-      // is higher than `pollHeartBeat` and `downstreamLatency`
-      // on the other hand, it would be ideal to receive the following error message from kafka
-      // "the group has already rebalanced and assigned the partitions to another member"
-      // as it happens from kafka-client 1.1.0, see tests from kafka1x.
+      /* checks that value never returns,
+       * which is correct in this scenario since if the `maxPollInterval`
+       * is higher than `pollHeartBeat` and `downstreamLatency`
+       * on the other hand, it would be ideal to receive the following error message from kafka
+       * "the group has already rebalanced and assigned the partitions to another member"
+       * as it happens from kafka-client 1.1.0, see tests from kafka1x.
+       */
       assert(f.value === None)
     }
   }

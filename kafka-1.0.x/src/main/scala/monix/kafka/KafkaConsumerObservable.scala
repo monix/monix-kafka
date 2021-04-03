@@ -16,7 +16,6 @@
 
 package monix.kafka
 
-import com.typesafe.scalalogging.StrictLogging
 import monix.eval.Task
 import monix.execution.Ack.{Continue, Stop}
 import monix.execution.{Ack, Callback, Cancelable, Scheduler}
@@ -37,9 +36,9 @@ import scala.concurrent.duration._
   * [[KafkaConsumerConfig]] needed and see `monix/kafka/default.conf`,
   * (in the resource files) that is exposing all default values.
   */
-trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogging {
-  protected def config: KafkaConsumerConfig
+trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
 
+  protected def config: KafkaConsumerConfig
   protected def consumerT: Task[Consumer[K, V]]
 
   @volatile
