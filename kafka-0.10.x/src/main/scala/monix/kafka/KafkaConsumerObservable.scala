@@ -116,11 +116,10 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
             }
           }
         }
+      }.onErrorHandleWith { ex =>
+        Task.now(scheduler.reportFailure(ex)) >>
+          Task.sleep(1.second)
       }
-        .onErrorHandleWith { ex =>
-          Task.now(scheduler.reportFailure(ex)) >>
-            Task.sleep(1.second)
-        }
   }
 }
 

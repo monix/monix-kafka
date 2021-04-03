@@ -27,7 +27,7 @@ import org.apache.kafka.common.TopicPartition
 
 import java.util
 import scala.jdk.CollectionConverters._
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 

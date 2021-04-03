@@ -26,7 +26,7 @@ import org.apache.kafka.clients.consumer.{Consumer, OffsetAndMetadata, OffsetCom
 import org.apache.kafka.common.TopicPartition
 
 import java.util
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 import scala.jdk.CollectionConverters._

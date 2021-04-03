@@ -118,11 +118,10 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] with StrictLogg
             }
           }
         }
+      }.onErrorHandleWith { ex =>
+        Task.now(scheduler.reportFailure(ex)) >>
+          Task.sleep(1.seconds)
       }
-        .onErrorHandleWith { ex =>
-          Task.now(scheduler.reportFailure(ex)) >>
-            Task.sleep(1.seconds)
-        }
   }
 
 }
@@ -139,8 +138,8 @@ object KafkaConsumerObservable {
     *                 instance to use for consuming from Kafka
     */
   def apply[K, V](
-                   cfg: KafkaConsumerConfig,
-                   consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] =
+    cfg: KafkaConsumerConfig,
+    consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] =
     new KafkaConsumerObservableAutoCommit[K, V](cfg, consumer)
 
   /** Builds a [[KafkaConsumerObservable]] instance.
@@ -151,8 +150,8 @@ object KafkaConsumerObservable {
     * @param topics is the list of Kafka topics to subscribe to.
     */
   def apply[K, V](cfg: KafkaConsumerConfig, topics: List[String])(implicit
-                                                                  K: Deserializer[K],
-                                                                  V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
+    K: Deserializer[K],
+    V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topics)
     apply(cfg, consumer)
@@ -166,8 +165,8 @@ object KafkaConsumerObservable {
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
   def apply[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(implicit
-                                                                K: Deserializer[K],
-                                                                V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
+    K: Deserializer[K],
+    V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topicsRegex)
     apply(cfg, consumer)
@@ -196,10 +195,11 @@ object KafkaConsumerObservable {
     *                 instance to use for consuming from Kafka
     */
   def manualCommit[K, V](
-                          cfg: KafkaConsumerConfig,
-                          consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
+    cfg: KafkaConsumerConfig,
+    consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
-    val manualCommitConfig = cfg.copy(observableCommitOrder = ObservableCommitOrder.NoAck, enableAutoCommit = false)
+    val manualCommitConfig = cfg
+      .copy(observableCommitOrder = ObservableCommitOrder.NoAck, enableAutoCommit = false)
       .withPollHeartBeatRate(cfg.pollHeartbeatRate)
     new KafkaConsumerObservableManualCommit[K, V](manualCommitConfig, consumer)
   }
@@ -225,8 +225,8 @@ object KafkaConsumerObservable {
     * @param topics is the list of Kafka topics to subscribe to.
     */
   def manualCommit[K, V](cfg: KafkaConsumerConfig, topics: List[String])(implicit
-                                                                         K: Deserializer[K],
-                                                                         V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
+    K: Deserializer[K],
+    V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topics)
     manualCommit(cfg, consumer)
@@ -253,8 +253,8 @@ object KafkaConsumerObservable {
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
   def manualCommit[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(implicit
-                                                                       K: Deserializer[K],
-                                                                       V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
+    K: Deserializer[K],
+    V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val consumer = createConsumer[K, V](cfg, topicsRegex)
     manualCommit(cfg, consumer)
@@ -262,8 +262,8 @@ object KafkaConsumerObservable {
 
   /** Returns a `Task` for creating a consumer instance given list of topics. */
   def createConsumer[K, V](config: KafkaConsumerConfig, topics: List[String])(implicit
-                                                                              K: Deserializer[K],
-                                                                              V: Deserializer[V]): Task[Consumer[K, V]] = {
+    K: Deserializer[K],
+    V: Deserializer[V]): Task[Consumer[K, V]] = {
 
     Task.evalAsync {
       val configMap = config.toJavaMap
@@ -277,8 +277,8 @@ object KafkaConsumerObservable {
 
   /** Returns a `Task` for creating a consumer instance given topics regex. */
   def createConsumer[K, V](config: KafkaConsumerConfig, topicsRegex: Regex)(implicit
-                                                                            K: Deserializer[K],
-                                                                            V: Deserializer[V]): Task[Consumer[K, V]] = {
+    K: Deserializer[K],
+    V: Deserializer[V]): Task[Consumer[K, V]] = {
     Task.evalAsync {
       val configMap = config.toJavaMap
       blocking {

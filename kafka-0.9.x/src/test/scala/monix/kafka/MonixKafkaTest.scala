@@ -219,8 +219,7 @@ class MonixKafkaTest extends FunSuite {
   test("slow batches processing doesn't cause rebalancing") {
     val count = 10000
 
-    val consumerConfig = consumerCfg.copy(
-      sessionTimeout = 200.millis)
+    val consumerConfig = consumerCfg.copy(sessionTimeout = 200.millis)
 
     val producer = KafkaProducerSink[String, String](producerCfg, io)
     val consumer = KafkaConsumerObservable[String, String](consumerConfig, List(topicName)).executeOn(io)
