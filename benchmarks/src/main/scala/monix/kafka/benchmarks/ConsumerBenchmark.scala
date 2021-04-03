@@ -5,7 +5,6 @@ import monix.kafka.config.ObservableCommitType
 
 import java.util.concurrent.TimeUnit
 import monix.kafka.{KafkaConsumerObservable, KafkaProducerSink}
-//import monix.kafka.config.ObservableCommitType
 import monix.reactive.Observable
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.openjdk.jmh.annotations.{BenchmarkMode, Fork, Measurement, Mode, OutputTimeUnit, Scope, State, Threads, Warmup, _}

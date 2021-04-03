@@ -106,9 +106,9 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
     }
   }
 
-  test("manual commit consumer test when subscribed to topics list") {
+  test("manual commitSync consumer test when subscribed to topics list") {
     withRunningKafka {
-      val count = 1000
+      val count = 10000
       val topicName = "monix-kafka-manual-commit-tests"
 
       val producer = KafkaProducerSink[String, String](producerCfg, io)
@@ -117,7 +117,7 @@ class MonixKafkaTopicListTest extends FunSuite with KafkaTestKit {
       val pushT = Observable
         .range(0, count)
         .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
-        .bufferTumbling(10)
+        .bufferIntrospective(1024)
         .consumeWith(producer)
 
       val listT = consumer
