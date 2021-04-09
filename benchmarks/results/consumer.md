@@ -1,6 +1,12 @@
 
-## RC7
+## Consumer Benchmarks
 
+The consumer benchmark covers the *manual* and *auto commit* consumer implementations of the different libraries.
+The manual commit will also cover producing committing back the consumed offsets.
+It also runs on different range `pollHeartbeatRate` [1, 10, 15, 100, 1000], which is an important configuration
+ implemented in this `monix-kafka` library.
+
+## RC7
 ### 1fork 1thread
 Benchmark                               Mode  Cnt   Score   Error  Units
 ConsumerBenchmark.monix_auto_commit_async  thrpt    7  13.097 ± 0.827  ops/s
@@ -11,7 +17,6 @@ ConsumerBenchmark.monix_manual_commit  thrpt   10  11.519 ± 2.247  ops/s
 Benchmark                               Mode  Cnt   Score   Error  Units
 ConsumerBenchmark.monix_auto_commit    thrpt   10  16.186 ± 0.920  ops/s
 ConsumerBenchmark.monix_manual_commit  thrpt   10  16.319 ± 1.465  ops/s
-
 
 ## RC8 - (Introduces PollHeartbeatRate)
 ### 1fork 1thread

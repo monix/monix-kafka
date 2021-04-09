@@ -1,3 +1,6 @@
+## Producer benchmarks
+
+This section includes benchmarks for single and sink producers.
 
 ## RC7
 
