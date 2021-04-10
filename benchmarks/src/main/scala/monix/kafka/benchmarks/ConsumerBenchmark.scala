@@ -19,13 +19,13 @@ import scala.concurrent.duration._
 @Threads(3)
 class ConsumerBenchmark extends MonixFixture {
 
-  var totalRecords: Int = 1500
+  var totalRecords: Int = 1100
   val consumedRecords = 1000
   var maxPollRecords: Int = 1
 
-  // preparing test data
   @Setup
   def setup(): Unit = {
+    // preparing test data
     Observable
       .from(0 to totalRecords)
       .map(i => new ProducerRecord[Integer, Integer](monixTopic, i))

@@ -266,8 +266,8 @@ This was an [issue](https://github.com/monix/monix-kafka/issues/101) in `monix-k
 since poll is not called until all previous consumed ones were processed, so that slow downstream subscribers
  were in risk of being kicked off the consumer group indefinitely.
 
-This has been resolved in `1.0.0-RC8` by introducing an internal poll heartbeat interval
-that runs in the background keeping the consumer alive.
+It is resolved in `1.0.0-RC8` by introducing an internal poll heartbeat interval
+that runs in the background keeping the consumer alive. 
 
 ## How can I contribute to Monix-Kafka?
 
