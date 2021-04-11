@@ -68,7 +68,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
         Resource
           .make(consumer) { c =>
             // Forced asynchronous boundary
-            Task.evalAsync(consumer.synchronized(blocking(c.close()))).memoizeOnSuccess
+            Task.evalAsync(consumer.synchronized(blocking(c.close())))
           }
           .use { c =>
             // Skipping all available messages on all partitions

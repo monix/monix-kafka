@@ -75,7 +75,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
           Task.race(runLoop(c, out), pollHeartbeat(c).loopForever).void
         } { consumer =>
           // Forced asynchronous boundary
-          Task.evalAsync(consumer.synchronized(blocking(consumer.close()))).memoizeOnSuccess
+          Task.evalAsync(consumer.synchronized(blocking(consumer.close())))
         }
       startConsuming.runAsync(cb)
     }
