@@ -31,9 +31,8 @@ lazy val warnUnusedImport = Seq(
 
 lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.14",
-  crossScalaVersions := Seq("2.11.12", "2.12.14", "2.13.6"),
-
+  scalaVersion := "2.12.15",
+  crossScalaVersions := Seq("2.11.12", "2.12.15", "2.13.6"),
   scalacOptions ++= Seq(
     // warnings
     "-unchecked", // able additional warnings where generated code depends on assumptions
@@ -84,11 +83,11 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   scalacOptions ++= Seq(
     // Turns all warnings into errors ;-)
     // TODO: enable after fixing deprecations for Scala 2.13
-    "-Xfatal-warnings",
+    //"-Xfatal-warnings",
     // Enables linter options
     "-Xlint:adapted-args", // warn if an argument list is modified to match the receiver
-    "-Xlint:nullary-unit", // warn when nullary methods return Unit
-    "-Xlint:nullary-override", // warn when non-nullary `def f()' overrides nullary `def f'
+    //"-Xlint:nullary-unit", // warn when nullary methods return Unit
+    //"-Xlint:nullary-override", // warn when non-nullary `def f()' overrides nullary `def f'
     "-Xlint:infer-any", // warn when a type argument is inferred to be `Any`
     "-Xlint:missing-interpolator", // a string literal appears to be missing an interpolator id
     "-Xlint:doc-detached", // a ScalaDoc comment appears to be detached from its element
@@ -197,8 +196,9 @@ lazy val commonDependencies = Seq(
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
-    "org.scalacheck" %% "scalacheck" % "1.15.2" % "test"
-  )
+    "org.scalacheck" %% "scalacheck" % "1.15.2" % "test",
+    "io.github.embeddedkafka" %% "embedded-kafka" % "2.4.1" force()
+  ),
 )
 
 lazy val monixKafka = project.in(file("."))
@@ -212,10 +212,6 @@ lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(mimaSettings("monix-kafka-1x"))
   .settings(
     name := "monix-kafka-1x",
-    libraryDependencies ++= {
-      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j"))
-      else Seq.empty[ModuleID]
-    },
     libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "1.0.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
   )
 
@@ -225,10 +221,6 @@ lazy val kafka11 = project.in(file("kafka-0.11.x"))
   .settings(mimaSettings("monix-kafka-11"))
   .settings(
     name := "monix-kafka-11",
-    libraryDependencies ++= {
-      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "1.0.0" % "test" exclude ("log4j", "log4j"))
-      else Seq.empty[ModuleID]
-    },
     libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "0.11.0.3" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
   )
 
@@ -237,12 +229,8 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   .settings(commonDependencies)
   .settings(mimaSettings("monix-kafka-10"))
   .settings(
-    name := "monix-kafka-10",
-    libraryDependencies ++= {
-      if (!(scalaVersion.value startsWith "2.13")) Seq("net.manub" %% "scalatest-embedded-kafka" % "0.16.0" % "test" exclude ("log4j", "log4j"))
-      else Seq.empty[ModuleID]
-    },
-    libraryDependencies += "org.apache.kafka" % "kafka-clients" % "0.10.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+    libraryDependencies += "org.apache.kafka" % "kafka-clients" % "0.10.2.2" force(),
+    //dependencyOverrides += "org.apache.kafka" % "kafka-clients" % "0.10.2.2" // exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
   )
 
 lazy val kafka9 = project.in(file("kafka-0.9.x"))

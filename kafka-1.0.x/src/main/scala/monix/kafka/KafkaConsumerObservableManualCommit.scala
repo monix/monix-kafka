@@ -36,7 +36,8 @@ import scala.jdk.CollectionConverters._
   */
 final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
   override protected val config: KafkaConsumerConfig,
-  override protected val consumer: Task[Consumer[K, V]])
+  override protected val consumer: Task[Consumer[K, V]],
+  override protected val shouldClose: Boolean)
     extends KafkaConsumerObservable[K, V, CommittableMessage[K, V]] {
 
   // Caching value to save CPU cycles
