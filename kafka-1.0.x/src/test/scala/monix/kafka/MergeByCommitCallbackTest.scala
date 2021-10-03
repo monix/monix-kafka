@@ -1,6 +1,5 @@
 package monix.kafka
 
-import cats.effect.Resource
 import monix.eval.Task
 import monix.kafka.config.AutoOffsetReset
 import monix.reactive.Observable
@@ -8,8 +7,8 @@ import org.apache.kafka.clients.producer.ProducerRecord
 import org.scalatest.{FunSuite, Matchers}
 
 import scala.concurrent.duration._
+import scala.concurrent.Await
 import monix.execution.Scheduler.Implicits.global
-import net.manub.embeddedkafka.EmbeddedKafka
 import org.apache.kafka.clients.consumer.OffsetCommitCallback
 import org.apache.kafka.common.TopicPartition
 import org.scalacheck.Gen
@@ -30,43 +29,45 @@ class MergeByCommitCallbackTest extends FunSuite with KafkaTestKit with ScalaChe
     commit <- Gen.oneOf(commitCallbacks)
   } yield CommittableOffset(new TopicPartition("topic", partition), offset, commit)
 
-  private def logic(bootstrapServer: String, topic: String) = {
-    val kafkaConfig: KafkaConsumerConfig = KafkaConsumerConfig.default.copy(
-      bootstrapServers = List(bootstrapServer),
-      groupId = "failing-logic",
-      autoOffsetReset = AutoOffsetReset.Earliest
-    )
-    KafkaConsumerObservable
-      .manualCommit[String, String](kafkaConfig, List(topic))
-      .timeoutOnSlowUpstreamTo(6.seconds, Observable.empty)
-      .foldLeft(CommittableOffsetBatch.empty) { case (batch, message) => batch.updated(message.committableOffset) }
-      .map{completeBatch =>
-        {Task.unit >> Task.sleep(3.second) >> Task.evalAsync(println("Committing async!!!")) >> completeBatch.commitAsync()}.runSyncUnsafe()
-      }
-      .headL
+  test("merge by commit callback works") {
+    forAll(Gen.nonEmptyListOf(committableOffsetsGen)) { offsets =>
+      val partitions = offsets.map(_.topicPartition)
+      val received: List[CommittableOffsetBatch] = CommittableOffsetBatch.mergeByCommitCallback(offsets)
+
+      received.foreach { batch => partitions should contain allElementsOf batch.offsets.keys }
+
+      received.size should be <= 4
+    }
   }
 
-  test("async commit finalizes successfully after cancellation") {
-    EmbeddedKafka.start()
-      val batchSize = 10
-
-      val topicName = "random_topic"
+  test("merge by commit callback for multiple consumers") {
+    withRunningKafka {
+      val count = 10000
+      val topicName = "monix-kafka-merge-by-commit"
 
       val producerCfg = KafkaProducerConfig.default.copy(
         bootstrapServers = List("127.0.0.1:6001"),
-        clientId = "monix-kafka-producer-test"
+        clientId = "monix-kafka-1-0-producer-test"
       )
 
-      val t = for {
-          _ <- Resource.liftF(Task(KafkaProducer[String, String](producerCfg, io))).use { producer =>
-            Task(producer.send(new ProducerRecord(topicName, "message1"))) >>
-              Task(producer.send(new ProducerRecord(topicName, "message2")))
-          }
-          _ <- logic("127.0.0.1:6001", topicName)
-        } yield ()
-      t.runSyncUnsafe()
+      val producer = KafkaProducerSink[String, String](producerCfg, io)
 
-    EmbeddedKafka.stop()
+      val pushT = Observable
+        .range(0, count)
+        .map(msg => new ProducerRecord(topicName, "obs", msg.toString))
+        .bufferIntrospective(1024)
+        .consumeWith(producer)
+
+      val listT = Observable
+        .range(0, 4)
+        .mergeMap(i => createConsumer(i.toInt, topicName).take(500))
+        .bufferTumbling(2000)
+        .map(CommittableOffsetBatch.mergeByCommitCallback)
+        .map { offsetBatches => assert(offsetBatches.length == 4) }
+        .completedL
+
+      Await.result(Task.parZip2(listT, pushT).runToFuture, 60.seconds)
+    }
   }
 
   private def createConsumer(i: Int, topicName: String): Observable[CommittableOffset] = {

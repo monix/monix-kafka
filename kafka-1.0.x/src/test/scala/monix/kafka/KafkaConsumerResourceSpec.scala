@@ -16,13 +16,13 @@ class KafkaConsumerResourceSpec extends FunSuite with KafkaTestKit with ScalaChe
 
   val consumerConf: KafkaConsumerConfig = KafkaConsumerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
-    groupId = "failing-logic",
+    groupId = "monix-closeable-consumer-test",
     autoOffsetReset = AutoOffsetReset.Earliest
   )
 
   val producerCfg = KafkaProducerConfig.default.copy(
     bootstrapServers = List("127.0.0.1:6001"),
-    clientId = "monix-kafka-producer-test"
+    clientId = "monix-closeable-consumer-test"
   )
   
   test("async commit fails when observable was already cancelled") {

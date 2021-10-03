@@ -25,11 +25,12 @@ import org.apache.kafka.clients.consumer.{Consumer, ConsumerRecord, KafkaConsume
 import scala.concurrent.blocking
 import scala.util.matching.Regex
 
-/** Exposes an `Observable` that consumes a Kafka stream by
-  * means of a Kafka Consumer client.
+/** Acquires and releases a [[KafkaConsumer]] within a [[Resource]]
+  * is exposed in form of [[KafkaConsumerObservable]], which consumes
+  * and emits records from the specified topic.
   *
-  * In order to get initialized, it needs a configuration. See the
-  * [[KafkaConsumerConfig]] needed and see `monix/kafka/default.conf`,
+  * In order to get initialized, it needs a configuration.
+  * @see the [[KafkaConsumerConfig]] needed and `monix/kafka/default.conf`,
   * (in the resource files) that is exposing all default values.
   */
 object KafkaConsumerResource {

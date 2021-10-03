@@ -197,8 +197,9 @@ lazy val commonDependencies = Seq(
     "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
     "org.scalacheck" %% "scalacheck" % "1.15.2" % "test",
-    "io.github.embeddedkafka" %% "embedded-kafka" % "2.4.1" force()
+    "io.github.embeddedkafka" %% "embedded-kafka" % "2.1.0" % Test force()
   ),
+  dependencyOverrides += "io.github.embeddedkafka" %% "embedded-kafka" % "2.1.0" % Test
 )
 
 lazy val monixKafka = project.in(file("."))
