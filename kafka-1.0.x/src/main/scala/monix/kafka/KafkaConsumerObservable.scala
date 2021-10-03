@@ -38,6 +38,7 @@ import scala.util.matching.Regex
 trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   protected def config: KafkaConsumerConfig
   protected def consumer: Task[Consumer[K, V]]
+  protected val shouldClose: Boolean
 
   /** Creates a task that polls the source, then feeds the downstream
     * subscriber, returning the resulting acknowledgement
@@ -90,7 +91,7 @@ trait KafkaConsumerObservable[K, V, Out] extends Observable[Out] {
   private def cancelTask(consumer: Consumer[K, V]): Task[Unit] = {
     // Forced asynchronous boundary
     val cancelTask = Task.evalAsync {
-      consumer.synchronized(blocking(consumer.close()))
+      if (shouldClose) { consumer.synchronized(blocking(consumer.close())) }
     }
 
     // By applying memoization, we are turning this
@@ -113,10 +114,11 @@ object KafkaConsumerObservable {
     *        `org.apache.kafka.clients.consumer.KafkaConsumer`
     *        instance to use for consuming from Kafka
     */
+  @deprecated("Use `KafkaConsumerResource`.", "1.0.0-RC8")
   def apply[K, V](
     cfg: KafkaConsumerConfig,
     consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] =
-    new KafkaConsumerObservableAutoCommit[K, V](cfg, consumer)
+    new KafkaConsumerObservableAutoCommit[K, V](cfg, consumer, true)
 
   /** Builds a [[KafkaConsumerObservable]] instance.
     *
@@ -126,6 +128,7 @@ object KafkaConsumerObservable {
     *
     * @param topics is the list of Kafka topics to subscribe to.
     */
+  @deprecated("Use `KafkaConsumerResource`.", "1.0.0-RC8")
   def apply[K, V](cfg: KafkaConsumerConfig, topics: List[String])(implicit
     K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
@@ -142,6 +145,7 @@ object KafkaConsumerObservable {
     *
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
+  @deprecated("Use `KafkaConsumerResource`.", "1.0.0-RC8")
   def apply[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(implicit
     K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, ConsumerRecord[K, V]] = {
@@ -173,12 +177,13 @@ object KafkaConsumerObservable {
     *        `org.apache.kafka.clients.consumer.KafkaConsumer`
     *        instance to use for consuming from Kafka
     */
+  @deprecated("Use `KafkaConsumerResource`.", "1.0.0-RC8")
   def manualCommit[K, V](
     cfg: KafkaConsumerConfig,
     consumer: Task[Consumer[K, V]]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
 
     val manualCommitConfig = cfg.copy(observableCommitOrder = ObservableCommitOrder.NoAck, enableAutoCommit = false)
-    new KafkaConsumerObservableManualCommit[K, V](manualCommitConfig, consumer)
+    new KafkaConsumerObservableManualCommit[K, V](manualCommitConfig, consumer, shouldClose = true)
   }
 
   /** Builds a [[KafkaConsumerObservable]] instance with ability to manual commit offsets
@@ -202,6 +207,7 @@ object KafkaConsumerObservable {
     *
     * @param topics is the list of Kafka topics to subscribe to.
     */
+  @deprecated("Use `KafkaConsumerResource`.", "1.0.0-RC8")
   def manualCommit[K, V](cfg: KafkaConsumerConfig, topics: List[String])(implicit
     K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {
@@ -231,6 +237,7 @@ object KafkaConsumerObservable {
     *
     * @param topicsRegex is the pattern of Kafka topics to subscribe to.
     */
+  @deprecated("Use `KafkaConsumerResource`.", "1.0.0-RC8")
   def manualCommit[K, V](cfg: KafkaConsumerConfig, topicsRegex: Regex)(implicit
     K: Deserializer[K],
     V: Deserializer[V]): KafkaConsumerObservable[K, V, CommittableMessage[K, V]] = {

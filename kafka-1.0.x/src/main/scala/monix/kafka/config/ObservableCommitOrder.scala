@@ -46,6 +46,7 @@ sealed trait ObservableCommitOrder extends Serializable {
     }
 }
 
+
 object ObservableCommitOrder {
 
   @throws(classOf[BadValue])
@@ -61,7 +62,7 @@ object ObservableCommitOrder {
   /** Do a `commit` in the Kafka Consumer before
     * receiving an acknowledgement from downstream.
     */
-  case object BeforeAck extends ObservableCommitOrder {
+  case object BeforeAck extends ObservableCommitOrder  {
     val id = "before-ack"
   }
 
