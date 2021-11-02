@@ -32,7 +32,7 @@ lazy val warnUnusedImport = Seq(
 lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
   scalaVersion := "2.12.14",
-  crossScalaVersions := Seq("2.11.12", "2.12.14", "2.13.6"),
+  crossScalaVersions := Seq("2.11.12", "2.12.14", "2.13.7"),
 
   scalacOptions ++= Seq(
     // warnings
