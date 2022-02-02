@@ -191,7 +191,7 @@ lazy val commonDependencies = Seq(
   libraryDependencies ++= Seq(
     "io.monix" %% "monix-reactive" % monixVersion,
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
-    "com.typesafe" % "config" % "1.4.1",
+    "com.typesafe" % "config" % "1.4.2",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.30",
     "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.4" % "provided;optional",
     // For testing ...
