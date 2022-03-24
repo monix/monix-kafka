@@ -35,7 +35,7 @@ import org.apache.kafka.common.serialization.{Deserializer => KafkaDeserializer}
 final case class Deserializer[A](
   className: String,
   classType: Class[_ <: KafkaDeserializer[A]],
-  constructor: Deserializer.Constructor[A] = (d: Deserializer[A]) => d.classType.newInstance()) {
+  constructor: Deserializer.Constructor[A] = (d: Deserializer[A]) => d.classType.getDeclaredConstructor().newInstance()) {
 
   /** Creates a new instance. */
   def create(): KafkaDeserializer[A] =

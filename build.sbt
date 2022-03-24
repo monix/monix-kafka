@@ -32,21 +32,21 @@ addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAl
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
-  publishArtifact in (Compile, packageDoc) := false,
-  publishArtifact in (Compile, packageSrc) := false,
-  publishArtifact in (Compile, packageBin) := false
+  Compile / packageDoc / publishArtifact := false,
+  Compile / packageSrc / publishArtifact := false,
+  Compile / packageBin / publishArtifact := false
 )
 
 lazy val warnUnusedImport = Seq(
   scalacOptions ++= Seq("-Ywarn-unused:imports"),
-  scalacOptions in (Compile, console) --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports"),
-  scalacOptions in Test --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports")
+  Compile / console / scalacOptions --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports"),
+  Test / scalacOptions --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports")
 )
 
 lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.14",
-  crossScalaVersions := Seq("2.12.14", "2.13.6"),
+  scalaVersion := "2.12.15",
+  crossScalaVersions := Seq("2.12.15", "2.13.8"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -94,18 +94,18 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
     "-Xlint:package-object-classes", // Class or object defined in package object
   ),
 
-  scalacOptions in doc ++=
+  doc / scalacOptions ++=
     Opts.doc.title(s"Monix"),
-  scalacOptions in doc ++=
+  doc / scalacOptions ++=
     Opts.doc.sourceUrl(s"https://github.com/monix/monix-kafka/tree/v${version.value}€{FILE_PATH}.scala"),
-  scalacOptions in doc ++=
+  doc / scalacOptions ++=
     Seq("-doc-root-content", file("docs/rootdoc.txt").getAbsolutePath),
-  scalacOptions in doc ++=
+  doc / scalacOptions ++=
     Opts.doc.version(s"${version.value}"),
 
   // ScalaDoc settings
   autoAPIMappings := true,
-  scalacOptions in ThisBuild ++= Seq(
+  ThisBuild / scalacOptions ++= Seq(
     // Note, this is used by the doc-source-url feature to determine the
     // relative path of a given source file. If it's not a prefix of a the
     // absolute path of the source file, the absolute path of that file
@@ -114,11 +114,11 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
     "-sourcepath", file(".").getAbsolutePath.replaceAll("[.]$", "")
   ),
 
-  parallelExecution in Test := false,
-  parallelExecution in IntegrationTest := false,
-  testForkedParallel in Test := false,
-  testForkedParallel in IntegrationTest := false,
-  concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
+  Test / parallelExecution := false,
+  IntegrationTest / parallelExecution := false,
+  Test / testForkedParallel := false,
+  IntegrationTest / testForkedParallel := false,
+  Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
 
   headerLicense := Some(HeaderLicense.Custom(
     """|Copyright (c) 2014-2021 by The Monix Project Developers.
@@ -140,7 +140,7 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   sonatypeProfileName := organization.value,
 
   isSnapshot := version.value endsWith "SNAPSHOT",
-  publishArtifact in Test := false,
+  Test / publishArtifact := false,
   pomIncludeRepository := { _ => false }, // removes optional dependencies
 )
 
@@ -156,12 +156,12 @@ lazy val commonDependencies = Seq(
 
   libraryDependencies ++= Seq(
     "io.monix" %% "monix-reactive" % monixVersion,
-    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.3",
-    "com.typesafe" % "config" % "1.4.1",
-    "org.slf4j" % "log4j-over-slf4j" % "1.7.30",
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.4.4" % "provided;optional",
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
+    "com.typesafe" % "config" % "1.4.2",
+    "org.slf4j" % "log4j-over-slf4j" % "1.7.36",
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0" % "provided;optional",
     // For testing ...
-    "ch.qos.logback" % "logback-classic" % "1.2.3" % "test",
+    "ch.qos.logback" % "logback-classic" % "1.2.11" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
     "org.scalacheck" %% "scalacheck" % "1.15.2" % "test")
 )
@@ -237,25 +237,4 @@ lazy val benchmarks = project.in(file("benchmarks"))
 
 scalacOptions += "-Ypartial-unification"
 
-//------------- For Release
-
-enablePlugins(GitVersioning)
-
-isSnapshot := version.value endsWith "SNAPSHOT"
-
-/* The BaseVersion setting represents the previously released version. */
-git.baseVersion := "1.0.0-RC6"
-
-val ReleaseTag = """^v(\d+\.\d+(?:\.\d+(?:[-.]\w+)?)?)$""".r
-git.gitTagToVersionNumber := {
-  case ReleaseTag(v) => Some(v)
-  case _ => None
-}
-
-git.formattedShaVersion := {
-  val suffix = git.makeUncommittedSignifierSuffix(git.gitUncommittedChanges.value, git.uncommittedSignifier.value)
-
-  git.gitHeadCommit.value map { _.substring(0, 7) } map { sha =>
-    git.baseVersion.value + "-" + sha + suffix
-  }
-}
+git.baseVersion := (version in ThisBuild).value

@@ -65,7 +65,7 @@ final class KafkaConsumerObservableAutoCommit[K, V] private[kafka] (
       val cancelable = BooleanCancelable()
 
       // Forced asynchronous boundary (on the I/O scheduler)
-      s.executeAsync { () =>
+      s.execute { () =>
         val ackFuture =
           try consumer.synchronized {
             val assignment = consumer.assignment().asScala.toArray

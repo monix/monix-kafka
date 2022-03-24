@@ -35,7 +35,7 @@ import org.apache.kafka.common.serialization.{Serializer => KafkaSerializer}
 final case class Serializer[A](
   className: String,
   classType: Class[_ <: KafkaSerializer[A]],
-  constructor: Serializer.Constructor[A] = (s: Serializer[A]) => s.classType.newInstance()) {
+  constructor: Serializer.Constructor[A] = (s: Serializer[A]) => s.classType.getDeclaredConstructor().newInstance()) {
 
   /** Creates a new instance. */
   def create(): KafkaSerializer[A] =

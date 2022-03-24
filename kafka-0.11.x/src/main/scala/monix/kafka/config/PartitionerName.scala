@@ -23,7 +23,7 @@ final case class PartitionerName(className: String) extends ClassName[Partitione
 
   /** Creates a new instance of the referenced `Serializer`. */
   def createInstance(): Partitioner =
-    classType.newInstance()
+    classType.getDeclaredConstructor().newInstance()
 }
 
 object PartitionerName {

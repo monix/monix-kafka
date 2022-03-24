@@ -100,7 +100,7 @@ object KafkaProducer {
         val asyncCb = Callback.forked(cb)(s)
         val connection = StackedCancelable()
         // Forcing asynchronous boundary
-        sc.executeAsync(() => {
+        sc.execute(() => {
           if (isCanceled.get()) {
             asyncCb.onSuccess(None)
           } else {
@@ -150,7 +150,7 @@ object KafkaProducer {
       Task.create { (s, cb) =>
         val asyncCb = Callback.forked(cb)(s)
         // Forcing asynchronous boundary
-        sc.executeAsync { () =>
+        sc.execute { () =>
           {
             if (!isCanceled.compareAndSet(expect = false, update = true)) {
               asyncCb.onSuccess(())

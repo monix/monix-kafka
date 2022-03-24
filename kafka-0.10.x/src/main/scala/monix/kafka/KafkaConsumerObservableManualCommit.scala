@@ -54,7 +54,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       Task
         .async0[Unit] { (s, cb) =>
           val asyncCb = Callback.forked(cb)(s)
-          s.executeAsync { () =>
+          s.execute { () =>
             val offsets = batch.map { case (k, v) => k -> new OffsetAndMetadata(v) }.asJava
             val offsetCommitCallback = new OffsetCommitCallback {
               def onComplete(offsets: util.Map[TopicPartition, OffsetAndMetadata], ex: Exception): Unit =
@@ -80,7 +80,7 @@ final class KafkaConsumerObservableManualCommit[K, V] private[kafka] (
       val commit: Commit = CommitWithConsumer(consumer)
 
       // Forced asynchronous boundary (on the I/O scheduler)
-      s.executeAsync { () =>
+      s.execute { () =>
         val ackFuture: Future[Ack] =
           if (cancelable.isCanceled) Stop
           else {
