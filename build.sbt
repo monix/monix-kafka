@@ -228,7 +228,7 @@ lazy val benchmarks = project.in(file("benchmarks"))
     scalacOptions += "-Ypartial-unification",
     name := "benchmarks",
     organization := "io.monix",
-    scalaVersion := "2.12.10",
+    scalaVersion := "2.12.15",
     libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2")
   )
   .enablePlugins(JmhPlugin)
