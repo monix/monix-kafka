@@ -12,7 +12,7 @@ jobs:
       fail-fast: true
       matrix:
         java: [8]
-        scala: [2.11.12, 2.12.10]
+        scala: [2.12.10, 2.13.6]
 
     steps:
       - uses: actions/checkout@v2
@@ -43,3 +43,19 @@ jobs:
 
       - name: Run Tests for Kafka 1.x.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
         run: sbt -J-Xmx6144m kafka1x/test
+
+  publish:
+    needs: [ tests ]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: olafurpg/setup-scala@v10
+      - uses: olafurpg/setup-gpg@v3
+      - name: Publish release ${{ github.ref }}
+        run: sbt ci-release
+        env:
+          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
+          PGP_SECRET: ${{ secrets.PGP_SECRET }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}

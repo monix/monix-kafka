@@ -1,6 +1,25 @@
 import pl.project13.scala.sbt.JmhPlugin
 
-val monixVersion = "3.3.0"
+inThisBuild(List(
+  organization := "io.monix",
+  homepage := Some(url("https://github.com/monix/monix-kafka")),
+  licenses := List("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
+  developers := List(
+    Developer(
+      id="alexelcu",
+      name="Alexandru Nedelcu",
+      email="noreply@alexn.org",
+      url=url("https://alexn.org")
+    ),
+    Developer(
+      id="pgawrys",
+      name="Piotr Gawryś",
+      email="pgawrys2@gmail.com",
+      url=url("https://github.com/Avasil")
+    )),
+))
+
+val monixVersion = "3.4.0"
 
 val allProjects = List(
   "kafka1x",
@@ -19,14 +38,7 @@ lazy val doNotPublishArtifact = Seq(
 )
 
 lazy val warnUnusedImport = Seq(
-  scalacOptions ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 11)) =>
-        Seq("-Ywarn-unused-import")
-      case _ =>
-        Seq("-Ywarn-unused:imports")
-    }
-  },
+  scalacOptions ++= Seq("-Ywarn-unused:imports"),
   scalacOptions in (Compile, console) --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports"),
   scalacOptions in Test --= Seq("-Ywarn-unused-import", "-Ywarn-unused:imports")
 )
@@ -34,7 +46,7 @@ lazy val warnUnusedImport = Seq(
 lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
   scalaVersion := "2.12.14",
-  crossScalaVersions := Seq("2.11.12", "2.12.14", "2.13.6"),
+  crossScalaVersions := Seq("2.12.14", "2.13.6"),
 
   scalacOptions ++= Seq(
     // warnings
@@ -59,26 +71,6 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
         "-Xlint:unsound-match" // Pattern match may not be typesafe
       )
     case _ =>
-      Seq.empty
-  }),
-
-  // Targeting Java 6, but only for Scala <= 2.11
-  javacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, majorVersion)) if majorVersion <= 11 =>
-      // generates code with the Java 6 class format
-      Seq("-source", "1.6", "-target", "1.6")
-    case _ =>
-      // For 2.12 we are targeting the Java 8 class format
-      Seq.empty
-  }),
-
-  // Targeting Java 6, but only for Scala <= 2.11
-  scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-    case Some((2, majorVersion)) if majorVersion <= 11 =>
-      // generates code with the Java 6 class format
-      Seq("-target:jvm-1.6")
-    case _ =>
-      // For 2.12 we are targeting the Java 8 class format
       Seq.empty
   }),
 
@@ -128,8 +120,6 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   testForkedParallel in IntegrationTest := false,
   concurrentRestrictions in Global += Tags.limit(Tags.Test, 1),
 
-  licenses := Seq("APL2" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-  homepage := Some(url("https://github.com/monix/monix-kafka")),
   headerLicense := Some(HeaderLicense.Custom(
     """|Copyright (c) 2014-2021 by The Monix Project Developers.
        |
@@ -146,38 +136,12 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
        |limitations under the License."""
     .stripMargin)),
 
-  scmInfo := Some(
-    ScmInfo(
-      url("https://github.com/monix/monix-kafka"),
-      "scm:git@github.com:monix/monix-kafka.git"
-    )),
-
-  developers := List(
-    Developer(
-      id="alexelcu",
-      name="Alexandru Nedelcu",
-      email="noreply@alexn.org",
-      url=url("https://alexn.org")
-    ),
-    Developer(
-      id="pgawrys",
-      name="Piotr Gawryś",
-      email="pgawrys2@gmail.com",
-      url=url("https://github.com/Avasil")
-    )),
-
   // -- Settings meant for deployment on oss.sonatype.org
-  publishMavenStyle := true,
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases"  at nexus + "service/local/staging/deploy/maven2")
-  },
+  sonatypeProfileName := organization.value,
 
+  isSnapshot := version.value endsWith "SNAPSHOT",
   publishArtifact in Test := false,
-  pomIncludeRepository := { _ => false } // removes optional dependencies
+  pomIncludeRepository := { _ => false }, // removes optional dependencies
 )
 
 def mimaSettings(projectName: String) = Seq(
