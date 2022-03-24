@@ -36,13 +36,13 @@ jobs:
           restore-keys: ${{ runner.os }}-sbt-
 
       - name: Run Tests for Kafka 0.10.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
-        run: sbt -J-Xmx6144m  kafka10/test
+        run: sbt -J-Xmx6144m  ";clean ;kafka10/test"
 
       - name: Run Tests for Kafka 0.11.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
-        run: sbt -J-Xmx6144m kafka11/test
+        run: sbt -J-Xmx6144m ";clean ;kafka11/test"
 
       - name: Run Tests for Kafka 1.x.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
-        run: sbt -J-Xmx6144m kafka1x/test
+        run: sbt -J-Xmx6144m ";clean ;kafka1x/test"
 
   publish:
     needs: [ tests ]

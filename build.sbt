@@ -21,15 +21,6 @@ inThisBuild(List(
 
 val monixVersion = "3.4.0"
 
-val allProjects = List(
-  "kafka1x",
-  "kafka11",
-  "kafka10"
-)
-
-addCommandAlias("ci",      s";clean ;test:compile ;${allProjects.map(_ + "/test").mkString(" ;")} ;doc")
-addCommandAlias("release", ";+clean ;+package ;+publishSigned ;sonatypeReleaseAll")
-
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
   Compile / packageDoc / publishArtifact := false,
