@@ -45,7 +45,7 @@ lazy val warnUnusedImport = Seq(
 
 lazy val sharedSettings = warnUnusedImport ++ Seq(
   organization := "io.monix",
-  scalaVersion := "2.12.15",
+  scalaVersion := "2.13.8",
   crossScalaVersions := Seq("2.12.15", "2.13.8"),
 
   scalacOptions ++= Seq(
@@ -68,7 +68,8 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
       Seq(
         "-Xlint:inaccessible", // warn about inaccessible types in method signatures
         "-Xlint:by-name-right-associative", // By-name parameter of right associative operator
-        "-Xlint:unsound-match" // Pattern match may not be typesafe
+        "-Xlint:unsound-match", // Pattern match may not be typesafe
+        "-Xlint:nullary-override", // warn when non-nullary `def f()' overrides nullary `def f'
       )
     case _ =>
       Seq.empty
@@ -77,7 +78,6 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   // Linter
   scalacOptions ++= Seq(
     // Turns all warnings into errors ;-)
-    // TODO: enable after fixing deprecations for Scala 2.13
     "-Xfatal-warnings",
     // Enables linter options
     "-Xlint:adapted-args", // warn if an argument list is modified to match the receiver
@@ -121,7 +121,7 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
 
   headerLicense := Some(HeaderLicense.Custom(
-    """|Copyright (c) 2014-2021 by The Monix Project Developers.
+    """|Copyright (c) 2014-2022 by The Monix Project Developers.
        |
        |Licensed under the Apache License, Version 2.0 (the "License");
        |you may not use this file except in compliance with the License.
@@ -172,7 +172,6 @@ lazy val monixKafka = project.in(file("."))
   .aggregate(kafka1x, kafka11, kafka10, kafka9)
 
 lazy val kafka1x = project.in(file("kafka-1.0.x"))
-  .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(mimaSettings("monix-kafka-1x"))
   .settings(
@@ -185,7 +184,6 @@ lazy val kafka1x = project.in(file("kafka-1.0.x"))
   )
 
 lazy val kafka11 = project.in(file("kafka-0.11.x"))
-  .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(mimaSettings("monix-kafka-11"))
   .settings(
@@ -198,7 +196,6 @@ lazy val kafka11 = project.in(file("kafka-0.11.x"))
   )
 
 lazy val kafka10 = project.in(file("kafka-0.10.x"))
-  .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(mimaSettings("monix-kafka-10"))
   .settings(
@@ -211,7 +208,6 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
   )
 
 lazy val kafka9 = project.in(file("kafka-0.9.x"))
-  .settings(sharedSettings)
   .settings(commonDependencies)
   .settings(mimaSettings("monix-kafka-9"))
   .settings(
@@ -237,4 +233,4 @@ lazy val benchmarks = project.in(file("benchmarks"))
 
 scalacOptions += "-Ypartial-unification"
 
-git.baseVersion := (version in ThisBuild).value
+git.baseVersion := (ThisBuild / version).value

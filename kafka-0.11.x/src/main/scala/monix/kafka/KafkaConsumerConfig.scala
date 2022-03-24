@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 by The Monix Project Developers.
+ * Copyright (c) 2014-2022 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -346,7 +346,7 @@ object KafkaConsumerConfig {
     Option(System.getProperty("config.file")).map(f => new File(f)) match {
       case Some(file) if file.exists() =>
         loadFile(file)
-      case None =>
+      case _ =>
         Option(System.getProperty("config.resource")) match {
           case Some(resource) =>
             loadResource(resource)

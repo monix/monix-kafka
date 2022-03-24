@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014-2021 by The Monix Project Developers.
+ * Copyright (c) 2014-2022 by The Monix Project Developers.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ final class KafkaProducerSink[K, V] private (
 
             if (!shouldTerminate) cb
             else
-              Task(p.value.close()).flatten.materialize.foreach {
+              Task(p.value().close()).flatten.materialize.foreach {
                 case Success(_) => cb
                 case Failure(ex) =>
                   logger.error("Unexpected error in KafkaProducerSink", ex)
