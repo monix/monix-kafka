@@ -35,10 +35,6 @@ lazy val warnUnusedImport = Seq(
 )
 
 lazy val sharedSettings = warnUnusedImport ++ Seq(
-  organization := "io.monix",
-  scalaVersion := "2.13.8",
-  crossScalaVersions := Seq("2.12.15", "2.13.8"),
-
   scalacOptions ++= Seq(
     // warnings
     "-unchecked", // able additional warnings where generated code depends on assumptions
@@ -106,9 +102,7 @@ lazy val sharedSettings = warnUnusedImport ++ Seq(
   ),
 
   Test / parallelExecution := false,
-  IntegrationTest / parallelExecution := false,
   Test / testForkedParallel := false,
-  IntegrationTest / testForkedParallel := false,
   Global / concurrentRestrictions += Tags.limit(Tags.Test, 1),
 
   headerLicense := Some(HeaderLicense.Custom(
@@ -156,6 +150,9 @@ lazy val commonDependencies = Seq(
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
     "org.scalacheck" %% "scalacheck" % "1.15.2" % "test")
 )
+
+ThisBuild / scalaVersion := "2.13.8"
+ThisBuild / crossScalaVersions := List("2.12.15", "2.13.8")
 
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
@@ -223,5 +220,3 @@ lazy val benchmarks = project.in(file("benchmarks"))
   .dependsOn(kafka1x)
 
 scalacOptions += "-Ypartial-unification"
-
-git.baseVersion := (ThisBuild / version).value
