@@ -4,6 +4,46 @@ on: [push, pull_request]
 
 jobs:
 
+  compile:
+    name: scala-${{ matrix.scala }} jdk-${{ matrix.java }} tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: true
+      matrix:
+        java: [ 8 ]
+        scala: [ 2.12.15 ]
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: olafurpg/setup-scala@v13
+        with:
+          java-version: "adopt@1.${{ matrix.java }}"
+
+      - name: Cache SBT Coursier directory
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/coursier/v1
+          key: ${{ runner.os }}-coursier-${{ hashFiles('**/*.sbt') }}
+          restore-keys: |
+            ${{ runner.os }}-coursier-
+      - name: Cache SBT directory
+        uses: actions/cache@v2
+        with:
+          path: ~/.sbt
+          key: |
+            ${{ runner.os }}-sbt-${{ hashFiles('project/build.properties') }}-${{ hashFiles('project/plugins.sbt') }}
+          restore-keys: ${{ runner.os }}-sbt-
+
+      - name: Run Compile for Kafka 0.10.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
+        run: sbt -J-Xmx6144m  ";++${{ matrix.scala }} ;clean ;kafka10/compile"
+
+      - name: Run Compile for Kafka 0.11.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
+        run: sbt -J-Xmx6144m ";++${{ matrix.scala }} ;clean ;kafka11/compile"
+
+      - name: Run Compile for Kafka 1.x.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
+        run: sbt -J-Xmx6144m ";++${{ matrix.scala }} ;clean ;kafka1x/compile"
+
   tests:
     name: scala-${{ matrix.scala }} jdk-${{ matrix.java }} tests
     runs-on: ubuntu-latest
@@ -45,7 +85,7 @@ jobs:
         run: sbt -J-Xmx6144m ";++${{ matrix.scala }} ;clean ;kafka1x/test"
 
   publish:
-    needs: [ tests ]
+    needs: [ compile, tests ]
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:

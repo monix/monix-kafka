@@ -157,7 +157,7 @@ ThisBuild / crossScalaVersions := List("2.12.15", "2.13.8")
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka1x, kafka11, kafka10, kafka9)
+  .aggregate(kafka1x, kafka11, kafka10)
 
 lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(commonDependencies)
@@ -193,16 +193,6 @@ lazy val kafka10 = project.in(file("kafka-0.10.x"))
       else Seq.empty[ModuleID]
     },
     libraryDependencies += "org.apache.kafka" % "kafka-clients" % "0.10.2.2" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
-  )
-
-lazy val kafka9 = project.in(file("kafka-0.9.x"))
-  .settings(commonDependencies)
-  .settings(mimaSettings("monix-kafka-9"))
-  .settings(
-    name := "monix-kafka-9",
-    libraryDependencies ++= Seq(
-      "org.apache.kafka" %  "kafka-clients" % "0.9.0.1" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
-    )
   )
 
 lazy val benchmarks = project.in(file("benchmarks"))
