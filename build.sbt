@@ -19,7 +19,7 @@ inThisBuild(List(
     )),
 ))
 
-val monixVersion = "3.4.0"
+val monixVersion = "3.4.1"
 
 lazy val doNotPublishArtifact = Seq(
   publishArtifact := false,
