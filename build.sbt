@@ -144,7 +144,7 @@ lazy val commonDependencies = Seq(
     "com.typesafe.scala-logging" %% "scala-logging" % "3.9.4",
     "com.typesafe" % "config" % "1.4.2",
     "org.slf4j" % "log4j-over-slf4j" % "1.7.36",
-    "org.scala-lang.modules" %% "scala-collection-compat" % "2.7.0" % "provided;optional",
+    "org.scala-lang.modules" %% "scala-collection-compat" % "2.8.0" % "provided;optional",
     // For testing ...
     "ch.qos.logback" % "logback-classic" % "1.2.11" % "test",
     "org.scalatest" %% "scalatest" % "3.0.9" % "test",
