@@ -152,7 +152,7 @@ lazy val commonDependencies = Seq(
 )
 
 ThisBuild / scalaVersion := "2.13.8"
-ThisBuild / crossScalaVersions := List("2.12.15", "2.13.8")
+ThisBuild / crossScalaVersions := List("2.12.19", "2.13.8")
 
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
@@ -202,7 +202,7 @@ lazy val benchmarks = project.in(file("benchmarks"))
     scalacOptions += "-Ypartial-unification",
     name := "benchmarks",
     organization := "io.monix",
-    scalaVersion := "2.12.15",
+    scalaVersion := "2.12.19",
     libraryDependencies ++= Seq("org.scala-lang.modules" %% "scala-collection-compat" % "2.3.2")
   )
   .enablePlugins(JmhPlugin)
