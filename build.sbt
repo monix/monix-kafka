@@ -151,8 +151,8 @@ lazy val commonDependencies = Seq(
     "org.scalacheck" %% "scalacheck" % "1.15.2" % "test")
 )
 
-ThisBuild / scalaVersion := "2.13.8"
-ThisBuild / crossScalaVersions := List("2.12.15", "2.13.8")
+ThisBuild / scalaVersion := "2.13.13"
+ThisBuild / crossScalaVersions := List("2.12.15", "2.13.13")
 
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
