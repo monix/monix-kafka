@@ -44,6 +44,9 @@ jobs:
       - name: Run Compile for Kafka 1.x.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
         run: sbt -J-Xmx6144m ";++${{ matrix.scala }} ;clean ;kafka1x/compile"
 
+      - name: Run Compile for Kafka 4.x.x, Java ${{ matrix.java }} and Scala ${{ matrix.scala }}
+        run: sbt -J-Xmx6144m ";++${{ matrix.scala }} ;clean ;kafka4x/compile"
+
   tests:
     name: scala-${{ matrix.scala }} jdk-${{ matrix.java }} tests
     runs-on: ubuntu-latest

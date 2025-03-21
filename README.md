@@ -21,6 +21,20 @@ Work in progress!
 8. [Maintainers](#maintainers)
 9. [License](#license)
 
+## Getting Started with Kafka 4.0.0 or above
+
+In SBT:
+
+```scala
+libraryDependencies += "io.monix" %% "monix-kafka-4x" % "<tbd>"
+```
+
+Also add a dependency override:
+
+```scala
+dependencyOverrides += "org.apache.kafka" % "kafka-clients" % "4.0.0"
+```
+
 ## Getting Started with Kafka 1.0.x or above
 
 In SBT:
