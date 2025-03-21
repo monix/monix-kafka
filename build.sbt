@@ -151,13 +151,21 @@ lazy val commonDependencies = Seq(
     "org.scalacheck" %% "scalacheck" % "1.15.2" % "test")
 )
 
-ThisBuild / scalaVersion := "2.13.8"
-ThisBuild / crossScalaVersions := List("2.12.15", "2.13.8")
+ThisBuild / scalaVersion := "2.13.15"
+ThisBuild / crossScalaVersions := List("2.12.15", "2.13.15")
 
 lazy val monixKafka = project.in(file("."))
   .settings(sharedSettings)
   .settings(doNotPublishArtifact)
-  .aggregate(kafka1x, kafka11, kafka10)
+  .aggregate(kafka4x, kafka1x, kafka11, kafka10)
+
+lazy val kafka4x = project.in(file("kafka-4.0.x"))
+  .settings(commonDependencies)
+  .settings(mimaSettings("monix-kafka-4x"))
+  .settings(
+    name := "monix-kafka-4x",
+    libraryDependencies += "org.apache.kafka" %  "kafka-clients" % "4.0.0" exclude("org.slf4j","slf4j-log4j12") exclude("log4j", "log4j")
+  )
 
 lazy val kafka1x = project.in(file("kafka-1.0.x"))
   .settings(commonDependencies)
